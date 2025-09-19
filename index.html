@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lucky Boxes Official Store</title>
+  <meta name="description" content="Modern dark theme storefront for linking to your eBay listings. Replace placeholder data with your items and eBay URLs.">
+  <style>
+    :root{
+      --bg:#0b0f12;
+      --card:#071021;
+      --muted:#8aa6b1;
+      --accent:#1fb6a7;
+      --accent-2:#1e90ff;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      --max-width:1100px;
+      --shadow: 0 6px 20px rgba(2,6,23,0.6);
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg) 0%, #041018 100%);
+      color:#e6f3f2;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      justify-content:center;
+      padding:32px 16px;
+    }
+
+    .container{width:100%;max-width:var(--max-width)}
+
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:56px;height:56px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:grid;place-items:center;font-weight:700;color:#021018;box-shadow:var(--shadow);
+    }
+    h1{font-size:18px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:10px;align-items:center}
+    .search{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:8px;min-width:220px}
+    .search input{background:transparent;border:0;color:inherit;outline:none;width:180px}
+
+    .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));border:0;padding:10px 14px;border-radius:10px;color:#021018;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(30,144,255,0.12)}
+
+    main{display:block}
+
+    .catalog{
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      padding:18px;border-radius:18px;box-shadow:var(--shadow);
+    }
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+
+    .card{
+      background:linear-gradient(180deg,var(--card), rgba(0,0,0,0.3));
+      padding:12px;border-radius:12px;overflow:hidden;
+      border:1px solid rgba(255,255,255,0.03);
+      display:flex;flex-direction:column;gap:8px;
+      transition:transform .22s ease, box-shadow .22s ease;
+    }
+    .card:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(10,20,30,0.6)}
+
+    .thumb{width:100%;aspect-ratio:1.2/1;background:#041824;border-radius:10px;display:grid;place-items:center;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+    .meta{display:flex;align-items:center;justify-content:space-between}
+    .title{font-weight:700;font-size:14px}
+    .price{font-weight:800;color:var(--accent);font-size:15px}
+
+    .actions{display:flex;gap:8px;margin-top:auto}
+    .link-ebay{flex:1;text-align:center;padding:10px 8px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent-2);text-decoration:none;font-weight:700}
+
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.5),rgba(0,0,0,0.65));display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:linear-gradient(180deg,#07121a, #021018);padding:18px;border-radius:12px;max-width:720px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,0.7)}
+    .modal .thumb{aspect-ratio:1.2/1}
+    .close{background:transparent;border:0;color:var(--muted);font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo">
+          <img src="https://www.dropbox.com/scl/fi/alpy6a3olbahi59gpcpkk/8-Logo-No-BG.png?dl=1" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">
+        </div>        
+        <div>
+          <h1>Lucky Boxes</h1>
+          <p class="lead">Welcome to our box store! Browse our available boxes here.</p>
+        </div>
+      </div>
+
+      <div class="controls" role="region" aria-label="store controls">
+        <div class="search" role="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
+          <input id="q" placeholder="Search items..." aria-label="Search items">
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="catalog" aria-labelledby="catalog-heading">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 id="catalog-heading" style="margin:0">All Boxes</h2>
+          <div class="subtitle" id="count">0 items</div>
+        </div>
+
+        <div class="grid" id="grid"></div>
+      </section>
+    </main>
+
+    <!-- modal -->
+    <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal" role="document">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
+          <div>
+            <h3 id="m-title">Title</h3>
+            <div class="subtitle" id="m-sub">Short description</div>
+          </div>
+          <button class="close" id="m-close" aria-label="Close">✕</button>
+        </div>
+        <div class="thumb" id="m-img"><img src="https://via.placeholder.com/800x500?text=Product" alt=""></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+          <div style="font-weight:800;color:var(--accent);font-size:20px" id="m-price">$0.00</div>
+          <a id="m-link" class="btn" target="_blank" rel="noopener noreferrer">View on eBay</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRODUCT_DATA = [
+      {id:'p1', title:'Common Lucky Block', price:4.99, img:'https://www.dropbox.com/scl/fi/6xh2e30a5ux0cqlgaymcq/1.png?dl=1', url:'out-of-stock.html'},
+      {id:'p2', title:'Uncommon Lucky Block', price:9.99, img:'https://www.dropbox.com/scl/fi/sx856ruu7fa5reaa24yqd/2.png?dl=1', url:''},
+      {id:'p3', title:'Rare Lucky Block', price:19.99, img:'https://www.dropbox.com/scl/fi/0iptlzk2u764aeszhkjix/3.png?dl=1', url:''},
+      {id:'p4', title:'Legendary Lucky Block', price:29.99, img:'https://www.dropbox.com/scl/fi/34edwv29czgaeanqy4x3h/4.png?dl=1', url:''},
+      {id:'p5', title:'Premium Lucky Block', price:39.99, img:'https://www.dropbox.com/scl/fi/b3c3q7tzug11zumtacpzh/5.png?dl=1', url:''},
+      {id:'p6', title:'Mythic Lucky Block', price:49.99, img:'https://www.dropbox.com/scl/fi/hq6ywtouh44z6bs3n925d/6.png?dl=1', url:''}
+    ];
+
+    const grid=document.getElementById('grid'),q=document.getElementById('q'),count=document.getElementById('count'),
+          modal=document.getElementById('modal'),mTitle=document.getElementById('m-title'),
+          mSub=document.getElementById('m-sub'),mImg=document.getElementById('m-img'),
+          mPrice=document.getElementById('m-price'),mLink=document.getElementById('m-link'),
+          mClose=document.getElementById('m-close');
+
+    function formatPrice(p){return '$'+Number(p).toFixed(2)}
+
+    function render(){
+      const term=q.value.trim().toLowerCase();
+      let list=PRODUCT_DATA.filter(it=>!term||it.title.toLowerCase().includes(term));
+      count.textContent=list.length+' items';
+      grid.innerHTML='';
+      if(list.length===0){
+        grid.innerHTML='<div style="grid-column:1/-1;color:var(--muted);padding:28px;text-align:center">No items found.</div>';
+        return;
+      }
+      for(const it of list){
+        const card=document.createElement('article');
+        card.className='card';
+        card.innerHTML=`
+          <div class="thumb"><img src="${it.img}" alt="${it.title}"></div>
+          <div class="meta"><div class="title">${it.title}</div><div class="price">${formatPrice(it.price)}</div></div>
+          <div class="actions">
+            <a class="link-ebay" href="${it.url}" ${it.url.endsWith('.html')?'':'target="_blank"'}>View on eBay</a>
+            <button class="btn" data-id="${it.id}">Quick View</button>
+          </div>`;
+        grid.appendChild(card);
+      }
+      grid.querySelectorAll('button[data-id]').forEach(b=>{
+        b.onclick=()=>openModal(PRODUCT_DATA.find(x=>x.id===b.dataset.id));
+      });
+    }
+
+    function openModal(item){
+      mTitle.textContent=item.title;
+      mSub.textContent=item.description||'';
+      mImg.innerHTML=`<img src="${item.img}" alt="${item.title}">`;
+      mPrice.textContent=formatPrice(item.price);
+      mLink.href=item.url;
+      modal.style.display='flex';
+      modal.setAttribute('aria-hidden','false');
+    }
+    function closeModal(){modal.style.display='none';modal.setAttribute('aria-hidden','true')}
+
+    q.addEventListener('input',render);
+    mClose.addEventListener('click',closeModal);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+    window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+    render();
+  </script>
+</body>
+</html>
