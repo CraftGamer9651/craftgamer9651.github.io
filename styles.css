@@ -124,3 +124,50 @@ footer{margin-top:12px;color:var(--muted); font-size:13px}
   .input-row{flex-direction:column}
   .options{flex-direction:column; align-items:flex-start}
 }
+
+.video-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 16px;
+}
+
+.video-item {
+  display: flex;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  padding: 10px;
+  border-radius: 10px;
+  align-items: center;
+}
+
+.video-thumb img {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.video-info {
+  flex: 1;
+}
+
+.video-info h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.video-info p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.play-mini {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
