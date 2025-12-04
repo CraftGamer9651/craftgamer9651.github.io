@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QuickTube — play YouTube links inline</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <h1>QuickTube</h1>
+    <p class="lead">Paste a YouTube URL below and play the video right here (no need to go to YouTube).</p>
+
+    <div class="card">
+      <label for="urlInput">YouTube URL or ID</label>
+      <div class="input-row">
+        <input id="urlInput" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" aria-label="YouTube URL or ID">
+        <button id="playBtn" class="btn">Play</button>
+      </div>
+
+      <div class="options">
+        <label><input type="checkbox" id="autoplay"> Autoplay</label>
+        <label><input type="checkbox" id="nocookie" checked> Use privacy embed (youtube-nocookie.com)</label>
+        <label>Start at (seconds): <input id="startAt" type="number" min="0" value="0" class="small-number"></label>
+      </div>
+
+      <div class="permalink-row">
+        <button id="copyPermalink" class="btn-secondary">Copy permalink</button>
+        <span id="permText" class="perm-text" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <div id="playerWrapper" class="player-wrapper hidden" aria-live="polite">
+      <div class="player-container" id="playerContainer">
+        <!-- iframe is injected here -->
+      </div>
+    </div>
+
+    <footer>
+      <small>Built for inline playback. Embeds respect YouTube's embedding rules.</small>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
