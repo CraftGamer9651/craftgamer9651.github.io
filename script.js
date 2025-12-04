@@ -26,25 +26,41 @@ function extractYouTubeID(urlOrId) {
   if (!urlOrId) return null;
   urlOrId = urlOrId.trim();
 
+  // If it looks like a raw ID
   const possibleId = urlOrId.match(/^[A-Za-z0-9_-]{6,20}$/);
   if (possibleId) return possibleId[0];
 
   try {
     const u = new URL(urlOrId);
 
-    if (u.hostname.includes("youtu.be"))
-      return u.pathname.split("/")[1];
+    // youtu.be/VIDEOID
+    if (u.hostname.includes("youtu.be")) {
+      const seg = u.pathname.split("/")[1];
+      if (seg) return seg;
+    }
 
-    if (u.searchParams.get("v"))
+    // youtube.com/watch?v=VIDEOID
+    if (u.searchParams.get("v")) {
       return u.searchParams.get("v");
+    }
 
-    const embed = u.pathname.match(/\/embed\/([A-Za-z0-9_-]+)/);
-    if (embed) return embed[1];
+    // /embed/VIDEOID
+    const embedMatch = u.pathname.match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
+    if (embedMatch) return embedMatch[1];
 
-  } catch {}
+    // ⭐ NEW: /shorts/VIDEOID
+    const shortsMatch = u.pathname.match(/\/shorts\/([A-Za-z0-9_-]{6,20})/);
+    if (shortsMatch) return shortsMatch[1];
+
+  } catch (e) {
+    // Fallback: URL-like without protocol
+    const vMatch = urlOrId.match(/v=([A-Za-z0-9_-]{6,20})/);
+    if (vMatch) return vMatch[1];
+  }
 
   return null;
 }
+
 
 
 // --------------------------
