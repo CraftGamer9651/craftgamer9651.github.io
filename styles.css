@@ -1,0 +1,126 @@
+:root{
+  --bg: #0f1724;
+  --card: #0b1220;
+  --accent: #60a5fa;
+  --muted: #94a3b8;
+  --text: #e6eef8;
+  --radius: 10px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: linear-gradient(180deg, #071028 0%, #0b1220 100%);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.container{
+  width:100%;
+  max-width:920px;
+}
+
+h1{margin:0 0 8px;font-size:28px}
+.lead{margin:0 0 18px;color:var(--muted)}
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding:18px;
+  border-radius:var(--radius);
+  box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+  margin-bottom:18px;
+}
+
+.input-row{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+input[type="text"], input[type="url"], input[type="number"], #urlInput{
+  flex:1;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color:var(--text);
+  outline:none;
+}
+
+input[type="number"].small-number{
+  width:90px;
+  padding:6px 8px;
+}
+
+.btn{
+  background:linear-gradient(180deg,var(--accent),#3b82f6);
+  border:none;
+  color:white;
+  padding:10px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.btn-secondary{
+  background:transparent;
+  border:1px solid rgba(255,255,255,0.06);
+  color:var(--text);
+  padding:8px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.options{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  margin-top:12px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.permalink-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:12px;
+}
+
+.perm-text{color:var(--muted); font-size:13px}
+
+.player-wrapper{
+  border-radius:var(--radius);
+  overflow:hidden;
+  background: #000;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.7);
+}
+
+.player-container{
+  width:100%;
+  height:0;
+  padding-bottom:56.25%; /* 16:9 */
+  position:relative;
+}
+
+.player-container iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+}
+
+.hidden{display:none}
+
+footer{margin-top:12px;color:var(--muted); font-size:13px}
+@media (max-width:520px){
+  .input-row{flex-direction:column}
+  .options{flex-direction:column; align-items:flex-start}
+}
