@@ -171,3 +171,28 @@ footer{margin-top:12px;color:var(--muted); font-size:13px}
   cursor: pointer;
 }
 
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: -60px; /* starts hidden below screen */
+  padding: 12px 16px;
+  font-size: 15px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.35s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  z-index: 999;
+}
+
+.back-to-top.show {
+  bottom: 20px; /* slide up */
+}
+
+.back-to-top.hidden {
+  display: none;
+}
+
+
