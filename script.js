@@ -98,7 +98,11 @@ function showPlayer(videoId) {
     `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 
   playerWrapper.classList.remove("hidden");
+
+  scrollToPlayer();
+  showBackToTopButton();
 }
+
 
 
 // --------------------------
@@ -157,6 +161,15 @@ function renderVideoList(container, items) {
   });
 }
 
+function scrollToPlayer() {
+  setTimeout(() => {
+    playerWrapper.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }, 200);
+}
+
 searchBtn.addEventListener("click", async () => {
   const q = searchInput.value.trim();
   if (!q) return;
@@ -170,7 +183,6 @@ searchInput.addEventListener("keydown", e => {
   if (e.key === "Enter") searchBtn.click();
 });
 
-
 // -----------------------------------------------------------
 // TRENDING VIDEOS
 // -----------------------------------------------------------
@@ -183,5 +195,34 @@ async function loadTrending() {
 
   renderVideoList(trendingList, data.items || []);
 }
+
+const backToTopBtn = document.getElementById("backToTop");
+
+function showBackToTopButton() {
+  backToTopBtn.classList.remove("hidden");
+  setTimeout(() => backToTopBtn.classList.add("show"), 10);
+}
+
+function hideBackToTopButton() {
+  backToTopBtn.classList.remove("show");
+  setTimeout(() => backToTopBtn.classList.add("hidden"), 300);
+}
+
+// Click → scroll to top
+backToTopBtn.addEventListener("click", () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  hideBackToTopButton();
+});
+
+// auto-hide when user scrolls high enough
+window.addEventListener("scroll", () => {
+  if (window.scrollY < 150) {
+    hideBackToTopButton();
+  }
+});
 
 loadTrending();
