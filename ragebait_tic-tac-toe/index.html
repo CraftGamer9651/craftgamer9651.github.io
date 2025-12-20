@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ragebait Tic-tac-toe</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #111, #333);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    p { opacity: 0.8; }
 
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 120px);
+      grid-template-rows: repeat(3, 120px);
+      gap: 10px;
+      margin-top: 2rem;
+    }
+    .cell {
+      width: 120px;
+      height: 120px;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+      cursor: pointer;
+      border-radius: 1rem;
+      transition: background 0.3s, transform 0.2s;
+      user-select: none;
+    }
+    .cell:hover { background: #444; transform: scale(1.05); }
+
+    #status { margin-top: 1.5rem; font-size: 1.2rem; }
+    #reset {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      background: #ff4444;
+      border: none;
+      border-radius: 0.5rem;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #reset:hover { background: #ff1111; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ragebait Tic-tac-toe</h1>
+    <p>The most frustrating Tic-tac-toe experience is now downloadable.</p>
+  </header>
+
+  <section style="margin-top:2rem; text-align:center;">
+    <h2>Download the Game</h2>
+    <p>Click below to get the latest version:</p>
+    <a href="YOUR_DOWNLOAD_LINK_HERE" 
+       style="display:inline-block; margin-top:1rem; padding:1rem 2rem; background:#ff4444; color:#fff; border-radius:0.5rem; text-decoration:none; font-size:1.2rem;">
+      Download Ragebait Tic-tac-toe
+    </a>
+  </section>
+</body>
+</html>
