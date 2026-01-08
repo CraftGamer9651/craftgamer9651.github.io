@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Order Successful - Lucky Blocks</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo"><img src="7.png" alt="Lucky Blocks logo" style="width:100%;height:100%;object-fit:contain;border-radius:12px;"></div>
+      <div>
+        <h1>Lucky Blocks</h1>
+        <p class="lead">Official Lucky Blocks Store</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="card-page">
+    <div class="card-box">
+      <h1 style="color:var(--accent)">🎉 Thank You!</h1>
+      <p>Your order was successful. Here are your details:</p>
+      <div id="order-details">Loading your order...</div>
+
+      <div class="review-form">
+        <h3 style="color:var(--accent)">Leave a Review</h3>
+        <textarea id="review-input" placeholder="Share your experience..."></textarea>
+        <button class="btn" onclick="submitReview()">Submit Review</button>
+        <div id="review-msg" class="review-msg"></div>
+      </div>
+
+      <a href="index.html" class="btn">Back to Store</a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-title">LUCKY BLOCKS</div>
+    <div class="footer-credits">created by <strong>eoqw</strong> and <strong>CraftGamer</strong></div>
+  </footer>
+
+  <!-- Contact (same as main) -->
+  <div id="contactBar" style="position:fixed;top:15px;right:20px;z-index:1000;text-align:right;transition:opacity 0.4s ease;opacity:1;">
+    <div style="font-size:13px;color:#8aa6b1;margin-bottom:6px">Questions? Comments? Concerns? Contact us below.</div>
+    <div style="position:relative;display:inline-block">
+      <button onclick="toggleContact()" class="btn">Contact Us</button>
+      <div id="contactDropdown" style="display:none;position:absolute;right:0;margin-top:6px;background:#071021;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.4);min-width:240px;z-index:1001">
+        <div style="padding:10px;color:#e6f3f2;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)">📞 Call: <strong>760-330-6384</strong></div>
+        <div style="padding:10px;color:#e6f3f2;font-size:13px">📧 Email: <strong>luckyblocks.no.reply@gmail.com</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleContact(){const dd=document.getElementById("contactDropdown");dd.style.display=(dd.style.display==="block")?"none":"block";}
+    window.addEventListener("click",function(e){if(!e.target.matches("button")&&!e.target.closest("#contactDropdown")){document.getElementById("contactDropdown").style.display="none";}});
+
+    async function loadOrder(){const params=new URLSearchParams(window.location.search);const sessionId=params.get("session_id");if(!sessionId){document.getElementById("order-details").textContent="No order ID found.";return;}try{const res=await fetch("https://luckyblocksbackend.onrender.com/order/"+sessionId);if(!res.ok)throw new Error("Order not found");const order=await res.json();document.getElementById("order-details").innerHTML=`<p><strong>Email:</strong> ${order.email}</p><p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p><p><strong>Items:</strong></p><ul>${order.items.split(", ").map(i=>`<li>${i}</li>`).join("")}</ul><p><strong>Total Paid:</strong> $${order.total.toFixed(2)}</p>`;}catch(err){console.error(err);document.getElementById("order-details").textContent="Could not load order details."}}
+    async function submitReview(){const text=document.getElementById("review-input").value.trim();const msgBox=document.getElementById("review-msg");if(!text){msgBox.textContent="Please enter a review before submitting.";return;}try{const res=await fetch("https://luckyblocksbackend.onrender.com/add-review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});const data=await res.json();if(data.success){msgBox.style.color="limegreen";msgBox.textContent="✅ Thank you! Your review has been submitted.";document.getElementById("review-input").value="";}else throw new Error(data.error||"Unknown error");}catch(err){console.error(err);msgBox.style.color="red";msgBox.textContent="❌ Failed to submit review."}}
+    loadOrder();
+  </script>
+</body>
+</html>

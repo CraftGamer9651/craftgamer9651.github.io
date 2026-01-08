@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Order Canceled - Lucky Blocks</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo"><img src="7.png" alt="Lucky Blocks logo" style="width:100%;height:100%;object-fit:contain;border-radius:12px;"></div>
+      <div>
+        <h1>Lucky Blocks</h1>
+        <p class="lead">Official Lucky Blocks Store</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="card-page">
+    <div class="card-box">
+      <h1 style="color:#ff4d6d">❌ Checkout Canceled</h1>
+      <p>Your order was not completed.</p>
+      <p>No charges were made, and no order was saved in our system.</p>
+      <a href="index.html" class="btn">Back to Store</a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-title">LUCKY BLOCKS</div>
+    <div class="footer-credits">created by <strong>eoqw</strong> and <strong>CraftGamer</strong></div>
+  </footer>
+
+  <!-- Contact -->
+  <div id="contactBar" style="position:fixed;top:15px;right:20px;z-index:1000;text-align:right;transition:opacity 0.4s ease;opacity:1;">
+    <div style="font-size:13px;color:#8aa6b1;margin-bottom:6px">Questions? Comments? Concerns? Contact us below.</div>
+    <div style="position:relative;display:inline-block">
+      <button onclick="toggleContact()" class="btn">Contact Us</button>
+      <div id="contactDropdown" style="display:none;position:absolute;right:0;margin-top:6px;background:#071021;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.4);min-width:240px;z-index:1001">
+        <div style="padding:10px;color:#e6f3f2;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)">📞 Call: <strong>760-330-6384</strong></div>
+        <div style="padding:10px;color:#e6f3f2;font-size:13px">📧 Email: <strong>luckyblocks.no.reply@gmail.com</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleContact(){const dd=document.getElementById("contactDropdown");dd.style.display=(dd.style.display==="block")?"none":"block";}
+    window.addEventListener("click",function(e){if(!e.target.matches("button")&&!e.target.closest("#contactDropdown")){document.getElementById("contactDropdown").style.display="none";}});
+  </script>
+</body>
+</html>
