@@ -1,1 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lucky Blocks Official Store</title>
+  <meta name="description" content="The official store to buy Lucky Blocks. All purchases are made securely with Stripe.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <div class="container" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo"><img src='7.png' alt="" style="width:100%;height:100%;object-fit:contain;border-radius:12px;"></div>
+        <div>
+          <h1>Lucky Blocks</h1>
+          <p class="lead">Welcome to our store! Browse our available Lucky Blocks here.</p>
+        </div>
+      </div>
+    </header>
+    
+<!-- test deploy 10/11 -->
+    
+    <main>
+      <section class="catalog">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="margin:0">All Blocks</h2>
+          <div class="subtitle" id="count">0 items</div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </section>
+
+      <aside class="panel">
+        <h3>Your Cart</h3>
+        <div id="cart-items">Your cart is empty. Add something!</div>
+        <div id="cart-total"></div>
+        <button class="btn" onclick="checkout()">Checkout</button>
+
+        <!-- Reviews Panel directly under checkout -->
+        <div id="reviews-panel" style="margin-top:28px;text-align:center">
+          <div style="font-size:28px;color:#FFD700;letter-spacing:6px;margin-bottom:6px">
+            ★ ★ ★ ★ ★
+          </div>
+          <div style="color:#8aa6b1;font-size:14px;margin-bottom:10px">
+            Rated 4.8/5 by our loyal customers
+          </div>
+          <div id="review-text" style="font-style:italic;color:#e6f3f2;font-size:15px">
+            "This store is amazing!"
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- modal -->
+    <div class="modal-backdrop" id="modal" aria-hidden="true">
+      <div class="modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
+          <div>
+            <h3 id="m-title">Title</h3>
+            <div class="subtitle" id="m-sub">One of five tiered mystery boxes.</div>
+          </div>
+          <div><button class="close" id="m-close">✕</button></div>
+        </div>
+        <div class="thumb" id="m-img"><img src="https://via.placeholder.com/800x500?text=Product" alt=""></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+          <div style="font-weight:800;color:var(--accent);font-size:20px" id="m-price">$0.00</div>
+          <button id="checkout-btn" class="btn">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="margin-top:80px;text-align:center;opacity:0.8">
+    <div class="footer-title" style="font-size:40px;font-weight:900;letter-spacing:4px;color:#ffffff1a">
+      LUCKY BLOCKS
+    </div>
+    <div class="footer-credits" style="margin-top:8px;font-size:14px;color:#8aa6b1">
+      created by <strong>eoqw</strong> and <strong>CraftGamer</strong>
+    </div>
+  </footer>
+
+    <!-- Fixed Contact (Top Right) -->
+ <div id="contactBar" style="position:fixed;top:15px;right:20px;z-index:1000;text-align:right;transition:opacity 0.4s ease;opacity:1;">
+    <div style="font-size:13px;color:#8aa6b1;margin-bottom:6px">
+      Questions? Comments? Concerns? Contact us using the sources below.
+    </div>
+    <div style="position:relative;display:inline-block">
+      <button onclick="toggleContact()" style="background:linear-gradient(90deg,var(--accent),var(--accent-2));border:0;padding:8px 12px;border-radius:8px;color:#021018;font-weight:600;cursor:pointer;font-size:13px">
+        Contact Us
+      </button>
+      <div id="contactDropdown" style="display:none;position:absolute;right:0;margin-top:6px;background:#071021;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.4);min-width:240px;z-index:1001">
+        <div style="padding:10px;color:#e6f3f2;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)">📞 Call: <strong>760-330-6384</strong></div>
+        <div style="padding:10px;color:#e6f3f2;font-size:13px">📧 Email (recommended): <strong>luckyblocks.no.reply@gmail.com</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:fixed;bottom:10px;left:20px;font-size:12px;color:#8aa6b1;z-index:1000">
+    © 2025 Lucky Loot Boxes (eoqw and CraftGamer)
+  </div>
+
+  <!-- scripts -->
+  <script>
+    function toggleContact(){
+      const dd=document.getElementById("contactDropdown");
+      dd.style.display=(dd.style.display==="block")?"none":"block";
+    }
+    window.addEventListener("click",function(e){
+      if(!e.target.matches("button") && !e.target.closest("#contactDropdown")){
+        document.getElementById("contactDropdown").style.display="none";
+      }
+    });
+  </script>
+
+  <!-- Fixed Copyright (Bottom Left) -->
+  <div style="position:fixed;bottom:10px;left:20px;font-size:12px;color:#8aa6b1;z-index:1000">
+    © 2025 Lucky Loot Boxes (eoqw and CraftGamer)
+  </div>
+
+  <script>
+    function toggleContact(){
+      const dd=document.getElementById("contactDropdown");
+      dd.style.display=(dd.style.display==="block")?"none":"block";
+    }
+
+    // Close dropdown if clicking outside
+    window.addEventListener("click",function(e){
+      if(!e.target.matches("button") && !e.target.closest("#contactDropdown")){
+        document.getElementById("contactDropdown").style.display="none";
+      }
+    });
+  </script>
+
+  <script>
+  const PRODUCT_DATA = [
+    {id:'p1',title:'Common Lucky Block',price:4.99,img:'1.png'},
+    {id:'p2',title:'Uncommon Lucky Block',price:9.99,img:'2.png'},
+    {id:'p3',title:'Rare Lucky Block',price:19.99,img:'3.png'},
+    {id:'p4',title:'Legendary Lucky Block',price:29.99,img:'4.png'},
+    {id:'p5',title:'Premium Lucky Block',price:39.99,img:'5.png'},
+    {id:'p6',title:'Mythic Lucky Block',price:49.99,img:'6.png'}
+  ];
+
+  const grid=document.getElementById("grid");
+  const count=document.getElementById("count");
+  const modal=document.getElementById("modal");
+  const mTitle=document.getElementById("m-title");
+  const mSub=document.getElementById("m-sub");
+  const mImg=document.getElementById("m-img");
+  const mPrice=document.getElementById("m-price");
+  const mClose=document.getElementById("m-close");
+  const checkoutBtn=document.getElementById("checkout-btn");
+
+  let cart=[];
+  let REVIEWS = [];  // will be fetched from server
+  let reviewIndex = 0;
+
+  function formatPrice(p){return "$"+p.toFixed(2);}
+
+  function renderProducts(){
+    grid.innerHTML="";
+    PRODUCT_DATA.forEach(it=>{
+      const card=document.createElement("article");
+      card.className="card";
+      card.innerHTML=`
+        <div class="thumb"><img src="${it.img}" alt="${it.title}"></div>
+        <div class="meta"><div class="title">${it.title}</div><div class="price">${formatPrice(it.price)}</div></div>
+        <div class="actions">
+          <button class="btn ghost" onclick='openModal(${JSON.stringify(it)})'>Quick View</button>
+          <button class="btn" onclick='addToCart(${JSON.stringify(it)})'>Add to Cart</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+    count.textContent=PRODUCT_DATA.length+" items";
+  }
+
+  function openModal(item){
+    mTitle.textContent=item.title;
+    mSub.textContent="Limited edition Lucky Block!";
+    mPrice.textContent=formatPrice(item.price);
+    mImg.innerHTML=`<img src="${item.img}" alt="${item.title}">`;
+    modal.style.display='flex';modal.setAttribute('aria-hidden','false');
+    checkoutBtn.onclick=()=>{addToCart(item);closeModal();};
+  }
+  function closeModal(){modal.style.display='none';modal.setAttribute('aria-hidden','true');}
+  mClose.addEventListener('click',closeModal);
+  modal.addEventListener('click',e=>{if(e.target===modal) closeModal();});
+
+  function addToCart(item){
+    const existing=cart.find(p=>p.id===item.id);
+    if(existing){existing.qty++;}
+    else{cart.push({...item,qty:1});}
+    renderCart();
+  }
+
+  function renderCart(){
+    const cartDiv=document.getElementById("cart-items");
+    const totalDiv=document.getElementById("cart-total");
+    if(cart.length===0){
+      cartDiv.textContent="Your cart is empty. Add something!";
+      totalDiv.textContent="";
+      return;
+    }
+    cartDiv.innerHTML=cart.map(p=>`${p.title} x ${p.qty} — ${formatPrice(p.price*p.qty)}`).join("<br>");
+    const total=cart.reduce((sum,p)=>sum+p.price*p.qty,0);
+    totalDiv.innerHTML=`<strong>Total: ${formatPrice(total)}</strong>`;
+  }
+
+  const stripe=Stripe("pk_test_51SDsfpCDsOEEIRCpVxl8dwYkrc7rO0lJuDJZt5p5OqexR4dZ5wraeES471928vGnQJh4ryvDRHG9MdRoozBDed4J00QPUbESyc"); 
+  async function checkout(){
+    if(cart.length===0){alert("Cart is empty!");return;}
+    try{
+      const res=await fetch("https://luckyblocksbackend.onrender.com/create-checkout-session",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({items:cart})
+      });
+      const session=await res.json();
+      if(session.error) throw new Error(session.error);
+      const {error}=await stripe.redirectToCheckout({sessionId:session.id});
+      if(error) alert(error.message);
+    }catch(err){console.error(err);alert("Checkout failed.");}
+  }
+
+  // --- Reviews rotation ---
+  async function loadReviews(){
+    try{
+      const res = await fetch("https://luckyblocksbackend.onrender.com/reviews");
+      if(!res.ok) throw new Error("Failed to load reviews");
+      const data = await res.json();
+      REVIEWS = data.map(r => r.text);  // assuming server returns {text}
+      if(REVIEWS.length === 0) REVIEWS = ["Be the first to leave a review!"];
+    }catch(err){
+      console.error("Error loading reviews:", err);
+      REVIEWS = ["Reviews unavailable at the moment."];
+    }
+  }
+
+  function rotateReviews(){
+    if(REVIEWS.length === 0) return;
+    const reviewBox = document.getElementById("review-text");
+    reviewIndex = (reviewIndex + 1) % REVIEWS.length;
+    reviewBox.textContent = REVIEWS[reviewIndex];
+  }
+
+  setInterval(rotateReviews, 5000);
+
+  // Init
+  renderProducts();
+  renderCart();
+  loadReviews();
+</script>
 
