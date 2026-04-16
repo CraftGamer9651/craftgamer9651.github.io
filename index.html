@@ -3,72 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>knokyoursock</title>
+  <title>My Projects</title>
   <style>
+    * { box-sizing:border-box; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; }
+
     body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background 0.35s var(--ease), color 0.35s var(--ease);
-      overflow-x: hidden;
+      margin:0;
+      padding:0;
+      height:100vh;
+      overflow-x:hidden;
+      color:#e5e7eb;
+      line-height:1.6;
+      background: #0f172a;
+      position: relative;
     }
-    .container {
-      max-width: 300px;
-      margin: auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
     }
-    .item {
-      background: rgba(255, 255, 255, 0.08);
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      backdrop-filter: blur(6px);
+
+    header {
+      padding:40px 20px;
+      text-align:center;
+      background:#020617;
+      border-bottom:1px solid #1e293b;
+      position: relative;
+      z-index: 1;
     }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #5b3df5;
-      color: white;
-      transition: 0.2s ease;
-    }
-    button:hover {
-      background: #7a5bff;
-      transform: translateY(-2px);
-    }
-    img {
-      margin-top: 15px;
-      max-width: 100%;
-      border-radius: 8px;
-    }
+
+    header h1 { font-size:2.5rem; margin-bottom:10px; }
+    header p { color:#94a3b8; }
+
+    .container { max-width:1100px; margin:auto; padding:40px 20px; position: relative; z-index: 1; }
+
+    .projects { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:25px; }
+
+    .card { background:#020617; border:1px solid #1e293b; border-radius:14px; overflow:hidden; transition:transform .2s ease, box-shadow .2s ease; cursor:pointer; }
+    .card:hover { transform:translateY(-6px); box-shadow:0 10px 30px rgba(0,0,0,0.4); }
+    .card img { width:100%; height:160px; object-fit:cover; }
+    .card-content { padding:18px; }
+    .card-content h3 { margin-bottom:8px; }
+    .card-content p { font-size:0.9rem; color:#94a3b8; margin-bottom:15px; }
+    .buttons { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { text-decoration:none; font-size:0.85rem; padding:8px 14px; border-radius:8px; border:1px solid #334155; color:white; transition:background .2s; }
+    .btn:hover { background:#1e293b; }
+
+    footer { text-align:center; padding:25px; border-top:1px solid #1e293b; color:#94a3b8; margin-top:40px; position: relative; z-index: 1; }
+
+    /* Fullscreen project modal */
+    .project-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; padding:40px; z-index:1000; }
+    .project-modal.active { display:flex; }
+    .modal-content { max-width:900px; width:100%; background:#020617; border:1px solid #1e293b; border-radius:16px; overflow:hidden; animation:modalIn .35s ease; }
+    .modal-content img { width:100%; height:340px; object-fit:cover; }
+    .modal-body { padding:24px; display:flex; flex-direction: column; gap: 10px; }
+    .close-modal { position:absolute; top:25px; right:30px; font-size:28px; cursor:pointer; color:white; }
+
+    @keyframes modalIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 style="color: #c9a8ff;">knokyoursock</h1>
 
-    <div class="item">
-      <button onclick="window.location.href='netsafe/index.html'">NetSafe Security Test</button>
-    </div>
-    
-    <div class="item">
-      <button onclick="window.location.href='ragebait_tic-tac-toe/index.html'">Ragebait Tictactoe</button>
+<canvas id="bgCanvas"></canvas>
+
+<header>
+  <h1>My Projects</h1>
+  <p>A collection of things I've built</p>
+</header>
+
+<section class="container">
+  <div class="projects">
+
+    <div class="card">
+      <img src="https://picsum.photos/400/200" alt="Project image">
+      <div class="card-content">
+        <h3>NetSafe Security Test</h3>
+        <p>A fun test you can take to see if you're responsible in the internet.</p>
+        <div class="buttons">
+          <a class="btn" href="netsafe/index.html">Try It</a>
+        </div>
+      </div>
     </div>
 
-    <div class="item">
-      <button onclick="window.location.href='quicktube/index.html'">QuickTube</button>
+    <div class="card">
+      <img src="https://picsum.photos/401/200" alt="Project image">
+      <div class="card-content">
+        <h3>QuickTube</h3>
+        <p>An unblocked website to view YouTube videos without restrictions.</p>
+        <div class="buttons">
+          <a class="btn" href="quicktube/index.html">Watch Now</a>
+        </div>
+      </div>
     </div>
 
-    <div class="item">
-      <button onclick="window.location.href='https://github.com/CraftGamer9651/Student-Managment-System'">Student Management System</button>
+    <div class="card">
+      <img src="https://picsum.photos/402/200" alt="Project image">
+      <div class="card-content">
+        <h3>exclude.gg</h3>
+        <p>A store and Minecraft server to buy items, and chat with firends</p>
+        <div class="buttons">
+          <a class="btn" href="https://discord.gg/23rxcPzVss">Join Community</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Your Name</p>
+</footer>
+
+<!-- Fullscreen project modal -->
+<div class="project-modal" id="projectModal">
+  <div class="close-modal" id="closeModal">✕</div>
+  <div class="modal-content" id="modalContent">
+    <img id="modalImage" src="" alt="Project image">
+    <div class="modal-body">
+      <h2 id="modalTitle"></h2>
+      <p id="modalDescription"></p>
+      <div class="buttons" id="modalButtons"></div>
     </div>
   </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="script.js"></script>
+<script>
+// Blobby gradient background behind cards
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let blobs = [];
+const colors = ['#6ecbff', '#1e3a8a', '#a78bfa', '#4c1d95', '#ff6ec7'];
+for(let i=0;i<8;i++){
+  blobs.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: 150 + Math.random()*100,
+    color: colors[i % colors.length],
+    dx: (Math.random()-0.5)*0.2,
+    dy: (Math.random()-0.5)*0.2
+  });
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  blobs.forEach(b => {
+    b.x += b.dx;
+    b.y += b.dy;
+    let gradient = ctx.createRadialGradient(b.x,b.y,b.r*0.3,b.x,b.y,b.r);
+    gradient.addColorStop(0, b.color+'88');
+    gradient.addColorStop(1, b.color+'00');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
+window.addEventListener('resize',()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+window.addEventListener('mousemove', e => {
+  let mx = (e.clientX / window.innerWidth - 0.5) * 4;
+  let my = (e.clientY / window.innerHeight - 0.5) * 4;
+  blobs.forEach(b => { b.x += mx; b.y += my; });
+});
+</script>
+
 </body>
 </html>
