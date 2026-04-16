@@ -5,12 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>knokyoursock</title>
   <style>
+    :root {
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --bg:          #0d0f14;
+      --surface:     #151820;
+      --surface-2:   #1e2230;
+      --border:      rgba(255,255,255,0.08);
+      --text:        #eef0f6;
+      --text-muted:  #7a8099;
+      --accent:      #4f8ef7;
+      --accent-glow: rgba(79,142,247,0.25);
+      --correct:     #34d399;
+      --wrong:       #f87171;
+      --correct-bg:  rgba(52,211,153,0.12);
+      --wrong-bg:    rgba(248,113,113,0.12);
+      --toggle-bg:   #1e2230;
+      --shadow:      0 8px 40px rgba(0,0,0,0.5);
+    }
+    
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0f24, #1b0f3b);
-      margin: 0;
-      padding: 40px;
-      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.35s var(--ease), color 0.35s var(--ease);
+      overflow-x: hidden;
     }
     .container {
       max-width: 300px;
