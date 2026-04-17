@@ -16,15 +16,17 @@ body {
   color: var(--text);
   padding: 24px;
   min-height: 100vh;
-  display: block;       /* allow natural scrolling */
-  overflow-y: auto;     /* ensure scrolling is allowed */
+  display: flex;           /* ← changed from block */
+  justify-content: center; /* ← centers container horizontally */
+  overflow-y: auto;
 }
 
-.container{
-  width:100%;
-  max-width:920px;
-  display:flex;
-  justify-content: center;
+.container {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;  /* ← stack children vertically */
+  align-items: center;     /* ← center children horizontally */
 }
 
 h1{margin:0 0 8px;font-size:28px}
