@@ -23,6 +23,8 @@ body {
 .container{
   width:100%;
   max-width:920px;
+  display:flex;
+  align-items: center;
 }
 
 h1{margin:0 0 8px;font-size:28px}
