@@ -32,13 +32,13 @@ body {
 h1{margin:0 0 8px;font-size:28px}
 .lead{margin:0 0 18px;color:var(--muted)}
 
-.card{
+.card {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  padding:18px;
-  border-radius:var(--radius);
+  padding: 18px;
+  border-radius: var(--radius);
   box-shadow: 0 6px 20px rgba(2,6,23,0.6);
-  margin-bottom:18px;
-  min-width: 500px;
+  margin-bottom: 18px;
+  width: 100%;  /* ← add this */
 }
 
 .input-row{
