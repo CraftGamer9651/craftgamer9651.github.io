@@ -38,6 +38,7 @@ h1{margin:0 0 8px;font-size:28px}
   border-radius:var(--radius);
   box-shadow: 0 6px 20px rgba(2,6,23,0.6);
   margin-bottom:18px;
+  min-width: 500px;
 }
 
 .input-row{
