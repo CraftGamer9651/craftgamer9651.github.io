@@ -4,530 +4,310 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QuickTube — Play & Search YouTube</title>
+
   <style>
     :root{
-    --bg: linear-gradient(180deg, #0f1724 0%, #020617 100%);
-    --card: #0b1220;
-    --accent: #60a5fa;
-    --muted: #94a3b8;
-    --text: #e6eef8;
-    --radius: 10px;
+      --bg: linear-gradient(180deg, #0f1724 0%, #020617 100%);
+      --card: #0b1220;
+      --accent: #60a5fa;
+      --muted: #94a3b8;
+      --text: #e6eef8;
+      --radius: 10px;
     }
-    :root.light {
-    --bg: linear-gradient(180deg, #f0e8db 0%, #fdf9e8 100%);
-    --card: #f4eddf;
-    --accent: #3b82f6;
-    --muted: #64748b;
-    --text: #0f1724;
+
+    :root.light{
+      --bg: linear-gradient(180deg, #f0e8db 0%, #fdf9e8 100%);
+      --card: #f4eddf;
+      --accent: #3b82f6;
+      --muted: #64748b;
+      --text: #0f1724;
     }
-    
-  
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    padding: 24px;
-    min-height: 100vh;
-    display: flex;           /* ← changed from block */
-    justify-content: center; /* ← centers container horizontally */
-    overflow-y: auto;
-    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
-  
-  .container {
-    width: 100%;
-    max-width: 920px;
-    display: flex;
-    flex-direction: column;  /* ← stack children vertically */
-    align-items: center;     /* ← center children horizontally */
-  }
-  
-  h1{margin:0 0 8px;font-size:28px}
-  .lead{margin:0 0 18px;color:var(--muted)}
-  
-  .card {
-    background: linear-gradient(
-      180deg,
-      rgba(255,255,255,0.04),
-      rgba(255,255,255,0.02)
-    ), var(--card);
-    padding: 18px;
-    border-radius: var(--radius);
-    box-shadow: 0 6px 20px rgba(2,6,23,0.6);
-    margin-bottom: 18px;
-    width: 90%;  /* ← add this */
-    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-  }
-  
-  .input-row{
-    display:flex;
-    gap:8px;
-    margin-top:8px;
-  }
-  
-  input[type="text"], input[type="url"], input[type="number"], #urlInput{
-    flex:1;
-    padding:10px 12px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.06);
-    background: var(--card);
-    color:var(--text);
-    outline:none;
-    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-  }
-  
-  input[type="number"].small-number{
-    width:90px;
-    padding:6px 8px;
-  }
-  
-  .btn{
-    background:linear-gradient(180deg,var(--accent),#3b82f6);
-    border:none;
-    color:white;
-    padding:10px 14px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:600;
-    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-  }
-  
-  .btn-secondary{
-    background:transparent;
-    border:1px solid rgba(255,255,255,0.06);
-    color:var(--text);
-    padding:8px 10px;
-    border-radius:8px;
-    cursor:pointer;
-  }
-  
-  .options{
-    display:flex;
-    gap:16px;
-    align-items:center;
-    margin-top:12px;
-    flex-wrap:wrap;
-    color:var(--muted);
-    font-size:14px;
-  }
-  
-  .permalink-row{
-    display:flex;
-    gap:12px;
-    align-items:center;
-    margin-top:12px;
-  }
-  
-  .perm-text{color:var(--muted); font-size:13px}
-  
-  .player-wrapper{
-    border-radius:var(--radius);
-    overflow:hidden;
-    background: #000;
-    box-shadow: 0 10px 30px rgba(2,6,23,0.7);
-    width: 100%;
-  }
-  
-  .player-container{
-    width:100%;
-    height:0;
-    padding-bottom:56.25%; /* 16:9 */
-    position:relative;
-  }
-  
-  .player-container iframe{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    border:0;
-  }
-  
-  .hidden{display:none}
-  
-  footer{margin-top:12px;
-    color:var(--muted);
-    font-size:13px;
-    width: 100%;
-  }
-  @media (max-width:520px){
-    .input-row{flex-direction:column}
-    .options{flex-direction:column; align-items:flex-start}
-  }
-  
-  .video-list {
-    margin-top: 12px;
-    display: grid;
-    gap: 16px;
-  }
-  
-  .video-item {
-    display: flex;
-    gap: 12px;
-    background: rgba(255,255,255,0.03);
-    padding: 10px;
-    border-radius: 10px;
-    align-items: center;
-  }
-  
-  .video-thumb img {
-    width: 160px;
-    height: 90px;
-    object-fit: cover;
-    border-radius: 8px;
-  }
-  
-  .video-info {
-    flex: 1;
-  }
-  
-  .video-info h3 {
-    margin: 0 0 6px;
-    font-size: 16px;
-  }
-  
-  .video-info p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  
-  .play-mini {
-    padding: 6px 10px;
-    border-radius: 6px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .back-to-top {
-    position: fixed;
-    right: 20px;
-    bottom: -60px; /* starts hidden below screen */
-    padding: 12px 16px;
-    font-size: 15px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.35s ease;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    z-index: 999;
-  }
-  
-  .back-to-top.show {
-    bottom: 20px; /* slide up */
-  }
-  
-  .back-to-top.hidden {
-    display: none;
-  }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      display:flex;
+      justify-content:center;
+      padding:24px;
+      min-height:100vh;
+      overflow-y:auto;
+      transition:background .25s ease,color .25s ease;
+    }
+
+    .container{
+      width:100%;
+      max-width:920px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+
+    h1{margin:0 0 8px;font-size:28px}
+    .lead{margin:0 0 18px;color:var(--muted)}
+
+    .card{
+      width:90%;
+      margin-bottom:18px;
+      padding:18px;
+      border-radius:var(--radius);
+      background:var(--card);
+      box-shadow:0 6px 20px rgba(0,0,0,.4);
+      transition:.25s ease;
+    }
+
+    .input-row{display:flex;gap:8px;margin-top:8px}
+
+    input{
+      flex:1;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.08);
+      background:var(--card);
+      color:var(--text);
+      outline:none;
+    }
+
+    .btn{
+      background:var(--accent);
+      border:none;
+      color:#fff;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .btn-secondary{
+      background:transparent;
+      border:1px solid rgba(255,255,255,.15);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:8px;
+      cursor:pointer;
+    }
+
+    .options{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:12px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .video-list{display:grid;gap:14px;margin-top:12px}
+
+    .video-item{
+      display:flex;
+      gap:12px;
+      padding:10px;
+      border-radius:10px;
+      background:rgba(255,255,255,.03);
+      align-items:center;
+    }
+
+    .video-thumb img{
+      width:160px;height:90px;
+      object-fit:cover;
+      border-radius:8px;
+    }
+
+    .video-info{flex:1}
+    .video-info h3{margin:0;font-size:16px}
+    .video-info p{margin:4px 0 0;color:var(--muted);font-size:14px}
+
+    .play-mini{
+      background:var(--accent);
+      border:none;
+      color:#fff;
+      padding:6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+
+    .player-wrapper{
+      width:100%;
+      border-radius:10px;
+      overflow:hidden;
+      background:#000;
+    }
+
+    .player-container{
+      position:relative;
+      padding-bottom:56.25%;
+      height:0;
+    }
+
+    iframe{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+
+    .hidden{display:none}
+
+    .back-to-top{
+      position:fixed;
+      right:20px;
+      bottom:-60px;
+      background:var(--accent);
+      border:none;
+      color:#fff;
+      padding:12px 16px;
+      border-radius:8px;
+      cursor:pointer;
+      transition:.3s;
+    }
+
+    .back-to-top.show{bottom:20px}
   </style>
 </head>
+
 <body>
-  <main class="container">
-    <h1>QuickTube</h1>
-    <p class="lead">Paste a YouTube link, search for videos, or pick something trending.</p>
-    <div style="width:90%; display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button id="themeToggle" class="btn-secondary">🌙 Dark</button>
+<main class="container">
+
+  <h1>QuickTube</h1>
+  <p class="lead">Paste a YouTube link, search videos, or browse trending.</p>
+
+  <div style="width:90%;display:flex;justify-content:flex-end">
+    <button id="themeToggle" class="btn-secondary">☀️ Light Mode</button>
+  </div>
+
+  <!-- PLAYER -->
+  <div class="card">
+    <div class="input-row">
+      <input id="urlInput" placeholder="YouTube URL or ID">
+      <button id="playBtn" class="btn">Play</button>
     </div>
 
-    <!-- URL PLAYER CARD -->
-    <div class="card">
-      <label for="urlInput">Paste YouTube URL or ID</label>
-      <div class="input-row">
-        <input id="urlInput" placeholder="https://youtube.com/watch?v=dQw4w9WgXcQ">
-        <button id="playBtn" class="btn">Play</button>
+    <div class="options">
+      <label><input type="checkbox" id="autoplay"> Autoplay</label>
+      <label><input type="checkbox" id="nocookie" checked> No-Cookie</label>
+      <label>Start: <input id="startAt" type="number" value="0" style="width:70px"></label>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="card">
+    <div class="input-row">
+      <input id="searchInput" placeholder="Search YouTube...">
+      <button id="searchBtn" class="btn-secondary">Search</button>
+    </div>
+    <div id="searchResults" class="video-list"></div>
+  </div>
+
+  <!-- TRENDING -->
+  <div class="card">
+    <h2>Trending</h2>
+    <div id="trendingList" class="video-list"></div>
+  </div>
+
+  <!-- PLAYER -->
+  <div id="playerWrapper" class="player-wrapper hidden">
+    <div id="playerContainer" class="player-container"></div>
+  </div>
+
+</main>
+
+<button id="backToTop" class="back-to-top hidden">Top ⬆</button>
+
+<script defer>
+const API_KEY = "YOUR_API_KEY";
+
+const $ = id => document.getElementById(id);
+
+// ---------------- THEME ----------------
+const themeBtn = $("themeToggle");
+
+function setTheme(isLight){
+  document.documentElement.classList.toggle("light", isLight);
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  themeBtn.textContent = isLight ? "🌙 Dark Mode" : "☀️ Light Mode";
+}
+
+setTheme(localStorage.getItem("theme") === "light");
+
+themeBtn.onclick = () =>
+  setTheme(!document.documentElement.classList.contains("light"));
+
+// ---------------- PLAYER ----------------
+function getId(url){
+  return url.match(/([A-Za-z0-9_-]{11})/)?.[0] || null;
+}
+
+function show(id){
+  const autoplay = $("autoplay").checked ? 1 : 0;
+  const start = $("startAt").value || 0;
+  const nocookie = $("nocookie").checked;
+
+  const base = nocookie
+    ? "https://www.youtube-nocookie.com/embed/"
+    : "https://www.youtube.com/embed/";
+
+  $("playerContainer").innerHTML =
+    `<iframe src="${base}${id}?autoplay=${autoplay}&start=${start}" allowfullscreen></iframe>`;
+
+  $("playerWrapper").classList.remove("hidden");
+}
+
+// ---------------- EVENTS ----------------
+$("playBtn").onclick = () => {
+  const id = getId($("urlInput").value);
+  if (id) show(id);
+};
+
+$("searchBtn").onclick = async () => {
+  const q = $("searchInput").value;
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${q}&key=${API_KEY}`);
+  const data = await res.json();
+
+  $("searchResults").innerHTML = data.items.map(v => `
+    <div class="video-item">
+      <img src="${v.snippet.thumbnails.medium.url}">
+      <div class="video-info">
+        <h3>${v.snippet.title}</h3>
+        <p>${v.snippet.channelTitle}</p>
       </div>
+      <button class="play-mini" onclick="(${show})('${v.id.videoId}')">Play</button>
+    </div>
+  `).join("");
+};
 
-      <div class="options">
-        <label><input type="checkbox" id="autoplay"> Autoplay</label>
-        <label><input type="checkbox" id="nocookie" checked> No-Cookie Embed</label>
-        <label>Start at: <input id="startAt" type="number" min="0" value="0" class="small-number"> sec</label>
+// ---------------- TRENDING ----------------
+async function loadTrending(){
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=10&regionCode=US&key=${API_KEY}`);
+  const data = await res.json();
+
+  $("trendingList").innerHTML = data.items.map(v => `
+    <div class="video-item">
+      <img src="${v.snippet.thumbnails.medium.url}">
+      <div class="video-info">
+        <h3>${v.snippet.title}</h3>
+        <p>${v.snippet.channelTitle}</p>
       </div>
+      <button class="play-mini" onclick="(${show})('${v.id}')">Play</button>
     </div>
+  `).join("");
+}
 
-    <!-- SEARCH SECTION -->
-    <div class="card">
-      <h2>Search YouTube</h2>
-      <div class="input-row">
-        <input id="searchInput" placeholder="Search for videos…">
-        <button id="searchBtn" class="btn-secondary">Search</button>
-      </div>
-      <div id="searchResults" class="video-list"></div>
-    </div>
+loadTrending();
 
-    <!-- POPULAR VIDEOS -->
-    <div class="card">
-      <h2>Popular / Trending Videos</h2>
-      <div id="trendingList" class="video-list"></div>
-    </div>
+// ---------------- BACK TO TOP ----------------
+const topBtn = $("backToTop");
 
-    <!-- VIDEO PLAYER -->
-    <div id="playerWrapper" class="player-wrapper hidden">
-      <div class="player-container" id="playerContainer"></div>
-    </div>
+window.onscroll = () =>
+  topBtn.classList.toggle("show", window.scrollY > 200);
 
-    <footer>
-      <small>Uses YouTube embeds & YouTube Data API v3.</small>
-    </footer>
-  </main>
+topBtn.onclick = () =>
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
-  <script>
-    // -----------------------------------------------------------
-    //  INSERT YOUR API KEY HERE
-    // -----------------------------------------------------------
-    const API_KEY = "AIzaSyARcD-x5JeRFI0zmjQu3FGWJwLAQFjcTi8";
-    // -----------------------------------------------------------
-    
-    const urlInput = document.getElementById("urlInput");
-    const playBtn = document.getElementById("playBtn");
-    const playerWrapper = document.getElementById("playerWrapper");
-    const playerContainer = document.getElementById("playerContainer");
-    
-    const searchBtn = document.getElementById("searchBtn");
-    const searchInput = document.getElementById("searchInput");
-    const searchResults = document.getElementById("searchResults");
-    const trendingList = document.getElementById("trendingList");
-    
-    const autoplayCheckbox = document.getElementById("autoplay");
-    const nocookieCheckbox = document.getElementById("nocookie");
-    const startAtInput = document.getElementById("startAt");
-    
-    
-    // --------------------------
-    // Extract Video ID
-    // --------------------------
-    function extractYouTubeID(urlOrId) {
-      if (!urlOrId) return null;
-      urlOrId = urlOrId.trim();
-    
-      // If it looks like a raw ID
-      const possibleId = urlOrId.match(/^[A-Za-z0-9_-]{6,20}$/);
-      if (possibleId) return possibleId[0];
-    
-      try {
-        const u = new URL(urlOrId);
-    
-        // youtu.be/VIDEOID
-        if (u.hostname.includes("youtu.be")) {
-          const seg = u.pathname.split("/")[1];
-          if (seg) return seg;
-        }
-    
-        // youtube.com/watch?v=VIDEOID
-        if (u.searchParams.get("v")) {
-          return u.searchParams.get("v");
-        }
-    
-        // /embed/VIDEOID
-        const embedMatch = u.pathname.match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
-        if (embedMatch) return embedMatch[1];
-    
-        // ⭐ NEW: /shorts/VIDEOID
-        const shortsMatch = u.pathname.match(/\/shorts\/([A-Za-z0-9_-]{6,20})/);
-        if (shortsMatch) return shortsMatch[1];
-    
-      } catch (e) {
-        // Fallback: URL-like without protocol
-        const vMatch = urlOrId.match(/v=([A-Za-z0-9_-]{6,20})/);
-        if (vMatch) return vMatch[1];
-      }
-    
-      return null;
-    }
-    
-    
-    
-    // --------------------------
-    // Build Embed URL
-    // --------------------------
-    function buildEmbedUrl(videoId) {
-      const autoplay = autoplayCheckbox.checked;
-      const nocookie = nocookieCheckbox.checked;
-      const start = Number(startAtInput.value) || 0;
-    
-      const domain = nocookie
-        ? "https://www.youtube-nocookie.com/embed/"
-        : "https://www.youtube.com/embed/";
-    
-      const params = new URLSearchParams({
-        rel: "0",
-        modestbranding: "1",
-        playsinline: "1"
-      });
-    
-      if (autoplay) params.set("autoplay", "1");
-      if (start > 0) params.set("start", String(start));
-    
-      return `${domain}${videoId}?${params.toString()}`;
-    }
-    
-    
-    // --------------------------
-    // Load video into player
-    // --------------------------
-    function showPlayer(videoId) {
-      const embedUrl = buildEmbedUrl(videoId);
-    
-      playerContainer.innerHTML =
-        `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-    
-      playerWrapper.classList.remove("hidden");
-    
-      scrollToPlayer();
-      showBackToTopButton();
-    }
-    
-    
-    
-    // --------------------------
-    // URL → Play Button
-    // --------------------------
-    function handlePlay() {
-      const id = extractYouTubeID(urlInput.value);
-      if (!id) {
-        alert("Invalid YouTube link or ID.");
-        return;
-      }
-      showPlayer(id);
-    }
-    
-    playBtn.addEventListener("click", handlePlay);
-    urlInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") handlePlay();
-    });
-    
-    
-    // -----------------------------------------------------------
-    // SEARCH FEATURE
-    // -----------------------------------------------------------
-    async function searchYouTube(query) {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`;
-    
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.items || [];
-    }
-    
-    function renderVideoList(container, items) {
-      container.innerHTML = "";
-    
-      items.forEach(v => {
-        const id = v.id.videoId || v.id;
-        const sn = v.snippet;
-    
-        const item = document.createElement("div");
-        item.className = "video-item";
-    
-        item.innerHTML = `
-          <div class="video-thumb">
-            <img src="${sn.thumbnails.medium.url}">
-          </div>
-          <div class="video-info">
-            <h3>${sn.title}</h3>
-            <p>${sn.channelTitle}</p>
-          </div>
-          <button class="play-mini">Play</button>
-        `;
-    
-        item.querySelector(".play-mini").onclick = () => showPlayer(id);
-    
-        container.appendChild(item);
-      });
-    }
-    
-    function scrollToPlayer() {
-      setTimeout(() => {
-        playerWrapper.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 200);
-    }
-    
-    searchBtn.addEventListener("click", async () => {
-      const q = searchInput.value.trim();
-      if (!q) return;
-    
-      searchResults.innerHTML = "<p>Searching…</p>";
-      const results = await searchYouTube(q);
-      renderVideoList(searchResults, results);
-    });
-    
-    searchInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") searchBtn.click();
-    });
-    
-    // -----------------------------------------------------------
-    // TRENDING VIDEOS
-    // -----------------------------------------------------------
-    async function loadTrending() {
-      const url =
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&regionCode=US&key=${API_KEY}`;
-    
-      const res = await fetch(url);
-      const data = await res.json();
-    
-      renderVideoList(trendingList, data.items || []);
-    }
-    
-    const backToTopBtn = document.getElementById("backToTop");
-    
-    function showBackToTopButton() {
-      backToTopBtn.classList.remove("hidden");
-      setTimeout(() => backToTopBtn.classList.add("show"), 10);
-    }
-    
-    function hideBackToTopButton() {
-      backToTopBtn.classList.remove("show");
-      setTimeout(() => backToTopBtn.classList.add("hidden"), 300);
-    }
-    
-    // Click → scroll to top
-    backToTopBtn.addEventListener("click", () => {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    
-      hideBackToTopButton();
-    });
-    
-    // auto-hide when user scrolls high enough
-    window.addEventListener("scroll", () => {
-      if (window.scrollY < 150) {
-        hideBackToTopButton();
-      }
-    });
-    
-    loadTrending();
-    const themeToggle = document.getElementById("themeToggle");
-    // Load saved theme
-    if (localStorage.getItem("theme") === "light") {
-      document.documentElement.classList.add("light");
-      themeToggle.textContent = "🌙 Dark Mode";
-    } else {
-      themeToggle.textContent = "☀️ Light Mode";
-    }
-    
-    themeToggle.addEventListener("click", () => {
-      const isLight = document.documentElement.classList.toggle("light");
-    
-      if (isLight) {
-        localStorage.setItem("theme", "light");
-        themeToggle.textContent = "🌙 Dark Mode";
-      } else {
-        localStorage.setItem("theme", "dark");
-        themeToggle.textContent = "☀️ Light Mode";
-      }
-    });
-  </script>
-  <button id="backToTop" class="back-to-top hidden">Back to top ⬆️</button>
+</script>
 </body>
 </html>
