@@ -152,54 +152,5 @@
     </div>
   </div>
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-<script src="script.js"></script>
-<script>
-// Blobby gradient background behind cards
-const canvas = document.getElementById('bgCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let blobs = [];
-const colors = ['#6ecbff', '#1e3a8a', '#a78bfa', '#4c1d95', '#ff6ec7'];
-for(let i=0;i<8;i++){
-  blobs.push({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    r: 150 + Math.random()*100,
-    color: colors[i % colors.length],
-    dx: (Math.random()-0.5)*0.2,
-    dy: (Math.random()-0.5)*0.2
-  });
-}
-
-function animate(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  blobs.forEach(b => {
-    b.x += b.dx;
-    b.y += b.dy;
-    let gradient = ctx.createRadialGradient(b.x,b.y,b.r*0.3,b.x,b.y,b.r);
-    gradient.addColorStop(0, b.color+'88');
-    gradient.addColorStop(1, b.color+'00');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fill();
-  });
-  requestAnimationFrame(animate);
-}
-animate();
-
-window.addEventListener('resize',()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-
-window.addEventListener('mousemove', e => {
-  let mx = (e.clientX / window.innerWidth - 0.5) * 4;
-  let my = (e.clientY / window.innerHeight - 0.5) * 4;
-  blobs.forEach(b => { b.x += mx; b.y += my; });
-});
-</script>
-
 </body>
 </html>
