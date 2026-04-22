@@ -1,228 +1,228 @@
-// -----------------------------------------------------------
-//  INSERT YOUR API KEY HERE
-// -----------------------------------------------------------
-const API_KEY = "AIzaSyARcD-x5JeRFI0zmjQu3FGWJwLAQFjcTi8";
-// -----------------------------------------------------------
+// // -----------------------------------------------------------
+// //  INSERT YOUR API KEY HERE
+// // -----------------------------------------------------------
+// const API_KEY = "AIzaSyARcD-x5JeRFI0zmjQu3FGWJwLAQFjcTi8";
+// // -----------------------------------------------------------
 
-const urlInput = document.getElementById("urlInput");
-const playBtn = document.getElementById("playBtn");
-const playerWrapper = document.getElementById("playerWrapper");
-const playerContainer = document.getElementById("playerContainer");
+// const urlInput = document.getElementById("urlInput");
+// const playBtn = document.getElementById("playBtn");
+// const playerWrapper = document.getElementById("playerWrapper");
+// const playerContainer = document.getElementById("playerContainer");
 
-const searchBtn = document.getElementById("searchBtn");
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
-const trendingList = document.getElementById("trendingList");
+// const searchBtn = document.getElementById("searchBtn");
+// const searchInput = document.getElementById("searchInput");
+// const searchResults = document.getElementById("searchResults");
+// const trendingList = document.getElementById("trendingList");
 
-const autoplayCheckbox = document.getElementById("autoplay");
-const nocookieCheckbox = document.getElementById("nocookie");
-const startAtInput = document.getElementById("startAt");
-
-
-// --------------------------
-// Extract Video ID
-// --------------------------
-function extractYouTubeID(urlOrId) {
-  if (!urlOrId) return null;
-  urlOrId = urlOrId.trim();
-
-  // If it looks like a raw ID
-  const possibleId = urlOrId.match(/^[A-Za-z0-9_-]{6,20}$/);
-  if (possibleId) return possibleId[0];
-
-  try {
-    const u = new URL(urlOrId);
-
-    // youtu.be/VIDEOID
-    if (u.hostname.includes("youtu.be")) {
-      const seg = u.pathname.split("/")[1];
-      if (seg) return seg;
-    }
-
-    // youtube.com/watch?v=VIDEOID
-    if (u.searchParams.get("v")) {
-      return u.searchParams.get("v");
-    }
-
-    // /embed/VIDEOID
-    const embedMatch = u.pathname.match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
-    if (embedMatch) return embedMatch[1];
-
-    // ⭐ NEW: /shorts/VIDEOID
-    const shortsMatch = u.pathname.match(/\/shorts\/([A-Za-z0-9_-]{6,20})/);
-    if (shortsMatch) return shortsMatch[1];
-
-  } catch (e) {
-    // Fallback: URL-like without protocol
-    const vMatch = urlOrId.match(/v=([A-Za-z0-9_-]{6,20})/);
-    if (vMatch) return vMatch[1];
-  }
-
-  return null;
-}
+// const autoplayCheckbox = document.getElementById("autoplay");
+// const nocookieCheckbox = document.getElementById("nocookie");
+// const startAtInput = document.getElementById("startAt");
 
 
+// // --------------------------
+// // Extract Video ID
+// // --------------------------
+// function extractYouTubeID(urlOrId) {
+//   if (!urlOrId) return null;
+//   urlOrId = urlOrId.trim();
 
-// --------------------------
-// Build Embed URL
-// --------------------------
-function buildEmbedUrl(videoId) {
-  const autoplay = autoplayCheckbox.checked;
-  const nocookie = nocookieCheckbox.checked;
-  const start = Number(startAtInput.value) || 0;
+//   // If it looks like a raw ID
+//   const possibleId = urlOrId.match(/^[A-Za-z0-9_-]{6,20}$/);
+//   if (possibleId) return possibleId[0];
 
-  const domain = nocookie
-    ? "https://www.youtube-nocookie.com/embed/"
-    : "https://www.youtube.com/embed/";
+//   try {
+//     const u = new URL(urlOrId);
 
-  const params = new URLSearchParams({
-    rel: "0",
-    modestbranding: "1",
-    playsinline: "1"
-  });
+//     // youtu.be/VIDEOID
+//     if (u.hostname.includes("youtu.be")) {
+//       const seg = u.pathname.split("/")[1];
+//       if (seg) return seg;
+//     }
 
-  if (autoplay) params.set("autoplay", "1");
-  if (start > 0) params.set("start", String(start));
+//     // youtube.com/watch?v=VIDEOID
+//     if (u.searchParams.get("v")) {
+//       return u.searchParams.get("v");
+//     }
 
-  return `${domain}${videoId}?${params.toString()}`;
-}
+//     // /embed/VIDEOID
+//     const embedMatch = u.pathname.match(/\/embed\/([A-Za-z0-9_-]{6,20})/);
+//     if (embedMatch) return embedMatch[1];
 
+//     // ⭐ NEW: /shorts/VIDEOID
+//     const shortsMatch = u.pathname.match(/\/shorts\/([A-Za-z0-9_-]{6,20})/);
+//     if (shortsMatch) return shortsMatch[1];
 
-// --------------------------
-// Load video into player
-// --------------------------
-function showPlayer(videoId) {
-  const embedUrl = buildEmbedUrl(videoId);
+//   } catch (e) {
+//     // Fallback: URL-like without protocol
+//     const vMatch = urlOrId.match(/v=([A-Za-z0-9_-]{6,20})/);
+//     if (vMatch) return vMatch[1];
+//   }
 
-  playerContainer.innerHTML =
-    `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-
-  playerWrapper.classList.remove("hidden");
-
-  scrollToPlayer();
-  showBackToTopButton();
-}
+//   return null;
+// }
 
 
 
-// --------------------------
-// URL → Play Button
-// --------------------------
-function handlePlay() {
-  const id = extractYouTubeID(urlInput.value);
-  if (!id) {
-    alert("Invalid YouTube link or ID.");
-    return;
-  }
-  showPlayer(id);
-}
+// // --------------------------
+// // Build Embed URL
+// // --------------------------
+// function buildEmbedUrl(videoId) {
+//   const autoplay = autoplayCheckbox.checked;
+//   const nocookie = nocookieCheckbox.checked;
+//   const start = Number(startAtInput.value) || 0;
 
-playBtn.addEventListener("click", handlePlay);
-urlInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") handlePlay();
-});
+//   const domain = nocookie
+//     ? "https://www.youtube-nocookie.com/embed/"
+//     : "https://www.youtube.com/embed/";
+
+//   const params = new URLSearchParams({
+//     rel: "0",
+//     modestbranding: "1",
+//     playsinline: "1"
+//   });
+
+//   if (autoplay) params.set("autoplay", "1");
+//   if (start > 0) params.set("start", String(start));
+
+//   return `${domain}${videoId}?${params.toString()}`;
+// }
 
 
-// -----------------------------------------------------------
-// SEARCH FEATURE
-// -----------------------------------------------------------
-async function searchYouTube(query) {
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+// // --------------------------
+// // Load video into player
+// // --------------------------
+// function showPlayer(videoId) {
+//   const embedUrl = buildEmbedUrl(videoId);
 
-  const res = await fetch(url);
-  const data = await res.json();
-  return data.items || [];
-}
+//   playerContainer.innerHTML =
+//     `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 
-function renderVideoList(container, items) {
-  container.innerHTML = "";
+//   playerWrapper.classList.remove("hidden");
 
-  items.forEach(v => {
-    const id = v.id.videoId || v.id;
-    const sn = v.snippet;
+//   scrollToPlayer();
+//   showBackToTopButton();
+// }
 
-    const item = document.createElement("div");
-    item.className = "video-item";
 
-    item.innerHTML = `
-      <div class="video-thumb">
-        <img src="${sn.thumbnails.medium.url}">
-      </div>
-      <div class="video-info">
-        <h3>${sn.title}</h3>
-        <p>${sn.channelTitle}</p>
-      </div>
-      <button class="play-mini">Play</button>
-    `;
 
-    item.querySelector(".play-mini").onclick = () => showPlayer(id);
+// // --------------------------
+// // URL → Play Button
+// // --------------------------
+// function handlePlay() {
+//   const id = extractYouTubeID(urlInput.value);
+//   if (!id) {
+//     alert("Invalid YouTube link or ID.");
+//     return;
+//   }
+//   showPlayer(id);
+// }
 
-    container.appendChild(item);
-  });
-}
+// playBtn.addEventListener("click", handlePlay);
+// urlInput.addEventListener("keydown", e => {
+//   if (e.key === "Enter") handlePlay();
+// });
 
-function scrollToPlayer() {
-  setTimeout(() => {
-    playerWrapper.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-  }, 200);
-}
 
-searchBtn.addEventListener("click", async () => {
-  const q = searchInput.value.trim();
-  if (!q) return;
+// // -----------------------------------------------------------
+// // SEARCH FEATURE
+// // -----------------------------------------------------------
+// async function searchYouTube(query) {
+//   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`;
 
-  searchResults.innerHTML = "<p>Searching…</p>";
-  const results = await searchYouTube(q);
-  renderVideoList(searchResults, results);
-});
+//   const res = await fetch(url);
+//   const data = await res.json();
+//   return data.items || [];
+// }
 
-searchInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") searchBtn.click();
-});
+// function renderVideoList(container, items) {
+//   container.innerHTML = "";
 
-// -----------------------------------------------------------
-// TRENDING VIDEOS
-// -----------------------------------------------------------
-async function loadTrending() {
-  const url =
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&regionCode=US&key=${API_KEY}`;
+//   items.forEach(v => {
+//     const id = v.id.videoId || v.id;
+//     const sn = v.snippet;
 
-  const res = await fetch(url);
-  const data = await res.json();
+//     const item = document.createElement("div");
+//     item.className = "video-item";
 
-  renderVideoList(trendingList, data.items || []);
-}
+//     item.innerHTML = `
+//       <div class="video-thumb">
+//         <img src="${sn.thumbnails.medium.url}">
+//       </div>
+//       <div class="video-info">
+//         <h3>${sn.title}</h3>
+//         <p>${sn.channelTitle}</p>
+//       </div>
+//       <button class="play-mini">Play</button>
+//     `;
 
-const backToTopBtn = document.getElementById("backToTop");
+//     item.querySelector(".play-mini").onclick = () => showPlayer(id);
 
-function showBackToTopButton() {
-  backToTopBtn.classList.remove("hidden");
-  setTimeout(() => backToTopBtn.classList.add("show"), 10);
-}
+//     container.appendChild(item);
+//   });
+// }
 
-function hideBackToTopButton() {
-  backToTopBtn.classList.remove("show");
-  setTimeout(() => backToTopBtn.classList.add("hidden"), 300);
-}
+// function scrollToPlayer() {
+//   setTimeout(() => {
+//     playerWrapper.scrollIntoView({
+//       behavior: "smooth",
+//       block: "center"
+//     });
+//   }, 200);
+// }
 
-// Click → scroll to top
-backToTopBtn.addEventListener("click", () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+// searchBtn.addEventListener("click", async () => {
+//   const q = searchInput.value.trim();
+//   if (!q) return;
 
-  hideBackToTopButton();
-});
+//   searchResults.innerHTML = "<p>Searching…</p>";
+//   const results = await searchYouTube(q);
+//   renderVideoList(searchResults, results);
+// });
 
-// auto-hide when user scrolls high enough
-window.addEventListener("scroll", () => {
-  if (window.scrollY < 150) {
-    hideBackToTopButton();
-  }
-});
+// searchInput.addEventListener("keydown", e => {
+//   if (e.key === "Enter") searchBtn.click();
+// });
 
-loadTrending();
+// // -----------------------------------------------------------
+// // TRENDING VIDEOS
+// // -----------------------------------------------------------
+// async function loadTrending() {
+//   const url =
+//     `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&regionCode=US&key=${API_KEY}`;
+
+//   const res = await fetch(url);
+//   const data = await res.json();
+
+//   renderVideoList(trendingList, data.items || []);
+// }
+
+// const backToTopBtn = document.getElementById("backToTop");
+
+// function showBackToTopButton() {
+//   backToTopBtn.classList.remove("hidden");
+//   setTimeout(() => backToTopBtn.classList.add("show"), 10);
+// }
+
+// function hideBackToTopButton() {
+//   backToTopBtn.classList.remove("show");
+//   setTimeout(() => backToTopBtn.classList.add("hidden"), 300);
+// }
+
+// // Click → scroll to top
+// backToTopBtn.addEventListener("click", () => {
+//   window.scrollTo({
+//     top: 0,
+//     behavior: "smooth"
+//   });
+
+//   hideBackToTopButton();
+// });
+
+// // auto-hide when user scrolls high enough
+// window.addEventListener("scroll", () => {
+//   if (window.scrollY < 150) {
+//     hideBackToTopButton();
+//   }
+// });
+
+// loadTrending();
