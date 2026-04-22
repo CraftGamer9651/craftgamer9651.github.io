@@ -278,7 +278,7 @@
     </footer>
   </main>
 
-  <script defer>
+  <script>
     // -----------------------------------------------------------
     //  INSERT YOUR API KEY HERE
     // -----------------------------------------------------------
@@ -507,6 +507,7 @@
     });
     
     loadTrending();
+    const themeToggle = document.getElementById("themeToggle");
     if (localStorage.getItem("theme") === "light") {
       document.documentElement.classList.add("light");
       themeToggle.textContent = "🌙 Dark Mode";
