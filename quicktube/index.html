@@ -6,26 +6,34 @@
   <title>QuickTube — Play & Search YouTube</title>
   <style>
     :root{
-    --bg: #0f1724;
+    --bg: linear-gradient(180deg, #0f1724 0%, #020617 100%);
     --card: #0b1220;
     --accent: #60a5fa;
     --muted: #94a3b8;
     --text: #e6eef8;
     --radius: 10px;
+    }
+    :root.light {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --accent: #3b82f6;
+    --muted: #64748b;
+    --text: #0f1724;
+    }
     font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
   
   *{box-sizing:border-box}
   html,body{height:100%}
   body {
     margin: 0;
-    background: linear-gradient(180deg, #0f1724 0%, #020617 100%);
+    background: var(--bg);
     color: var(--text);
     padding: 24px;
     min-height: 100vh;
     display: flex;           /* ← changed from block */
     justify-content: center; /* ← centers container horizontally */
     overflow-y: auto;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
   
   .container {
@@ -46,6 +54,7 @@
     box-shadow: 0 6px 20px rgba(2,6,23,0.6);
     margin-bottom: 18px;
     width: 90%;  /* ← add this */
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
   
   .input-row{
@@ -62,6 +71,7 @@
     background: rgba(255,255,255,0.02);
     color:var(--text);
     outline:none;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
   
   input[type="number"].small-number{
@@ -77,6 +87,7 @@
     border-radius:8px;
     cursor:pointer;
     font-weight:600;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
   
   .btn-secondary{
@@ -217,6 +228,9 @@
   <main class="container">
     <h1>QuickTube</h1>
     <p class="lead">Paste a YouTube link, search for videos, or pick something trending.</p>
+    <div style="width:90%; display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button id="themeToggle" class="btn-secondary">🌙 Dark</button>
+    </div>
 
     <!-- URL PLAYER CARD -->
     <div class="card">
@@ -488,6 +502,26 @@
     });
     
     loadTrending();
+    const themeToggle = document.getElementById("themeToggle");
+
+    // Load saved theme
+    if (localStorage.getItem("theme") === "light") {
+      document.documentElement.classList.add("light");
+      themeToggle.textContent = "☀️ Light";
+    }
+    
+    // Toggle click
+    themeToggle.addEventListener("click", () => {
+      const isLight = document.documentElement.classList.toggle("light");
+    
+      if (isLight) {
+        localStorage.setItem("theme", "light");
+        themeToggle.textContent = "☀️ Light";
+      } else {
+        localStorage.setItem("theme", "dark");
+        themeToggle.textContent = "🌙 Dark";
+      }
+    });
   </script>
   <button id="backToTop" class="back-to-top hidden">Back to top ⬆️</button>
 </body>
