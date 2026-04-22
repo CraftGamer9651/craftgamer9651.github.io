@@ -13,6 +13,7 @@
       --muted: #94a3b8;
       --text: #e6eef8;
       --radius: 10px;
+      --input-border: 1px solid rgba(255,255,255,.08);
     }
 
     :root.light{
@@ -21,6 +22,7 @@
       --accent: #3b82f6;
       --muted: #64748b;
       --text: #0f1724;
+      --input-border: 1px solid rgba(0,0,0,.08);
     }
 
     *{box-sizing:border-box}
@@ -66,7 +68,7 @@
       flex:1;
       padding:10px 12px;
       border-radius:8px;
-      border:1px solid rgba(255,255,255,.08);
+      border:var(--input-border);
       background:var(--card);
       color:var(--text);
       outline:none;
