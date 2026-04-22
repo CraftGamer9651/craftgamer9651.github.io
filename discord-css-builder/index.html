@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord Theme Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #09090f;
+  --bg2:     #0f0f18;
+  --bg3:     #14141f;
+  --bg4:     #1a1a28;
+  --border:  rgba(120,130,255,0.12);
+  --accent:  #6b8fff;
+  --accent2: #3d5fff;
+  --text:    #e8eaf6;
+  --muted:   #7880a0;
+}
+
+html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Geist', sans-serif; font-size: 14px; }
+
+.app {
+  display: grid;
+  grid-template-columns: 296px 1fr;
+  grid-template-rows: 52px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Topbar ── */
+.topbar {
+  grid-column: 1/-1;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  z-index: 10;
+}
+.logo {
+  width: 26px; height: 26px;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.topbar-title { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+.spacer { flex: 1; }
+
+.mode-wrap { display: flex; align-items: center; gap: 7px; }
+.mode-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px; border-radius: 7px; border: none; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  transition: all 0.14s;
+}
+.btn-primary { background: var(--accent2); color: #fff; }
+.btn-primary:hover { background: var(--accent); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: rgba(120,130,255,0.35); }
+
+select {
+  background: var(--bg4); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 12px;
+  padding: 5px 8px; border-radius: 6px; outline: none; cursor: pointer;
+}
+select:focus { border-color: var(--accent2); }
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--bg2); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 10px 0 28px;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); border-radius: 99px; }
+
+.sec-label {
+  padding: 14px 15px 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--muted); text-transform: uppercase;
+}
+
+.ctrl {
+  display: flex; align-items: center;
+  padding: 5px 15px; gap: 9px;
+}
+.ctrl-label {
+  flex: 1; font-size: 12px; color: #b8bcd8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ctrl-val {
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  color: var(--muted); min-width: 34px; text-align: right;
+}
+
+input[type="range"] {
+  /* -webkit-appearance: none; */
+  width: 96px; height: 4px; border-radius: 99px;
+  background: var(--bg4); outline: none; cursor: pointer; flex-shrink: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 5px rgba(107,143,255,0.55);
+  cursor: pointer; transition: transform 0.1s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* ── Color input block ── */
+.color-block {
+  margin: 4px 15px 10px;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.color-block-top {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.big-swatch {
+  width: 32px; height: 32px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer; position: relative; overflow: hidden; flex-shrink: 0;
+}
+.big-swatch input[type="color"] {
+  position: absolute; inset: -4px; opacity: 0;
+  width: calc(100%+8px); height: calc(100%+8px); cursor: pointer;
+}
+.swatch-hint { font-size: 11px; color: var(--muted); }
+.swatch-hint strong { color: var(--text); font-family: 'Geist Mono', monospace; font-weight: 400; }
+
+.color-fields-row {
+  display: flex; gap: 0;
+}
+.color-field-cell {
+  flex: 1;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+.color-field-cell:last-child { border-right: none; }
+.color-field-lbl {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 5px 0 2px; text-align: center;
+}
+.color-field-cell input[type="text"] {
+  background: transparent; border: none;
+  color: var(--text); font-family: 'Geist Mono', monospace; font-size: 11px;
+  padding: 4px 4px 7px; outline: none; text-align: center; width: 100%;
+  transition: color 0.12s;
+}
+.color-field-cell input[type="text"]:focus { color: #fff; }
+.color-field-cell input[type="text"].invalid { color: #ff6b6b; }
+
+/* Toggle */
+.toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-sl {
+  position: absolute; inset: 0;
+  background: var(--bg4); border-radius: 99px; border: 1px solid var(--border);
+  cursor: pointer; transition: background 0.18s;
+}
+.tog-sl::after {
+  content: ''; position: absolute; left: 2px; top: 2px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--muted); transition: transform 0.18s, background 0.18s;
+}
+.toggle input:checked + .tog-sl { background: rgba(61,95,255,0.28); border-color: var(--accent2); }
+.toggle input:checked + .tog-sl::after { transform: translateX(15px); background: var(--accent); }
+
+.divider { height: 1px; background: var(--border); margin: 6px 15px; }
+
+/* ── Right panel ── */
+.right { display: flex; flex-direction: column; overflow: hidden; }
+
+.tabs {
+  display: flex; align-items: center; padding: 0 14px; gap: 2px;
+  border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0;
+}
+.tab {
+  padding: 0 13px; height: 38px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.14s;
+}
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: #a0a8c8; }
+
+/* ── Discord mock ── */
+.mock-wrap { flex: 1; padding: 10px; overflow: hidden; display: none; }
+.mock-wrap.active { display: flex; }
+.dc-win {
+  width: 100%; height: 100%; display: flex;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.dc-servers {
+  width: 64px; display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0; gap: 4px; flex-shrink: 0;
+}
+.dc-srv {
+  width: 42px; height: 42px; border-radius: 15px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; cursor: pointer; transition: border-radius 0.18s;
+  position: relative;
+}
+.dc-srv:hover { border-radius: 12px; }
+.dc-srv.active { border-radius: 12px; }
+.dc-srv.active::before {
+  content: ''; position: absolute; left: -9px; top: 50%; transform: translateY(-50%);
+  width: 4px; height: 55%; border-radius: 0 3px 3px 0; background: #fff;
+}
+.dc-srv-sep { width: 28px; height: 1px; background: rgba(255,255,255,0.06); margin: 3px 0; }
+
+.dc-channels { width: 210px; display: flex; flex-direction: column; flex-shrink: 0; }
+.dc-ch-head { padding: 14px 11px 7px; font-weight: 600; font-size: 14px; color: #dde0f0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.dc-ch-sec { padding: 10px 8px 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #4a5070; }
+.dc-ch-item { display: flex; align-items: center; gap: 6px; margin: 1px 5px; padding: 5px 7px; border-radius: 7px; cursor: pointer; font-size: 12px; color: #5a6080; transition: background 0.1s, color 0.1s; }
+.dc-ch-item:hover { background: rgba(120,130,255,0.08); color: #a0a8c8; }
+.dc-ch-item.active { background: rgba(120,130,255,0.15); color: #dde0f0; }
+.dc-user-panel { margin-top: auto; padding: 7px; background: rgba(0,0,0,0.18); display: flex; align-items: center; gap: 7px; }
+.dc-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.dc-uname { font-size: 12px; font-weight: 600; color: #dde0f0; }
+.dc-tag { font-size: 10px; color: #4a5070; }
+
+.dc-chat { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.dc-chat-head { padding: 0 14px; height: 44px; display: flex; align-items: center; gap: 7px; border-bottom: 1px solid rgba(255,255,255,0.04); font-weight: 600; color: #dde0f0; font-size: 14px; flex-shrink: 0; }
+.dc-msgs { flex: 1; padding: 14px; display: flex; flex-direction: column; overflow: hidden; }
+.dc-msg-grp { display: flex; gap: 10px; margin-bottom: 14px; }
+.dc-msg-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.dc-msg-body { flex: 1; }
+.dc-msg-hdr { display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px; }
+.dc-msg-name { font-weight: 600; font-size: 13px; }
+.dc-msg-time { font-size: 10px; color: #3a4060; }
+.dc-msg-txt { font-size: 13px; color: #8890b0; line-height: 1.5; }
+.dc-msg-txt a { color: #6b8fff; }
+.dc-chatbar { margin: 7px; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; font-size: 12px; color: #4a5070; flex-shrink: 0; }
+
+.dc-members { width: 170px; padding: 10px 7px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+.dc-mem-sec { font-size: 9px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #4a5070; padding: 7px 7px 3px; }
+.dc-mem { display: flex; align-items: center; gap: 7px; padding: 4px 7px; border-radius: 6px; cursor: pointer; transition: background 0.1s; }
+.dc-mem:hover { background: rgba(120,130,255,0.07); }
+.dc-mem-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; position: relative; }
+.dc-status { position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #0e0e1a; }
+.s-online { background: #5cb87a; } .s-idle { background: #c9a23e; } .s-dnd { background: #c05050; }
+.dc-mem-name { font-size: 12px; color: #6a7090; }
+
+/* ── CSS output ── */
+.code-wrap { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.code-wrap.active { display: flex; }
+.code-toolbar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+.code-filename { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); flex: 1; }
+pre.css-out { flex: 1; overflow: auto; padding: 14px; font-family: 'Geist Mono', monospace; font-size: 11.5px; line-height: 1.7; color: #c0c8e8; white-space: pre-wrap; word-break: break-all; }
+pre.css-out::-webkit-scrollbar { width: 4px; height: 4px; }
+pre.css-out::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); border-radius: 99px; }
+
+.toast { position: fixed; bottom: 22px; right: 22px; background: #1a2040; border: 1px solid var(--accent2); color: var(--text); padding: 9px 15px; border-radius: 9px; font-size: 12px; transform: translateY(55px); opacity: 0; transition: all 0.18s; pointer-events: none; z-index: 999; }
+.toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="logo">🌙</div>
+  <div class="topbar-title">Discord Theme Builder</div>
+  <div class="spacer"></div>
+  <div class="mode-wrap">
+    <span class="mode-label">Color format</span>
+    <select id="colorMode" onchange="onModeChange()">
+      <option value="oklch">OKLCH</option>
+      <option value="hex">HEX</option>
+      <option value="rgb">RGB</option>
+    </select>
+  </div>
+  <button class="btn btn-ghost" onclick="copyCSS()">Copy CSS</button>
+  <button class="btn btn-primary" onclick="downloadCSS()">⬇ Download .css</button>
+</header>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+
+  <div class="sec-label">Accent Color</div>
+  <div class="ctrl">
+    <div class="ctrl-label">Hue</div>
+    <input type="range" id="accentHue" min="0" max="360" value="225" oninput="onSlider()">
+    <div class="ctrl-val" id="accentHueVal">225°</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">Saturation</div>
+    <input type="range" id="accentSat" min="0.05" max="0.28" step="0.01" value="0.15" oninput="onSlider()">
+    <div class="ctrl-val" id="accentSatVal">0.15</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">Brightness</div>
+    <input type="range" id="accentLight" min="50" max="82" value="72" oninput="onSlider()">
+    <div class="ctrl-val" id="accentLightVal">72%</div>
+  </div>
+
+  <!-- Accent color input block -->
+  <div class="color-block">
+    <div class="color-block-top">
+      <div class="big-swatch" id="accentSwatchWrap" style="background:#6b8fff">
+        <input type="color" id="accentNativePicker" value="#6b8fff" oninput="onNativePicker('accent')">
+      </div>
+      <div class="swatch-hint">Click swatch to pick, or edit fields below</div>
+    </div>
+    <div class="color-fields-row" id="accentFields"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-label">Background</div>
+  <div class="ctrl">
+    <div class="ctrl-label">Base darkness</div>
+    <input type="range" id="bgDark" min="4" max="18" value="7" oninput="onSlider()">
+    <div class="ctrl-val" id="bgDarkVal">7%</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">BG hue</div>
+    <input type="range" id="bgHue" min="180" max="280" value="222" oninput="onSlider()">
+    <div class="ctrl-val" id="bgHueVal">222</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">BG saturation</div>
+    <input type="range" id="bgSat" min="5" max="30" value="20" oninput="onSlider()">
+    <div class="ctrl-val" id="bgSatVal">20%</div>
+  </div>
+
+  <!-- BG color input block -->
+  <div class="color-block">
+    <div class="color-block-top">
+      <div class="big-swatch" id="bgSwatchWrap" style="background:#0b0b12">
+        <input type="color" id="bgNativePicker" value="#0b0b12" oninput="onNativePicker('bg')">
+      </div>
+      <div class="swatch-hint">Click swatch to pick, or edit fields below</div>
+    </div>
+    <div class="color-fields-row" id="bgFields"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-label">Panels &amp; Spacing</div>
+  <div class="ctrl"><div class="ctrl-label">Panel gap</div><input type="range" id="gap" min="4" max="20" value="10" oninput="onSlider()"><div class="ctrl-val" id="gapVal">10px</div></div>
+  <div class="ctrl"><div class="ctrl-label">Corner radius</div><input type="range" id="radius" min="4" max="24" value="14" oninput="onSlider()"><div class="ctrl-val" id="radiusVal">14px</div></div>
+  <div class="ctrl"><div class="ctrl-label">Border thickness</div><input type="range" id="borderThick" min="0" max="3" step="1" value="1" oninput="onSlider()"><div class="ctrl-val" id="borderThickVal">1px</div></div>
+
+  <div class="divider"></div>
+
+  <div class="sec-label">Typography</div>
+  <div class="ctrl">
+    <div class="ctrl-label">Font</div>
+    <select id="font" onchange="onSlider()">
+      <option value="Inter">Inter</option>
+      <option value="Figtree">Figtree</option>
+      <option value="DM Sans">DM Sans</option>
+      <option value="Nunito">Nunito</option>
+      <option value="Outfit">Outfit</option>
+      <option value="">Default</option>
+    </select>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-label">Button Colors</div>
+
+  <div class="ctrl"><div class="ctrl-label" style="font-weight:500;color:#d0d4f0">Primary (e.g. Add Friend)</div></div>
+  <div class="ctrl">
+    <div class="ctrl-label">Hue</div>
+    <input type="range" id="btnPrimHue" min="0" max="360" value="225" oninput="onSlider()">
+    <div class="ctrl-val" id="btnPrimHueVal">225°</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">Saturation</div>
+    <input type="range" id="btnPrimSat" min="0.05" max="0.28" step="0.01" value="0.15" oninput="onSlider()">
+    <div class="ctrl-val" id="btnPrimSatVal">0.15</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">Brightness</div>
+    <input type="range" id="btnPrimLight" min="30" max="75" value="55" oninput="onSlider()">
+    <div class="ctrl-val" id="btnPrimLightVal">55%</div>
+  </div>
+  <div class="color-block">
+    <div class="color-block-top">
+      <div class="big-swatch" id="btnPrimSwatchWrap" style="background:#3d5fff">
+        <input type="color" id="btnPrimNativePicker" value="#3d5fff" oninput="onNativePicker('btnPrim')">
+      </div>
+      <div class="swatch-hint">Click swatch or edit fields</div>
+    </div>
+    <div class="color-fields-row" id="btnPrimFields"></div>
+  </div>
+
+  <div class="ctrl" style="margin-top:8px"><div class="ctrl-label" style="font-weight:500;color:#d0d4f0">Secondary (e.g. search bar)</div></div>
+  <div class="ctrl">
+    <div class="ctrl-label">Lightness</div>
+    <input type="range" id="btnSecLight" min="10" max="35" value="18" oninput="onSlider()">
+    <div class="ctrl-val" id="btnSecLightVal">18%</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-label">Tint hue</div>
+    <input type="range" id="btnSecHue" min="180" max="280" value="222" oninput="onSlider()">
+    <div class="ctrl-val" id="btnSecHueVal">222</div>
+  </div>
+  <div class="color-block">
+    <div class="color-block-top">
+      <div class="big-swatch" id="btnSecSwatchWrap" style="background:#1e2030">
+        <input type="color" id="btnSecNativePicker" value="#1e2030" oninput="onNativePicker('btnSec')">
+      </div>
+      <div class="swatch-hint">Click swatch or edit fields</div>
+    </div>
+    <div class="color-fields-row" id="btnSecFields"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-label">Features</div>
+  <div class="ctrl"><div class="ctrl-label">Animations</div><label class="toggle"><input type="checkbox" id="animations" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Custom window controls</div><label class="toggle"><input type="checkbox" id="winControls" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Small user panel</div><label class="toggle"><input type="checkbox" id="smallPanel" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Separated chatbar</div><label class="toggle"><input type="checkbox" id="sepChatbar" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Muted DM names</div><label class="toggle"><input type="checkbox" id="mutedDMs" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Blue unread badges</div><label class="toggle"><input type="checkbox" id="blueBadge" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Thin scrollbars</div><label class="toggle"><input type="checkbox" id="thinScroll" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+  <div class="ctrl"><div class="ctrl-label">Active item glow</div><label class="toggle"><input type="checkbox" id="activeGlow" checked onchange="onSlider()"><span class="tog-sl"></span></label></div>
+
+</aside>
+
+<!-- Right -->
+<div class="right">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('preview',this)">Preview</div>
+    <div class="tab" onclick="switchTab('code',this)">Generated CSS</div>
+  </div>
+
+  <div id="tab-preview" class="mock-wrap active">
+    <div class="dc-win" id="dcWindow">
+      <div class="dc-servers" id="dcServers">
+        <div class="dc-srv active" style="background:rgba(107,143,255,0.18);">🌙</div>
+        <div class="dc-srv-sep"></div>
+        <div class="dc-srv" style="background:rgba(255,107,107,0.13);">🎮</div>
+        <div class="dc-srv" style="background:rgba(107,255,184,0.1);">🎨</div>
+        <div class="dc-srv" style="background:rgba(255,184,107,0.1);">🎵</div>
+        <div class="dc-srv" style="background:rgba(184,107,255,0.1);">🚀</div>
+      </div>
+      <div class="dc-channels" id="dcChannels">
+        <div class="dc-ch-head">midnight</div>
+        <div class="dc-ch-sec">Text Channels</div>
+        <div class="dc-ch-item active"># general</div>
+        <div class="dc-ch-item"># announcements</div>
+        <div class="dc-ch-item"># off-topic</div>
+        <div class="dc-ch-sec">Voice</div>
+        <div class="dc-ch-item">🔊 Lounge</div>
+        <div class="dc-ch-item">🔊 Gaming</div>
+        <div style="flex:1"></div>
+        <div class="dc-user-panel">
+          <div class="dc-av" style="background:rgba(107,143,255,0.18);">🐱</div>
+          <div><div class="dc-uname">you</div><div class="dc-tag">#0001</div></div>
+        </div>
+      </div>
+      <div class="dc-chat">
+        <div class="dc-chat-head"><span style="color:#5a6080">#</span> general</div>
+        <div class="dc-msgs">
+          <div class="dc-msg-grp">
+            <div class="dc-msg-av" style="background:rgba(107,143,255,0.18);">🐱</div>
+            <div class="dc-msg-body">
+              <div class="dc-msg-hdr"><span class="dc-msg-name acc-preview" style="color:#6b8fff">you</span><span class="dc-msg-time">Today at 3:14 PM</span></div>
+              <div class="dc-msg-txt">just installed this theme, looks incredible 🔥</div>
+            </div>
+          </div>
+          <div class="dc-msg-grp">
+            <div class="dc-msg-av" style="background:rgba(107,255,184,0.13);">🦊</div>
+            <div class="dc-msg-body">
+              <div class="dc-msg-hdr"><span class="dc-msg-name" style="color:#6bffb8">refact0r</span><span class="dc-msg-time">Today at 3:15 PM</span></div>
+              <div class="dc-msg-txt">glad you like it! check out <a href="#">the repo</a></div>
+            </div>
+          </div>
+          <div class="dc-msg-grp">
+            <div class="dc-msg-av" style="background:rgba(255,184,107,0.13);">🐼</div>
+            <div class="dc-msg-body">
+              <div class="dc-msg-hdr"><span class="dc-msg-name" style="color:#ffc06b">panda</span><span class="dc-msg-time">Today at 3:16 PM</span></div>
+              <div class="dc-msg-txt">the rounded corners are so clean</div>
+            </div>
+          </div>
+        </div>
+        <div class="dc-chatbar">💬 Message #general</div>
+      </div>
+      <div class="dc-members" id="dcMembers">
+        <div class="dc-mem-sec">Online — 3</div>
+        <div class="dc-mem"><div class="dc-mem-av" style="background:rgba(107,143,255,0.18);">🐱<div class="dc-status s-online"></div></div><div class="dc-mem-name">you</div></div>
+        <div class="dc-mem"><div class="dc-mem-av" style="background:rgba(107,255,184,0.13);">🦊<div class="dc-status s-idle"></div></div><div class="dc-mem-name">refact0r</div></div>
+        <div class="dc-mem"><div class="dc-mem-av" style="background:rgba(255,184,107,0.13);">🐼<div class="dc-status s-dnd"></div></div><div class="dc-mem-name">panda</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-code" class="code-wrap">
+    <div class="code-toolbar">
+      <div class="code-filename">sleek-discord.theme.css</div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="copyCSS()">Copy</button>
+    </div>
+    <pre class="css-out" id="cssOut"></pre>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast">✓ Copied to clipboard</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// Color math
+// ═══════════════════════════════════════════════════════
+
+function oklchToSrgb(L, C, H) {
+  const h = H * Math.PI / 180;
+  const a_ = C * Math.cos(h), b_ = C * Math.sin(h);
+  const l_ = (L + 0.3963377774*a_ + 0.2158037573*b_)**3;
+  const m_ = (L - 0.1055613458*a_ - 0.0638541728*b_)**3;
+  const s_ = (L - 0.0894841775*a_ - 1.2914855480*b_)**3;
+  let r =  4.0767416621*l_ - 3.3077115913*m_ + 0.2309699292*s_;
+  let g = -1.2684380046*l_ + 2.6097574011*m_ - 0.3413193965*s_;
+  let b = -0.0041960863*l_ - 0.7034186147*m_ + 1.7076147010*s_;
+  return [Math.round(Math.max(0,Math.min(1,r))*255), Math.round(Math.max(0,Math.min(1,g))*255), Math.round(Math.max(0,Math.min(1,b))*255)];
+}
+
+function rgbToOklch(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const lin = v => v<=0.04045 ? v/12.92 : ((v+0.055)/1.055)**2.4;
+  const rl=lin(r), gl=lin(g), bl=lin(b);
+  const lc=Math.cbrt(0.4122214708*rl+0.5363325363*gl+0.0514459929*bl);
+  const mc=Math.cbrt(0.2119034982*rl+0.6806995451*gl+0.1073969566*bl);
+  const sc=Math.cbrt(0.0883024619*rl+0.2817188376*gl+0.6299787005*bl);
+  const Lo=0.2104542553*lc+0.7936177850*mc-0.0040720468*sc;
+  const a_=1.9779984951*lc-2.4285922050*mc+0.4505937099*sc;
+  const b_=0.0259040371*lc+0.7827717662*mc-0.8086757660*sc;
+  const Co=Math.sqrt(a_*a_+b_*b_);
+  let Ho=Math.atan2(b_,a_)*180/Math.PI; if(Ho<0)Ho+=360;
+  return [Lo, Co, Ho];
+}
+
+function hslToRgb(h, s, l) {
+  s/=100; l/=100;
+  const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+
+function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+
+function hexToRgb(hex) {
+  hex=hex.replace(/^#/,'');
+  if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
+  if(hex.length!==6) return null;
+  const n=parseInt(hex,16); if(isNaN(n)) return null;
+  return [(n>>16)&255,(n>>8)&255,n&255];
+}
+
+// ═══════════════════════════════════════════════════════
+// State helpers
+// ═══════════════════════════════════════════════════════
+
+let colorMode = 'oklch';
+let suppressFieldUpdate = false;
+
+function v(id){ return document.getElementById(id); }
+
+function accentRGB(){
+  return oklchToSrgb(+v('accentLight').value/100, +v('accentSat').value, +v('accentHue').value);
+}
+function bgRGB(){
+  return hslToRgb(+v('bgHue').value, +v('bgSat').value, +v('bgDark').value);
+}
+function btnPrimRGB(){
+  return oklchToSrgb(+v('btnPrimLight').value/100, +v('btnPrimSat').value, +v('btnPrimHue').value);
+}
+function btnSecRGB(){
+  return hslToRgb(+v('btnSecHue').value, 18, +v('btnSecLight').value);
+}
+
+// ═══════════════════════════════════════════════════════
+// Color field rendering
+// ═══════════════════════════════════════════════════════
+
+function onModeChange(){
+  colorMode = v('colorMode').value;
+  renderColorFields();
+  v('cssOut').textContent = generateCSS(getOpts());
+}
+
+function renderColorFields(){
+  renderBlock('accent', accentRGB());
+  renderBlock('bg', bgRGB());
+  renderBlock('btnPrim', btnPrimRGB());
+  renderBlock('btnSec', btnSecRGB());
+}
+
+function renderBlock(which, rgb){
+  const swatchWrap = v(which+'SwatchWrap');
+  const hexVal = rgbToHex(...rgb);
+  swatchWrap.style.background = hexVal;
+  v(which+'NativePicker').value = hexVal;
+
+  const container = v(which+'Fields');
+  container.innerHTML = '';
+
+  let fields = [];
+
+  if(colorMode === 'hex'){
+    fields = [{ lbl:'HEX', val: hexVal, apply(s){
+      const p = hexToRgb(s.startsWith('#')?s:'#'+s);
+      if(!p) return false;
+      applyRgbToSliders(which,...p); return true;
+    }}];
+  } else if(colorMode === 'rgb'){
+    const [r,g,b] = rgb;
+    fields = ['R','G','B'].map((lbl,i) => ({ lbl, val: [r,g,b][i].toString(), apply(s){
+      const n=parseInt(s); if(isNaN(n)||n<0||n>255) return false;
+      let c=which==='accent'?[...accentRGB()]:[...bgRGB()]; c[i]=n;
+      applyRgbToSliders(which,...c); return true;
+    }}));
+  } else { // oklch
+    if(which==='accent'){
+      const L=+v('accentLight').value, C=+v('accentSat').value, H=+v('accentHue').value;
+      fields = [
+        { lbl:'L %', val:L.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<50||n>82) return false; v('accentLight').value=n; return true; }},
+        { lbl:'C',   val:C.toFixed(2), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<0.05||n>0.28) return false; v('accentSat').value=n; return true; }},
+        { lbl:'H °', val:H.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<0||n>360) return false; v('accentHue').value=n; return true; }},
+      ];
+    } else if(which==='btnPrim') {
+      const L=+v('btnPrimLight').value, C=+v('btnPrimSat').value, H=+v('btnPrimHue').value;
+      fields = [
+        { lbl:'L %', val:L.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<30||n>75) return false; v('btnPrimLight').value=n; return true; }},
+        { lbl:'C',   val:C.toFixed(2), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<0.05||n>0.28) return false; v('btnPrimSat').value=n; return true; }},
+        { lbl:'H °', val:H.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<0||n>360) return false; v('btnPrimHue').value=n; return true; }},
+      ];
+    } else if(which==='btnSec') {
+      const H=+v('btnSecHue').value, L=+v('btnSecLight').value;
+      fields = [
+        { lbl:'Hue', val:H.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<180||n>280) return false; v('btnSecHue').value=n; return true; }},
+        { lbl:'L %', val:L.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<10||n>35) return false; v('btnSecLight').value=n; return true; }},
+      ];
+    } else {
+      const H=+v('bgHue').value, S=+v('bgSat').value, L=+v('bgDark').value;
+      fields = [
+        { lbl:'Hue', val:H.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<180||n>280) return false; v('bgHue').value=n; return true; }},
+        { lbl:'Sat%', val:S.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<5||n>30) return false; v('bgSat').value=n; return true; }},
+        { lbl:'L %',  val:L.toFixed(0), apply(s){ const n=parseFloat(s); if(isNaN(n)||n<4||n>18) return false; v('bgDark').value=n; return true; }},
+      ];
+    }
+  }
+
+  fields.forEach(f => {
+    const cell = document.createElement('div');
+    cell.className = 'color-field-cell';
+    const lbl = document.createElement('div');
+    lbl.className = 'color-field-lbl';
+    lbl.textContent = f.lbl;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = f.val;
+    inp.addEventListener('input', () => {
+      const ok = f.apply(inp.value.trim());
+      inp.classList.toggle('invalid', !ok);
+      if(ok){ suppressFieldUpdate=true; update(); suppressFieldUpdate=false; }
+    });
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); });
+    cell.appendChild(lbl);
+    cell.appendChild(inp);
+    container.appendChild(cell);
+  });
+}
+
+function applyRgbToSliders(which, r, g, b){
+  if(which==='accent' || which==='btnPrim'){
+    const [L,C,H] = rgbToOklch(r,g,b);
+    if(which==='accent'){
+      v('accentLight').value = Math.max(50,Math.min(82,Math.round(L*100)));
+      v('accentSat').value   = Math.max(0.05,Math.min(0.28,parseFloat(C.toFixed(2))));
+      v('accentHue').value   = Math.round(H);
+    } else {
+      v('btnPrimLight').value = Math.max(30,Math.min(75,Math.round(L*100)));
+      v('btnPrimSat').value   = Math.max(0.05,Math.min(0.28,parseFloat(C.toFixed(2))));
+      v('btnPrimHue').value   = Math.round(H);
+    }
+  } else {
+    // Approximate RGB → hue/lightness
+    const mx=Math.max(r,g,b)/255, mn=Math.min(r,g,b)/255;
+    const l=(mx+mn)/2;
+    const d=mx-mn;
+    let h=0;
+    if(d>0){
+      if(mx===r/255) h=((g-b)/255/d)%6;
+      else if(mx===g/255) h=(b-r)/255/d+2;
+      else h=(r-g)/255/d+4;
+      h=Math.round(h*60); if(h<0)h+=360;
+    }
+    if(which==='btnSec'){
+      v('btnSecHue').value   = Math.max(180,Math.min(280, h||222));
+      v('btnSecLight').value = Math.round(Math.max(10,Math.min(35,l*100)));
+    } else {
+      const s=d>0 ? d/(1-Math.abs(2*l-1)) : 0;
+      v('bgHue').value  = Math.max(180,Math.min(280, h||222));
+      v('bgSat').value  = Math.round(Math.max(5,Math.min(30,s*100)));
+      v('bgDark').value = Math.round(Math.max(4,Math.min(18,l*100)));
+    }
+  }
+}
+
+function onNativePicker(which){
+  const hex = v(which+'NativePicker').value;
+  const rgb = hexToRgb(hex);
+  if(rgb){ applyRgbToSliders(which,...rgb); update(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// CSS generation
+// ═══════════════════════════════════════════════════════
+
+function getOpts(){
+  return {
+    accentHue:   +v('accentHue').value,
+    accentSat:   +v('accentSat').value,
+    accentLight: +v('accentLight').value,
+    bgDark:      +v('bgDark').value,
+    bgHue:       +v('bgHue').value,
+    bgSat:       +v('bgSat').value,
+    gap:         +v('gap').value,
+    radius:      +v('radius').value,
+    borderThick: +v('borderThick').value,
+    font:        v('font').value,
+    animations:  v('animations').checked,
+    winControls: v('winControls').checked,
+    smallPanel:  v('smallPanel').checked,
+    sepChatbar:  v('sepChatbar').checked,
+    mutedDMs:    v('mutedDMs').checked,
+    blueBadge:   v('blueBadge').checked,
+    thinScroll:   v('thinScroll').checked,
+    activeGlow:   v('activeGlow').checked,
+    btnPrimHue:   +v('btnPrimHue').value,
+    btnPrimSat:   +v('btnPrimSat').value,
+    btnPrimLight: +v('btnPrimLight').value,
+    btnSecLight:  +v('btnSecLight').value,
+    btnSecHue:    +v('btnSecHue').value,
+  };
+}
+
+function generateCSS(o){
+  const {accentHue:aH, accentSat:aS, accentLight:aL, bgHue:bgH, bgSat:bgS, bgDark:bgD, radius:r, gap:g} = o;
+  const mode = colorMode;
+
+  function accentShade(offset){
+    const L=(aL+offset)/100, C=aS, H=aH;
+    if(mode==='oklch') return `oklch(${aL+offset}% ${aS} ${aH})`;
+    const rgb=oklchToSrgb(L,C,H);
+    return mode==='hex' ? rgbToHex(...rgb) : `rgb(${rgb.join(', ')})`;
+  }
+
+  function bgShade(lOff){
+    const l=bgD+lOff;
+    const rgb=hslToRgb(bgH,bgS,l);
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    return `hsla(${bgH}, ${bgS}%, ${l}%, 1)`;
+  }
+
+  function textShade(h,s,l){
+    const rgb=hslToRgb(h,s,l);
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  }
+
+  function colorOf(rgb){
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    const [L,C,H]=rgbToOklch(...rgb);
+    return `oklch(${(L*100).toFixed(1)}% ${C.toFixed(3)} ${H.toFixed(1)})`;
+  }
+
+  // Primary button shades
+  const btnPrimBase = btnPrimRGB();
+  const btnPrimHov  = oklchToSrgb(Math.min((o.btnPrimLight+5)/100,1), o.btnPrimSat, o.btnPrimHue);
+  const btnPrimAct  = oklchToSrgb(Math.max((o.btnPrimLight-5)/100,0), o.btnPrimSat, o.btnPrimHue);
+
+  // Secondary button shades
+  const btnSecBase = hslToRgb(o.btnSecHue, 18, o.btnSecLight);
+  const btnSecHov  = hslToRgb(o.btnSecHue, 18, Math.min(o.btnSecLight+5,35));
+  const btnSecAct  = hslToRgb(o.btnSecHue, 18, Math.max(o.btnSecLight-3,10));
+
+  const fontImport = o.font ? `\n/* ── Google Fonts ─────────────────────────── */\n@import url('https://fonts.googleapis.com/css2?family=${o.font.replace(' ','+')}:wght@300;400;500;600&display=swap');\n` : '';
+
+  return `/**
+ * @name sleek
+ * @description Built with Discord Theme Builder — color format: ${mode.toUpperCase()}
+ * @version 1.0.0
+*/
+
+@import url('https://refact0r.github.io/midnight-discord/build/midnight.css');
+${fontImport}
+body {
+    --font: '${o.font||''}';
+    --code-font: '';
+    font-weight: 400;
+    --gap: ${g}px;
+    --divider-thickness: 2px;
+    --border-thickness: ${o.borderThick}px;
+    --animations: ${o.animations?'on':'off'};
+    --list-item-transition: 0.18s ease;
+    --dms-icon-svg-transition: 0.35s ease;
+    --border-hover-transition: 0.18s ease;
+    --top-bar-height: var(--gap);
+    --top-bar-button-position: titlebar;
+    --top-bar-title-position: off;
+    --subtle-top-bar-title: off;
+    --custom-window-controls: ${o.winControls?'on':'off'};
+    --window-control-size: 13px;
+    --custom-dms-icon: custom;
+    --dms-icon-svg-url: url('https://refact0r.github.io/midnight-discord/assets/Font_Awesome_5_solid_moon.svg');
+    --dms-icon-svg-size: 85%;
+    --dms-icon-color-before: var(--icon-subtle);
+    --dms-icon-color-after: var(--white);
+    --custom-dms-background: off;
+    --background-image: off;
+    --background-image-url: url('');
+    --transparency-tweaks: off;
+    --remove-bg-layer: off;
+    --panel-blur: off;
+    --blur-amount: 12px;
+    --bg-floating: var(--bg-3);
+    --custom-chatbar: ${o.sepChatbar?'separated':'off'};
+    --chatbar-height: 47px;
+    --small-user-panel: ${o.smallPanel?'on':'off'};
+}
+
+:root {
+    --colors: on;
+
+    /* Text */
+    --text-0: var(--bg-4);
+    --text-1: ${textShade(aH, 50, 97)};
+    --text-2: ${textShade(aH, 30, 78)};
+    --text-3: ${textShade(aH, 20, 62)};
+    --text-4: ${textShade(aH, 15, 42)};
+    --text-5: ${textShade(aH, 12, 26)};
+
+    /* Backgrounds */
+    --bg-1: ${bgShade(10)};
+    --bg-2: ${bgShade(6)};
+    --bg-3: ${bgShade(3)};
+    --bg-4: ${bgShade(0)};
+
+    /* Interactive states */
+    --hover:         hsla(${aH}, 60%, 55%, 0.09);
+    --active:        hsla(${aH}, 60%, 55%, 0.18);
+    --active-2:      hsla(${aH}, 60%, 55%, 0.27);
+    --message-hover: hsla(${bgH}, 20%, 0%, 0.12);
+
+    /* Accent */
+    --accent-1: var(--blue-1);
+    --accent-2: var(--blue-2);
+    --accent-3: var(--blue-3);
+    --accent-4: var(--blue-4);
+    --accent-5: var(--blue-5);
+    --accent-new: var(--blue-2);
+
+    --mention:       linear-gradient(to right, color-mix(in hsl, var(--blue-2), transparent 88%) 40%, transparent);
+    --mention-hover: linear-gradient(to right, color-mix(in hsl, var(--blue-2), transparent 93%) 40%, transparent);
+    --reply:         linear-gradient(to right, color-mix(in hsl, var(--text-3), transparent 90%) 40%, transparent);
+    --reply-hover:   linear-gradient(to right, color-mix(in hsl, var(--text-3), transparent 95%) 40%, transparent);
+
+    /* Status */
+    --online: var(--green-2); --dnd: var(--red-2);
+    --idle: var(--yellow-2); --streaming: var(--purple-2); --offline: var(--text-4);
+
+    /* Borders */
+    --border-light: var(--hover);
+    --border:       var(--active);
+    --border-hover: var(--active);
+    --button-border: hsla(${aH}, 50%, 80%, 0.08);
+
+    /* Base palette */
+    --red-1: oklch(74% 0.13 8); --red-2: oklch(68% 0.13 8); --red-3: oklch(62% 0.13 8);
+    --red-4: oklch(56% 0.13 8); --red-5: oklch(50% 0.13 8);
+    --green-1: oklch(74% 0.12 162); --green-2: oklch(68% 0.12 162); --green-3: oklch(62% 0.12 162);
+    --green-4: oklch(56% 0.12 162); --green-5: oklch(50% 0.10 155);
+
+    /* Accent shades [${mode.toUpperCase()}] */
+    --blue-1: ${accentShade(0)};
+    --blue-2: ${accentShade(-6)};
+    --blue-3: ${accentShade(-12)};
+    --blue-4: ${accentShade(-18)};
+    --blue-5: ${accentShade(-24)};
+
+    --yellow-1: oklch(82% 0.12 92); --yellow-2: oklch(76% 0.12 92); --yellow-3: oklch(70% 0.12 92);
+    --yellow-4: oklch(64% 0.12 92); --yellow-5: oklch(58% 0.12 92);
+    --purple-1: oklch(72% 0.12 305); --purple-2: oklch(66% 0.12 305); --purple-3: oklch(60% 0.12 305);
+    --purple-4: oklch(54% 0.12 305); --purple-5: oklch(48% 0.12 305);
+}
+
+/* ── Panels & corners ── */
+[class*="wrapper_"] [class*="listItem_"] [class*="iconWrapper_"],
+[class*="blobContainer_"] { border-radius: ${r+2}px !important; transition: border-radius 0.2s ease !important; }
+[class*="selected_"] [class*="iconWrapper_"],
+[class*="listItem_"]:hover [class*="iconWrapper_"] { border-radius: ${r}px !important; }
+[class*="sidebar_"], [class*="chat_"], [class*="membersWrap_"],
+[class*="panels_"], [class*="privateChannels_"], [class*="container_"] { border-radius: ${r}px !important; }
+[class*="channel_"], [class*="privateChannel_"], [class*="containerDefault_"] {
+    border-radius: ${Math.round(r*0.6)}px !important; margin: 1px 6px !important; }
+[class*="channelTextArea_"], [class*="scrollableContainer_"],
+[class*="inner_"][class*="chatContent_"] { border-radius: ${Math.round(r*0.85)}px !important; }
+[class*="layer_"] [class*="container_"], [class*="menu_"],
+[class*="tooltip_"], [class*="popup_"] { border-radius: ${r}px !important; backdrop-filter: blur(12px) !important; }
+[class*="emojiPicker_"], [class*="expressionPicker_"],
+[class*="userPopout_"], [class*="userProfile_"] { border-radius: ${r+2}px !important; }
+[class*="menu_"] { border-radius: ${Math.round(r*0.85)}px !important; border: 1px solid var(--border) !important; }
+button, [class*="button_"] { border-radius: ${Math.round(r*0.55)}px !important; }
+${o.mutedDMs?`
+/* ── Muted DM names ── */
+[class*="privateChannel_"] [class*="name_"],
+[class*="privateChannel_"] [class*="nameAndDecorators_"],
+[class*="privateChannels_"] [class*="channel_"] [class*="name_"] { color: var(--text-4) !important; }
+[class*="privateChannel_"]:hover [class*="name_"] { color: var(--text-3) !important; }
+[class*="selected_"] [class*="name_"],
+[class*="privateChannel_"][class*="selected_"] [class*="name_"] { color: var(--text-2) !important; }
+[class*="privateChannel_"] [class*="subText_"],
+[class*="privateChannel_"] [class*="members_"],
+[class*="privateChannel_"] [class*="subtitle_"] { color: var(--text-5) !important; }
+[class*="privateChannel_"]:hover [class*="subText_"],
+[class*="privateChannel_"]:hover [class*="members_"],
+[class*="privateChannel_"]:hover [class*="subtitle_"] { color: var(--text-4) !important; }`:''}
+${o.thinScroll?`
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--blue-4); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-2); }`:''}
+${o.activeGlow?`
+/* ── Active glow ── */
+[class*="modeSelected_"], [class*="selected_"][class*="channel_"] {
+    background: var(--active) !important; box-shadow: inset 2px 0 0 var(--blue-2) !important; }
+[class*="selected_"] [class*="pill_"] [class*="item_"] {
+    background: var(--blue-2) !important;
+    box-shadow: 0 0 8px color-mix(in hsl, var(--blue-2), transparent 50%) !important; }`:''}
+${o.blueBadge?`
+/* ── Unread badge ── */
+[class*="numberBadge_"] {
+    background: var(--blue-3) !important; border-radius: 99px !important;
+    font-size: 10px !important; font-weight: 600 !important; }`:''}
+
+/* ── Messages ── */
+[class*="message_"]:hover { border-radius: 6px !important; }
+
+/* ── Button colors ── */
+/* Primary buttons (Add Friend, Boost, etc.) */
+[class*="lookFilled_"][class*="colorBrand_"],
+[class*="lookFilled_"][class*="colorGreen_"],
+[class*="button_"][class*="lookFilled_"] {
+    background-color: ${colorOf(btnPrimBase)} !important;
+    color: #fff !important;
+}
+[class*="lookFilled_"][class*="colorBrand_"]:hover,
+[class*="lookFilled_"][class*="colorGreen_"]:hover,
+[class*="button_"][class*="lookFilled_"]:hover {
+    background-color: ${colorOf(btnPrimHov)} !important;
+}
+[class*="lookFilled_"][class*="colorBrand_"]:active,
+[class*="button_"][class*="lookFilled_"]:active {
+    background-color: ${colorOf(btnPrimAct)} !important;
+}
+
+/* Secondary / ghost buttons (Find or start a conversation, etc.) */
+[class*="lookFilled_"][class*="colorPrimary_"],
+[class*="lookFilled_"][class*="colorSecondary_"],
+[class*="searchBar_"],
+[class*="privateChannels_"] [class*="searchBar_"] {
+    background-color: ${colorOf(btnSecBase)} !important;
+}
+[class*="lookFilled_"][class*="colorPrimary_"]:hover,
+[class*="lookFilled_"][class*="colorSecondary_"]:hover {
+    background-color: ${colorOf(btnSecHov)} !important;
+}
+[class*="lookFilled_"][class*="colorPrimary_"]:active,
+[class*="lookFilled_"][class*="colorSecondary_"]:active {
+    background-color: ${colorOf(btnSecAct)} !important;
+}
+
+/* ── Micro-details ── */
+[aria-label*="Mute"] [class*="icon_"],
+[aria-label*="Deafen"] [class*="icon_"] { color: var(--blue-2) !important; }
+[class*="username_"]:hover { color: var(--blue-1) !important; }
+code, pre { border: 1px solid var(--blue-5) !important; border-radius: 6px !important; }
+a { color: var(--blue-1) !important; }
+a:hover { color: var(--blue-2) !important; }
+[class*="form_"]::before {
+    background: linear-gradient(90deg, transparent, var(--blue-4), transparent) !important;
+    height: 1px !important; opacity: 0.5 !important; }
+[class*="callContainer_"], [class*="videoWrapper_"] { border-radius: ${r}px !important; }
+[class*="sidebar_"][class*="contentRegionScroller_"] { border-radius: 0 !important; }
+[class*="contentColumn_"] { border-radius: ${Math.round(r*0.85)}px !important; }
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// Update loop
+// ═══════════════════════════════════════════════════════
+
+function switchTab(name, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  v('tab-preview').classList.toggle('active', name==='preview');
+  v('tab-code').classList.toggle('active', name==='code');
+}
+
+function onSlider(){ update(); }
+
+function update(){
+  const o = getOpts();
+
+  v('accentHueVal').textContent   = o.accentHue+'°';
+  v('accentSatVal').textContent   = o.accentSat.toFixed(2);
+  v('accentLightVal').textContent = o.accentLight+'%';
+  v('bgDarkVal').textContent      = o.bgDark+'%';
+  v('bgHueVal').textContent       = o.bgHue;
+  v('bgSatVal').textContent       = o.bgSat+'%';
+  v('gapVal').textContent         = o.gap+'px';
+  v('radiusVal').textContent      = o.radius+'px';
+  v('borderThickVal').textContent = o.borderThick+'px';
+  v('btnPrimHueVal').textContent  = o.btnPrimHue+'°';
+  v('btnPrimSatVal').textContent  = o.btnPrimSat.toFixed(2);
+  v('btnPrimLightVal').textContent= o.btnPrimLight+'%';
+  v('btnSecLightVal').textContent = o.btnSecLight+'%';
+  v('btnSecHueVal').textContent   = o.btnSecHue;
+
+  const acc  = `oklch(${o.accentLight}% ${o.accentSat} ${o.accentHue})`;
+  const bgM  = `hsl(${o.bgHue},${o.bgSat}%,${o.bgDark}%)`;
+  const bgS  = `hsl(${o.bgHue},${o.bgSat}%,${o.bgDark+3}%)`;
+  const bgSv = `hsl(${o.bgHue},${o.bgSat}%,${Math.max(0,o.bgDark-1)}%)`;
+
+  v('dcWindow').style.background   = bgM;
+  v('dcWindow').style.borderRadius = `${o.radius}px`;
+  v('dcServers').style.background  = bgSv;
+  v('dcChannels').style.background = bgS;
+  v('dcMembers').style.background  = bgS;
+
+  document.querySelectorAll('.dc-ch-item').forEach(el => el.style.borderRadius=`${Math.round(o.radius*0.6)}px`);
+  document.querySelectorAll('.acc-preview').forEach(el => el.style.color=acc);
+
+  if(!suppressFieldUpdate) renderColorFields();
+  v('cssOut').textContent = generateCSS(o);
+}
+
+function downloadCSS(){
+  const blob=new Blob([generateCSS(getOpts())],{type:'text/css'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='sleek-discord.theme.css'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyCSS(){
+  navigator.clipboard.writeText(generateCSS(getOpts())).then(()=>{
+    const t=v('toast'); t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  });
+}
+
+update();
+</script>
+</body>
+</html>
