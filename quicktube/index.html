@@ -20,7 +20,7 @@
     --muted: #64748b;
     --text: #0f1724;
     }
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    
   
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -34,6 +34,7 @@
     justify-content: center; /* ← centers container horizontally */
     overflow-y: auto;
     transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   }
   
   .container {
@@ -48,7 +49,11 @@
   .lead{margin:0 0 18px;color:var(--muted)}
   
   .card {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    background: linear-gradient(
+      180deg,
+      rgba(255,255,255,0.04),
+      rgba(255,255,255,0.02)
+    ), var(--card);
     padding: 18px;
     border-radius: var(--radius);
     box-shadow: 0 6px 20px rgba(2,6,23,0.6);
@@ -68,7 +73,7 @@
     padding:10px 12px;
     border-radius:8px;
     border:1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.02);
+    background: var(--card);
     color:var(--text);
     outline:none;
     transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
@@ -502,26 +507,29 @@
     });
     
     loadTrending();
-    const themeToggle = document.getElementById("themeToggle");
-
-    // Load saved theme
     if (localStorage.getItem("theme") === "light") {
       document.documentElement.classList.add("light");
-      themeToggle.textContent = "☀️ Light";
+      themeToggle.textContent = "🌙 Dark Mode";
+    } else {
+      themeToggle.textContent = "☀️ Light Mode";
     }
     
-    // Toggle click
     themeToggle.addEventListener("click", () => {
       const isLight = document.documentElement.classList.toggle("light");
     
       if (isLight) {
         localStorage.setItem("theme", "light");
-        themeToggle.textContent = "☀️ Light";
+        themeToggle.textContent = "🌙 Dark Mode";
       } else {
         localStorage.setItem("theme", "dark");
-        themeToggle.textContent = "🌙 Dark";
+        themeToggle.textContent = "☀️ Light Mode";
       }
     });
+    if (!localStorage.getItem("theme")) {
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+        document.documentElement.classList.add("light");
+      }
+    }
   </script>
   <button id="backToTop" class="back-to-top hidden">Back to top ⬆️</button>
 </body>
