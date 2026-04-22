@@ -508,6 +508,7 @@
     
     loadTrending();
     const themeToggle = document.getElementById("themeToggle");
+    // Load saved theme
     if (localStorage.getItem("theme") === "light") {
       document.documentElement.classList.add("light");
       themeToggle.textContent = "🌙 Dark Mode";
@@ -526,11 +527,6 @@
         themeToggle.textContent = "☀️ Light Mode";
       }
     });
-    if (!localStorage.getItem("theme")) {
-      if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-        document.documentElement.classList.add("light");
-      }
-    }
   </script>
   <button id="backToTop" class="back-to-top hidden">Back to top ⬆️</button>
 </body>
