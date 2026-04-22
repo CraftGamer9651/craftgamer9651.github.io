@@ -98,7 +98,7 @@ select:focus { border-color: var(--accent2); }
 }
 
 input[type="range"] {
-  /* -webkit-appearance: none; */
+  -webkit-appearance: none;
   width: 96px; height: 4px; border-radius: 99px;
   background: var(--bg4); outline: none; cursor: pointer; flex-shrink: 0;
 }
@@ -259,6 +259,71 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 pre.css-out { flex: 1; overflow: auto; padding: 14px; font-family: 'Geist Mono', monospace; font-size: 11.5px; line-height: 1.7; color: #c0c8e8; white-space: pre-wrap; word-break: break-all; }
 pre.css-out::-webkit-scrollbar { width: 4px; height: 4px; }
 pre.css-out::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); border-radius: 99px; }
+
+/* ── Custom template tab ── */
+.custom-wrap { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.custom-wrap.active { display: flex; }
+
+.custom-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0; flex-wrap: wrap;
+}
+.custom-toolbar-left { display: flex; align-items: center; gap: 10px; }
+.custom-toolbar-right { display: flex; align-items: center; gap: 6px; }
+.custom-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.custom-hint { font-size: 11px; color: var(--muted); }
+.custom-hint code {
+  font-family: 'Geist Mono', monospace;
+  background: var(--bg4); border: 1px solid var(--border);
+  padding: 1px 4px; border-radius: 4px; font-size: 10px; color: #a0c4ff;
+}
+.custom-toggle-wrap {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.custom-toggle-wrap .toggle { display: inline-flex; }
+
+/* Token bar */
+.custom-token-bar {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 6px 12px; border-bottom: 1px solid var(--border);
+  background: var(--bg3); flex-shrink: 0;
+}
+.token-bar-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-right: 4px; }
+.token {
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  background: var(--bg4); border: 1px solid var(--border);
+  color: #a0c4ff; padding: 2px 7px; border-radius: 4px;
+  cursor: pointer; transition: all 0.12s; white-space: nowrap;
+}
+.token:hover { background: rgba(120,130,255,0.15); border-color: rgba(120,130,255,0.4); color: #c0d8ff; }
+.token:active { transform: scale(0.95); }
+
+/* Split panes */
+.custom-panes {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; overflow: hidden;
+}
+.custom-pane {
+  display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.custom-pane:last-child { border-right: none; }
+.custom-pane-label {
+  padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--muted);
+  border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: 0.07em;
+}
+.custom-pane textarea {
+  flex: 1; background: var(--bg); border: none; outline: none; resize: none;
+  font-family: 'Geist Mono', monospace; font-size: 11.5px; line-height: 1.7;
+  color: #c0c8e8; padding: 14px; white-space: pre; overflow: auto;
+  tab-size: 4;
+}
+.custom-pane textarea::placeholder { color: var(--muted); opacity: 0.6; }
+.custom-pane textarea[readonly] { color: #8898b8; background: var(--bg2); cursor: default; }
+.custom-pane textarea::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-pane textarea::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); border-radius: 99px; }
 
 .toast { position: fixed; bottom: 22px; right: 22px; background: #1a2040; border: 1px solid var(--accent2); color: var(--text); padding: 9px 15px; border-radius: 9px; font-size: 12px; transform: translateY(55px); opacity: 0; transition: all 0.18s; pointer-events: none; z-index: 999; }
 .toast.show { transform: translateY(0); opacity: 1; }
@@ -437,6 +502,7 @@ pre.css-out::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); borde
   <div class="tabs">
     <div class="tab active" onclick="switchTab('preview',this)">Preview</div>
     <div class="tab" onclick="switchTab('code',this)">Generated CSS</div>
+    <div class="tab" onclick="switchTab('custom',this)">Custom Template</div>
   </div>
 
   <div id="tab-preview" class="mock-wrap active">
@@ -506,6 +572,52 @@ pre.css-out::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); borde
       <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="copyCSS()">Copy</button>
     </div>
     <pre class="css-out" id="cssOut"></pre>
+  </div>
+
+  <div id="tab-custom" class="custom-wrap">
+    <div class="custom-toolbar">
+      <div class="custom-toolbar-left">
+        <span class="custom-title">Custom Template</span>
+        <span class="custom-hint">Write your own CSS — use <code>{{VAR}}</code> tokens to pull in builder values</span>
+      </div>
+      <div class="custom-toolbar-right">
+        <label class="custom-toggle-wrap">
+          <input type="checkbox" id="customSubstitute" checked onchange="refreshCustomOutput()">
+          <span class="tog-sl"></span>
+          <span style="font-size:11px;color:var(--muted)">Substitute tokens</span>
+        </label>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="loadStarterTemplate()">Load starter</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="copyCustomOutput()">Copy output</button>
+        <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="downloadCustom()">⬇ Download</button>
+      </div>
+    </div>
+
+    <div class="custom-token-bar" id="customTokenBar">
+      <span class="token-bar-label">Available tokens:</span>
+      <span class="token" onclick="insertToken('{{ACCENT}}')">{{ACCENT}}</span>
+      <span class="token" onclick="insertToken('{{ACCENT_DIM}}')">{{ACCENT_DIM}}</span>
+      <span class="token" onclick="insertToken('{{ACCENT_DIMMER}}')">{{ACCENT_DIMMER}}</span>
+      <span class="token" onclick="insertToken('{{BG_DARKEST}}')">{{BG_DARKEST}}</span>
+      <span class="token" onclick="insertToken('{{BG_DARK}}')">{{BG_DARK}}</span>
+      <span class="token" onclick="insertToken('{{BG_MID}}')">{{BG_MID}}</span>
+      <span class="token" onclick="insertToken('{{BG_LIGHT}}')">{{BG_LIGHT}}</span>
+      <span class="token" onclick="insertToken('{{BTN_PRIMARY}}')">{{BTN_PRIMARY}}</span>
+      <span class="token" onclick="insertToken('{{BTN_SECONDARY}}')">{{BTN_SECONDARY}}</span>
+      <span class="token" onclick="insertToken('{{RADIUS}}')">{{RADIUS}}</span>
+      <span class="token" onclick="insertToken('{{GAP}}')">{{GAP}}</span>
+      <span class="token" onclick="insertToken('{{FONT}}')">{{FONT}}</span>
+    </div>
+
+    <div class="custom-panes">
+      <div class="custom-pane">
+        <div class="custom-pane-label">Your template <span style="color:var(--muted);font-weight:400">(edit here)</span></div>
+        <textarea id="customInput" spellcheck="false" oninput="refreshCustomOutput()" placeholder="Paste your existing theme CSS here, or click 'Load starter' to begin from a blank template.\n\nUse {{ACCENT}}, {{BG_DARKEST}}, {{RADIUS}} etc. as placeholders — they'll be swapped for your current builder values in the output on the right."></textarea>
+      </div>
+      <div class="custom-pane">
+        <div class="custom-pane-label">Output <span style="color:var(--muted);font-weight:400">(tokens replaced — read only)</span></div>
+        <textarea id="customOutput" spellcheck="false" readonly></textarea>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -1015,6 +1127,185 @@ function switchTab(name, el){
   el.classList.add('active');
   v('tab-preview').classList.toggle('active', name==='preview');
   v('tab-code').classList.toggle('active', name==='code');
+  v('tab-custom').classList.toggle('active', name==='custom');
+}
+
+// ═══════════════════════════════════════════════════════
+// Custom template tab
+// ═══════════════════════════════════════════════════════
+
+const STARTER_TEMPLATE = `/**
+ * @name my-theme
+ * @description My custom Discord theme
+ * @version 1.0.0
+*/
+
+/* ── Remove this @import if you want a fully standalone theme ── */
+/* @import url('https://refact0r.github.io/midnight-discord/build/midnight.css'); */
+
+/* ── Or keep it to build on top of midnight ── */
+@import url('https://refact0r.github.io/midnight-discord/build/midnight.css');
+
+body {
+    --font: '{{FONT}}';
+    --gap: {{GAP}};
+    --border-thickness: 1px;
+    --animations: on;
+    --custom-window-controls: on;
+    --custom-chatbar: separated;
+    --small-user-panel: on;
+}
+
+:root {
+    --colors: on;
+
+    /* ── Main background ── */
+    --bg-4: {{BG_DARKEST}};   /* deepest / main bg */
+    --bg-3: {{BG_DARK}};      /* secondary panels */
+    --bg-2: {{BG_MID}};       /* buttons */
+    --bg-1: {{BG_LIGHT}};     /* button active states */
+
+    /* ── Accent color ── */
+    --accent-1: {{ACCENT}};
+    --accent-2: {{ACCENT_DIM}};
+    --accent-3: {{ACCENT_DIMMER}};
+    --accent-4: {{ACCENT_DIMMER}};
+    --accent-5: {{ACCENT_DIMMER}};
+
+    /* ── Text (customize freely) ── */
+    --text-1: #f0f2ff;   /* near white */
+    --text-2: #b0b8d8;   /* headings */
+    --text-3: #8890b0;   /* normal */
+    --text-4: #565e7a;   /* muted */
+    --text-5: #363c54;   /* very muted */
+
+    /* ── Interactive states ── */
+    --hover:    rgba(255,255,255,0.06);
+    --active:   rgba(255,255,255,0.10);
+    --active-2: rgba(255,255,255,0.14);
+}
+
+/* ── Panels: rounded corners ── */
+[class*="sidebar_"],
+[class*="chat_"],
+[class*="membersWrap_"],
+[class*="container_"] {
+    border-radius: {{RADIUS}} !important;
+}
+
+[class*="channel_"],
+[class*="privateChannel_"] {
+    border-radius: calc({{RADIUS}} * 0.6) !important;
+    margin: 1px 6px !important;
+}
+
+/* ── Primary buttons (Add Friend, Boost, etc.) ── */
+[class*="lookFilled_"][class*="colorBrand_"],
+[class*="lookFilled_"][class*="colorGreen_"] {
+    background-color: {{BTN_PRIMARY}} !important;
+    color: #fff !important;
+}
+
+/* ── Secondary buttons (search bar, ghost buttons) ── */
+[class*="lookFilled_"][class*="colorPrimary_"],
+[class*="lookFilled_"][class*="colorSecondary_"],
+[class*="searchBar_"] {
+    background-color: {{BTN_SECONDARY}} !important;
+}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: {{ACCENT_DIMMER}}; border-radius: 99px; }
+
+/* ── Add your own rules below ── */
+`;
+
+function getTokenMap(){
+  const o = getOpts();
+  const mode = colorMode;
+
+  function accentColor(offset){
+    const L=(o.accentLight+offset)/100;
+    const rgb=oklchToSrgb(L, o.accentSat, o.accentHue);
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    return `oklch(${o.accentLight+offset}% ${o.accentSat} ${o.accentHue})`;
+  }
+  function bgColor(lOff){
+    const rgb=hslToRgb(o.bgHue, o.bgSat, o.bgDark+lOff);
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    return `hsla(${o.bgHue}, ${o.bgSat}%, ${o.bgDark+lOff}%, 1)`;
+  }
+  function colorOf(rgb){
+    if(mode==='hex') return rgbToHex(...rgb);
+    if(mode==='rgb') return `rgb(${rgb.join(', ')})`;
+    const [L,C,H]=rgbToOklch(...rgb);
+    return `oklch(${(L*100).toFixed(1)}% ${C.toFixed(3)} ${H.toFixed(1)})`;
+  }
+
+  return {
+    '{{ACCENT}}':       accentColor(0),
+    '{{ACCENT_DIM}}':   accentColor(-8),
+    '{{ACCENT_DIMMER}}':accentColor(-18),
+    '{{BG_DARKEST}}':   bgColor(0),
+    '{{BG_DARK}}':      bgColor(3),
+    '{{BG_MID}}':       bgColor(6),
+    '{{BG_LIGHT}}':     bgColor(10),
+    '{{BTN_PRIMARY}}':  colorOf(btnPrimRGB()),
+    '{{BTN_SECONDARY}}':colorOf(btnSecRGB()),
+    '{{RADIUS}}':       o.radius+'px',
+    '{{GAP}}':          o.gap+'px',
+    '{{FONT}}':         o.font || '',
+  };
+}
+
+function applyTokens(template){
+  const map = getTokenMap();
+  return template.replace(/\{\{[A-Z_]+\}\}/g, m => map[m] !== undefined ? map[m] : m);
+}
+
+function refreshCustomOutput(){
+  const inp = v('customInput').value;
+  const doSub = v('customSubstitute').checked;
+  v('customOutput').value = doSub ? applyTokens(inp) : inp;
+}
+
+function loadStarterTemplate(){
+  if(v('customInput').value.trim() && !confirm('Replace your current template with the starter? This cannot be undone.')) return;
+  v('customInput').value = STARTER_TEMPLATE;
+  refreshCustomOutput();
+}
+
+function insertToken(token){
+  const ta = v('customInput');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const before = ta.value.slice(0, start);
+  const after  = ta.value.slice(end);
+  ta.value = before + token + after;
+  ta.selectionStart = ta.selectionEnd = start + token.length;
+  ta.focus();
+  refreshCustomOutput();
+}
+
+function copyCustomOutput(){
+  const out = v('customOutput').value;
+  if(!out.trim()){ showToast('Nothing to copy yet'); return; }
+  navigator.clipboard.writeText(out).then(()=>showToast('✓ Copied output'));
+}
+
+function downloadCustom(){
+  const out = v('customOutput').value || v('customInput').value;
+  if(!out.trim()){ showToast('Nothing to download yet'); return; }
+  const blob=new Blob([out],{type:'text/css'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='my-discord.theme.css'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function showToast(msg){
+  const t=v('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 function onSlider(){ update(); }
@@ -1053,6 +1344,7 @@ function update(){
 
   if(!suppressFieldUpdate) renderColorFields();
   v('cssOut').textContent = generateCSS(o);
+  refreshCustomOutput();
 }
 
 function downloadCSS(){
@@ -1063,10 +1355,7 @@ function downloadCSS(){
 }
 
 function copyCSS(){
-  navigator.clipboard.writeText(generateCSS(getOpts())).then(()=>{
-    const t=v('toast'); t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2000);
-  });
+  navigator.clipboard.writeText(generateCSS(getOpts())).then(()=>showToast('✓ Copied to clipboard'));
 }
 
 update();
