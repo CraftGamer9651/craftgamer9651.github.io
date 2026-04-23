@@ -175,7 +175,7 @@
 <body>
 <main class="container">
 
-  <h1>QuickTube</h1>
+  <h1 id="logoBtn" style="cursor:pointer;">QuickTube</h1>
   <p class="lead">Paste a YouTube link, search videos, or browse trending.</p>
 
   <div style="width:90%;display:flex;justify-content:flex-end">
@@ -310,6 +310,10 @@ window.onscroll = () =>
 topBtn.onclick = () =>
   window.scrollTo({ top: 0, behavior: "smooth" });
 
+document.getElementById('logoBtn').addEventListener('click', () => {
+  window.location.href = 'https://craftgamer9651.github.io' // go back to home
+    
+  });
 </script>
 </body>
 </html>
