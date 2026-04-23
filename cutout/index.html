@@ -522,7 +522,7 @@
 <body data-theme="dark">
 
 <header>
-  <div class="logo">Cut<span>Out</span></div>
+  <div class="logo" id="logoBtn" style="cursor:pointer;">Cut<span>Out</span></div>
   <div class="header-right">
     <span class="badge">AI-Powered</span>
     <button class="theme-btn" id="themeBtn" title="Toggle light/dark mode">☀️</button>
@@ -861,6 +861,11 @@ function loadImage(src) {
     const img = new Image();
     img.onload = () => res(img);
     img.onerror = rej;
+
+document.getElementById('logoBtn').addEventListener('click', () => {
+  window.location.href = 'craftgamer9651.github.io' // go back to home
+    
+  });
 </script>
 
 </body>
