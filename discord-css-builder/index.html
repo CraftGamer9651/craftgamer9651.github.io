@@ -334,8 +334,8 @@ pre.css-out::-webkit-scrollbar-thumb { background: rgba(120,130,255,0.18); borde
 
 <!-- Topbar -->
 <header class="topbar">
-  <div class="logo">🌙</div>
-  <div class="topbar-title">Discord Theme Builder</div>
+  <div class="logo" id="logoBtn" style="cursor:pointer;">🌙</div>
+  <div class="topbar-title" id="logoBtn" style="cursor:pointer;">Discord Theme Builder</div>
   <div class="spacer"></div>
   <div class="mode-wrap">
     <span class="mode-label">Color format</span>
@@ -1359,6 +1359,9 @@ function copyCSS(){
 }
 
 update();
+document.getElementById('logoBtn').addEventListener('click', () => {
+  window.location.href = 'craftgamer9651.github.io' // go back to home 
+});
 </script>
 </body>
 </html>
