@@ -802,6 +802,8 @@
     });
   });
 })();
+document.getElementById('logoBtn').addEventListener('click', () => {
+  window.location.href = 'https://craftgamer9651.github.io' // go back to home
 </script>
 
 <!-- @imgly/background-removal: designed for browser/file:// use, handles CORS itself -->
@@ -861,10 +863,7 @@ function loadImage(src) {
     const img = new Image();
     img.onload = () => res(img);
     img.onerror = rej;
-
-document.getElementById('logoBtn').addEventListener('click', () => {
-  window.location.href = 'craftgamer9651.github.io' // go back to home
-    
+  
   });
 </script>
 
