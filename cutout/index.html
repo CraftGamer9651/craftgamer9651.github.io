@@ -806,7 +806,11 @@
 
 <!-- @imgly/background-removal: designed for browser/file:// use, handles CORS itself -->
 <script type="module">
-import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.browser.mjs';
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal/dist/index.browser.mjs';
+
+if (!removeBackground) {
+  alert('Background removal failed to load. Check your internet or CDN.');
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let originalImg   = null;   // HTMLImageElement
