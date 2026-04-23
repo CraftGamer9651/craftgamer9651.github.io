@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CutOut — Background Remover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --bg2: #16161d;
+    --bg3: #1e1e28;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0eff5;
+    --text2: #9896a8;
+    --text3: #5f5e6e;
+    --accent: #a78bfa;
+    --accent2: #7c3aed;
+    --accent-glow: rgba(167,139,250,0.18);
+    --green: #34d399;
+    --red: #f87171;
+    --pill-bg: rgba(167,139,250,0.12);
+    --radius: 14px;
+    --radius-lg: 20px;
+    --shadow: 0 4px 32px rgba(0,0,0,0.45);
+  }
+  [data-theme="light"] {
+    --bg: #f5f4fa;
+    --bg2: #ffffff;
+    --bg3: #ede9f8;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1a1825;
+    --text2: #5f5c70;
+    --text3: #9896a8;
+    --accent: #6d28d9;
+    --accent2: #4c1d95;
+    --accent-glow: rgba(109,40,217,0.12);
+    --pill-bg: rgba(109,40,217,0.08);
+    --shadow: 0 4px 32px rgba(0,0,0,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--pill-bg);
+    color: var(--accent);
+    border: 1px solid rgba(167,139,250,0.2);
+  }
+
+  .theme-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: background 0.2s, transform 0.15s;
+    color: var(--text);
+  }
+  .theme-btn:hover { background: var(--bg3); transform: scale(1.08); }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  /* HERO */
+  .hero { text-align: center; margin-bottom: 2.5rem; }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { color: var(--text2); font-size: 1.05rem; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+  /* WORKSPACE */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 820px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  /* UPLOAD PANEL */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  /* DROP ZONE */
+  .dropzone {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .dropzone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .dz-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 0.75rem;
+    background: var(--bg3);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .dz-text { font-size: 0.9rem; color: var(--text2); line-height: 1.5; }
+  .dz-text strong { color: var(--text); font-weight: 500; }
+  .dz-hint { font-size: 0.78rem; color: var(--text3); margin-top: 4px; }
+
+  /* CANVAS AREA */
+  .canvas-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg3);
+    min-height: 200px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .canvas-wrap canvas { max-width: 100%; display: block; }
+  .canvas-placeholder {
+    color: var(--text3);
+    font-size: 0.88rem;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  /* CHECKERBOARD BG for output canvas */
+  .checker-bg {
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    background-color: #fff;
+  }
+  [data-theme="dark"] .checker-bg {
+    background-image:
+      linear-gradient(45deg, #333 25%, transparent 25%),
+      linear-gradient(-45deg, #333 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #333 75%),
+      linear-gradient(-45deg, transparent 75%, #333 75%);
+    background-color: #222;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 2rem;
+    text-align: center;
+  }
+  .progress-wrap.visible { display: flex; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2.5px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-label { font-size: 0.88rem; color: var(--text2); }
+  .progress-bar-wrap { width: 180px; height: 4px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s; width: 0%; }
+
+  /* RESULT AREA */
+  .result-section { display: none; }
+  .result-section.visible { display: block; }
+
+  .canvases-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1rem;
+  }
+  .canvas-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  /* CONTROLS PANEL */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 13px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .bg-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .bg-tab {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .bg-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .bg-tab.active {
+    background: var(--pill-bg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .bg-option { display: none; }
+  .bg-option.active { display: block; }
+
+  /* Color picker row */
+  .color-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;
+  }
+  .color-row input[type="color"] {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: none;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .color-row label { font-size: 13px; color: var(--text2); }
+
+  /* Gradient controls */
+  .gradient-row {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;
+  }
+  .gradient-row input[type="color"] {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: none;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .grad-dir {
+    display: flex; gap: 5px; flex-wrap: wrap;
+  }
+  .dir-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .dir-btn.active, .dir-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--pill-bg);
+  }
+
+  /* BG Image upload */
+  .bg-dropzone {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .bg-dropzone:hover { border-color: var(--accent); background: var(--accent-glow); }
+  .bg-dropzone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .bg-thumb {
+    width: 100%; height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    display: none;
+  }
+
+  /* APPLY BTN */
+  .apply-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 0.75rem;
+  }
+  .apply-btn:hover { opacity: 0.88; }
+  .apply-btn:active { transform: scale(0.98); }
+  .apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* DOWNLOAD BTN */
+  .download-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    padding: 11px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+    margin-top: 0.5rem;
+  }
+  .download-btn:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+  /* STATUS CHIP */
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    font-weight: 500;
+  }
+  .status-chip.success { background: rgba(52,211,153,0.12); color: var(--green); }
+  .status-chip.error { background: rgba(248,113,113,0.12); color: var(--red); }
+  .status-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* SENSITIVITY SLIDER */
+  .slider-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;
+  }
+  .slider-row label { font-size: 13px; color: var(--text2); min-width: 80px; }
+  .slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .slider-val { font-size: 13px; color: var(--accent); min-width: 28px; text-align: right; font-weight: 500; }
+
+  /* MODEL STATUS */
+  .model-status {
+    font-size: 12px; color: var(--text3);
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 0.5rem;
+  }
+
+  /* COMPAT BANNER */
+  .compat-banner {
+    display: none;
+    margin-bottom: 1.5rem;
+    background: var(--bg2);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .compat-banner.visible { display: block; }
+  .compat-banner-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;
+  }
+  .compat-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(248,113,113,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .compat-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--red);
+  }
+  .compat-subtitle { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .compat-body { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+  .compat-checks {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 1rem;
+  }
+  @media (max-width: 500px) { .compat-checks { grid-template-columns: 1fr; } }
+  .compat-check {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .compat-check .ci { font-size: 14px; }
+  .compat-check .cl { color: var(--text2); }
+  .compat-check.pass .ci::after { content: '✅'; }
+  .compat-check.fail .ci::after { content: '❌'; }
+  .compat-check.warn .ci::after { content: '⚠️'; }
+  .compat-note {
+    font-size: 12px; color: var(--text3);
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .compat-note a { color: var(--accent); text-decoration: none; }
+  .compat-note a:hover { text-decoration: underline; }
+  .compat-dismiss {
+    margin-top: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .compat-dismiss:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* RESET BTN */
+  .reset-link {
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  .reset-link:hover { color: var(--red); }
+
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="logo">Cut<span>Out</span></div>
+  <div class="header-right">
+    <span class="badge">AI-Powered</span>
+    <button class="theme-btn" id="themeBtn" title="Toggle light/dark mode">☀️</button>
+  </div>
+</header>
+
+<main>
+  <!-- COMPATIBILITY BANNER -->
+  <div class="compat-banner" id="compatBanner">
+    <div class="compat-banner-head">
+      <div class="compat-icon">⚠️</div>
+      <div>
+        <div class="compat-title" id="compatTitle">Compatibility issue detected</div>
+        <div class="compat-subtitle" id="compatSubtitle">Some features may not work on this browser or device</div>
+      </div>
+    </div>
+    <div class="compat-body" id="compatBody"></div>
+    <div class="compat-checks" id="compatChecks"></div>
+    <div class="compat-note" id="compatNote"></div>
+    <button class="compat-dismiss" id="compatDismiss">Continue anyway →</button>
+  </div>
+
+  <div class="hero">
+    <h1>Remove backgrounds<br><em>instantly</em></h1>
+    <p>Upload any image — our AI cuts out the subject in seconds. Swap in a new background, color, or gradient.</p>
+  </div>
+
+  <div class="workspace">
+    <!-- LEFT: Upload + Result -->
+    <div>
+      <div class="panel" id="uploadPanel">
+        <div class="top-bar">
+          <div class="panel-title">Source Image</div>
+          <button class="reset-link" id="resetBtn" style="display:none">✕ Start over</button>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="dz-icon">🖼️</div>
+          <div class="dz-text"><strong>Drop an image here</strong><br>or click to browse</div>
+          <div class="dz-hint">PNG, JPG, WEBP · Max 10MB</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap" id="progressWrap">
+          <div class="spinner"></div>
+          <div class="progress-label" id="progressLabel">Loading AI model…</div>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result-section" id="resultSection">
+          <div class="canvases-row">
+            <div>
+              <div class="canvas-label">Original</div>
+              <div class="canvas-wrap">
+                <canvas id="origCanvas"></canvas>
+              </div>
+            </div>
+            <div>
+              <div class="canvas-label">Result</div>
+              <div class="canvas-wrap checker-bg" id="resultWrap">
+                <canvas id="resultCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <span class="status-chip success" id="statusChip">
+              <span class="dot"></span> Background removed
+            </span>
+            <span id="imgInfo" style="font-size:12px; color:var(--text3);"></span>
+          </div>
+
+          <a id="downloadBtn" class="download-btn" download="cutout.png">
+            ⬇ Download PNG
+          </a>
+        </div>
+      </div>
+
+      <!-- Hidden canvases for processing -->
+      <canvas id="hiddenCanvas" style="display:none"></canvas>
+    </div>
+
+    <!-- RIGHT: Controls -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Background Options</div>
+
+        <!-- BACKGROUND TYPE TABS -->
+        <div class="bg-tabs">
+          <button class="bg-tab active" data-tab="transparent">Transparent</button>
+          <button class="bg-tab" data-tab="color">Color</button>
+          <button class="bg-tab" data-tab="gradient">Gradient</button>
+          <button class="bg-tab" data-tab="image">Image</button>
+        </div>
+
+        <!-- Transparent -->
+        <div class="bg-option active" id="tab-transparent">
+          <p style="font-size:13px; color:var(--text2); line-height:1.5;">Keep the background transparent — perfect for logos, stickers, and design assets. Downloads as PNG.</p>
+        </div>
+
+        <!-- Solid Color -->
+        <div class="bg-option" id="tab-color">
+          <div class="color-row">
+            <input type="color" id="solidColor" value="#ffffff">
+            <label>Pick a background color</label>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+            <div class="color-swatch" data-color="#ffffff" style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid var(--border2);cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#000000" style="width:24px;height:24px;border-radius:6px;background:#000000;cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#f5f4fa" style="width:24px;height:24px;border-radius:6px;background:#f5f4fa;border:1px solid var(--border2);cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#1e1e28" style="width:24px;height:24px;border-radius:6px;background:#1e1e28;cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#a78bfa" style="width:24px;height:24px;border-radius:6px;background:#a78bfa;cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#34d399" style="width:24px;height:24px;border-radius:6px;background:#34d399;cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#f87171" style="width:24px;height:24px;border-radius:6px;background:#f87171;cursor:pointer;"></div>
+            <div class="color-swatch" data-color="#fbbf24" style="width:24px;height:24px;border-radius:6px;background:#fbbf24;cursor:pointer;"></div>
+          </div>
+        </div>
+
+        <!-- Gradient -->
+        <div class="bg-option" id="tab-gradient">
+          <div style="font-size:13px; color:var(--text2); margin-bottom:8px;">Gradient colors</div>
+          <div class="gradient-row">
+            <input type="color" id="gradColor1" value="#a78bfa">
+            <span style="font-size:13px;color:var(--text3);">→</span>
+            <input type="color" id="gradColor2" value="#34d399">
+          </div>
+          <div style="font-size:13px; color:var(--text2); margin-bottom:6px;">Direction</div>
+          <div class="grad-dir">
+            <button class="dir-btn active" data-deg="135">↘</button>
+            <button class="dir-btn" data-deg="0">→</button>
+            <button class="dir-btn" data-deg="90">↓</button>
+            <button class="dir-btn" data-deg="45">↗</button>
+            <button class="dir-btn" data-deg="180">←</button>
+            <button class="dir-btn" data-deg="270">↑</button>
+          </div>
+          <div style="margin-top:10px;">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Preview</div>
+            <div id="gradPreview" style="height:36px;border-radius:8px;background:linear-gradient(135deg,#a78bfa,#34d399);border:1px solid var(--border2);"></div>
+          </div>
+        </div>
+
+        <!-- Custom Image -->
+        <div class="bg-option" id="tab-image">
+          <div class="bg-dropzone" id="bgDropzone">
+            <input type="file" id="bgFileInput" accept="image/*">
+            <img id="bgThumb" class="bg-thumb">
+            <div id="bgDzText">📷 Click or drop a background image</div>
+          </div>
+        </div>
+
+        <button class="apply-btn" id="applyBtn" disabled>Apply Background</button>
+
+        <hr class="divider">
+
+        <div class="section-title">Processing Settings</div>
+
+        <div class="slider-row">
+          <label>Edge Smooth</label>
+          <input type="range" min="0" max="10" value="3" step="1" id="edgeSmooth">
+          <span class="slider-val" id="edgeSmoothVal">3</span>
+        </div>
+        <div class="slider-row">
+          <label>Threshold</label>
+          <input type="range" min="80" max="220" value="140" step="5" id="threshold">
+          <span class="slider-val" id="thresholdVal">140</span>
+        </div>
+
+        <div class="model-status" id="modelStatus">
+          <span>⚙️</span> Model not loaded — upload an image to begin
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Compatibility detection (runs synchronously before module) -->
+<script>
+(function() {
+  const checks = [];
+  const ua = navigator.userAgent;
+
+  // 1. ES Modules support
+  const esModules = 'noModule' in HTMLScriptElement.prototype;
+  checks.push({ label: 'ES Modules', pass: esModules, fatal: true });
+
+  // 2. WebAssembly (required by Transformers.js)
+  const wasm = typeof WebAssembly === 'object' && typeof WebAssembly.instantiate === 'function';
+  checks.push({ label: 'WebAssembly', pass: wasm, fatal: true });
+
+  // 3. Canvas 2D API
+  const canvas = (function() {
+    try { const c = document.createElement('canvas'); return !!c.getContext('2d'); } catch(e) { return false; }
+  })();
+  checks.push({ label: 'Canvas API', pass: canvas, fatal: true });
+
+  // 4. Fetch API
+  const fetchOk = typeof fetch === 'function';
+  checks.push({ label: 'Fetch API', pass: fetchOk, fatal: true });
+
+  // 5. SharedArrayBuffer / cross-origin isolation (needed for ONNX threaded backend)
+  const sab = typeof SharedArrayBuffer !== 'undefined';
+  checks.push({ label: 'SharedArrayBuffer', pass: sab, fatal: false });
+
+  // 6. OffscreenCanvas (used by some Transformers.js paths)
+  const offscreen = typeof OffscreenCanvas !== 'undefined';
+  checks.push({ label: 'OffscreenCanvas', pass: offscreen, fatal: false });
+
+  // 7. Detect iOS (WebKit blocks WASM JIT on iOS < 16.4 and in non-Safari browsers)
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const iOSVersion = isIOS ? (ua.match(/OS (\d+)_/) || [])[1] : null;
+  const iOSUnsupported = isIOS && iOSVersion && parseInt(iOSVersion) < 16;
+  if (isIOS) checks.push({ label: 'iOS 16.4+ required', pass: !iOSUnsupported, fatal: iOSUnsupported });
+
+  // 8. Internet Explorer
+  const isIE = /Trident|MSIE/.test(ua);
+  if (isIE) checks.push({ label: 'Modern browser required', pass: false, fatal: true });
+
+  // Determine overall severity
+  const fatalFails = checks.filter(c => !c.pass && c.fatal);
+  const warnFails  = checks.filter(c => !c.pass && !c.fatal);
+  const hasIssue   = fatalFails.length > 0 || warnFails.length > 0;
+
+  if (!hasIssue) return; // All good — don't show banner
+
+  // Build banner
+  window.addEventListener('DOMContentLoaded', function() {
+    const banner   = document.getElementById('compatBanner');
+    const title    = document.getElementById('compatTitle');
+    const subtitle = document.getElementById('compatSubtitle');
+    const body     = document.getElementById('compatBody');
+    const checksEl = document.getElementById('compatChecks');
+    const note     = document.getElementById('compatNote');
+    const dismiss  = document.getElementById('compatDismiss');
+
+    if (!banner) return;
+
+    if (fatalFails.length > 0) {
+      title.textContent = 'Browser not supported';
+      title.style.color = 'var(--red)';
+      subtitle.textContent = 'CutOut requires features your browser does not support';
+      body.textContent = 'The AI background removal model uses WebAssembly and ES Modules to run entirely in your browser. One or more critical requirements are missing. Please switch to a supported browser to use this tool.';
+      dismiss.textContent = 'Try anyway (may not work) →';
+    } else {
+      title.textContent = 'Partial compatibility';
+      title.style.color = '#fbbf24';
+      banner.style.borderColor = 'rgba(251,191,36,0.3)';
+      document.querySelector('.compat-icon').textContent = '⚡';
+      subtitle.textContent = 'Most features will work, but performance may vary';
+      body.textContent = 'Your browser is missing some optional features. Background removal should still work, but processing may be slower or use a single-threaded fallback.';
+      dismiss.textContent = 'Got it, continue →';
+    }
+
+    // Render check items
+    checks.forEach(function(c) {
+      const div = document.createElement('div');
+      const status = c.pass ? 'pass' : (c.fatal ? 'fail' : 'warn');
+      div.className = 'compat-check ' + status;
+      div.innerHTML = '<span class="ci"></span><span class="cl">' + c.label + '</span>';
+      checksEl.appendChild(div);
+    });
+
+    // Recommended browsers note
+    const browserNote = isIOS
+      ? 'On iOS, use <a href="https://www.apple.com/safari/" target="_blank">Safari 16.4+</a> for best compatibility. Third-party browsers on iOS share the same WebKit engine and may have additional restrictions.'
+      : 'For best results, use the latest version of <a href="https://www.google.com/chrome/" target="_blank">Chrome</a>, <a href="https://www.microsoft.com/edge" target="_blank">Edge</a>, or <a href="https://www.mozilla.org/firefox/" target="_blank">Firefox</a>.';
+    note.innerHTML = '💡 ' + browserNote;
+
+    banner.classList.add('visible');
+
+    dismiss.addEventListener('click', function() {
+      banner.style.opacity = '0';
+      banner.style.transition = 'opacity 0.3s';
+      setTimeout(function() { banner.style.display = 'none'; }, 300);
+    });
+  });
+})();
+</script>
+
+<!-- @imgly/background-removal: designed for browser/file:// use, handles CORS itself -->
+<script type="module">
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.browser.mjs';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let originalImg   = null;   // HTMLImageElement
+let storedPixels  = null;   // ImageData of scaled source (cached for compositing)
+let removedBitmap = null;   // ImageBitmap of the transparent-bg result from library
+let bgImageEl     = null;   // background image element
+let gradDeg       = 135;
+let isProcessing  = false;
+
+// ─── Elements ─────────────────────────────────────────────────────────────────
+const dropzone      = document.getElementById('dropzone');
+const fileInput     = document.getElementById('fileInput');
+const progressWrap  = document.getElementById('progressWrap');
+const progressBar   = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+const resultSection = document.getElementById('resultSection');
+const origCanvas    = document.getElementById('origCanvas');
+const resultCanvas  = document.getElementById('resultCanvas');
+const hiddenCanvas  = document.getElementById('hiddenCanvas');
+const resultWrap    = document.getElementById('resultWrap');
+const statusChip    = document.getElementById('statusChip');
+const imgInfo       = document.getElementById('imgInfo');
+const downloadBtn   = document.getElementById('downloadBtn');
+const applyBtn      = document.getElementById('applyBtn');
+const resetBtn      = document.getElementById('resetBtn');
+const bgFileInput   = document.getElementById('bgFileInput');
+const bgThumb       = document.getElementById('bgThumb');
+const bgDzText      = document.getElementById('bgDzText');
+const modelStatus   = document.getElementById('modelStatus');
+const gradPreview   = document.getElementById('gradPreview');
+
+// ─── Theme toggle ─────────────────────────────────────────────────────────────
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isDark = document.body.dataset.theme === 'dark';
+  document.body.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+});
+
+// ─── Drag & Drop ──────────────────────────────────────────────────────────────
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleFile(file);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+// ─── BG Image Upload ──────────────────────────────────────────────────────────
+bgFileInput.addEventListener('change', () => {
+  const file = bgFileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    bgThumb.src = dataUrl;
+    bgThumb.style.display = 'block';
+    bgDzText.textContent = file.name;
+    const img = new Image();
+    img.onload = () => { bgImageEl = img; };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── BG Tab Switching ─────────────────────────────────────────────────────────
+document.querySelectorAll('.bg-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.bg-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Color swatches ───────────────────────────────────────────────────────────
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => { document.getElementById('solidColor').value = sw.dataset.color; });
+});
+
+// ─── Gradient preview ─────────────────────────────────────────────────────────
+function updateGradPreview() {
+  const c1 = document.getElementById('gradColor1').value;
+  const c2 = document.getElementById('gradColor2').value;
+  gradPreview.style.background = `linear-gradient(${gradDeg}deg, ${c1}, ${c2})`;
+}
+document.getElementById('gradColor1').addEventListener('input', updateGradPreview);
+document.getElementById('gradColor2').addEventListener('input', updateGradPreview);
+document.querySelectorAll('.dir-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    gradDeg = parseInt(btn.dataset.deg);
+    updateGradPreview();
+  });
+});
+
+// ─── Sliders ──────────────────────────────────────────────────────────────────
+document.getElementById('edgeSmooth').addEventListener('input', e => {
+  document.getElementById('edgeSmoothVal').textContent = e.target.value;
+});
+document.getElementById('threshold').addEventListener('input', e => {
+  document.getElementById('thresholdVal').textContent = e.target.value;
+});
+
+// ─── Apply / Reset ────────────────────────────────────────────────────────────
+applyBtn.addEventListener('click', () => { if (removedBitmap) compositeResult(); });
+
+resetBtn.addEventListener('click', () => {
+  originalImg = null; storedPixels = null; removedBitmap = null;
+  dropzone.style.display = '';
+  progressWrap.classList.remove('visible');
+  resultSection.classList.remove('visible');
+  resetBtn.style.display = 'none';
+  applyBtn.disabled = true;
+  fileInput.value = '';
+  modelStatus.innerHTML = '<span>⚙️</span> Model ready — upload another image';
+});
+
+// ─── File → data URL ──────────────────────────────────────────────────────────
+function fileToDataURL(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+function setProgress(pct, label) {
+  progressBar.style.width = pct + '%';
+  progressLabel.textContent = label;
+}
+
+// ─── Handle upload ────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if (isProcessing) return;
+  if (file.size > 10 * 1024 * 1024) { alert('Image too large — please use an image under 10 MB.'); return; }
+
+  isProcessing = true;
+  removedBitmap = null;
+  applyBtn.disabled = true;
+
+  // Read as data URL so we always have a stable reference (no blob URL expiry)
+  const dataURL = await fileToDataURL(file);
+  const img = await loadImage(dataURL);
+  originalImg = img;
+
+  // Scale for display (cap at 1200px)
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const maxDim = 1200;
+  const scale = Math.min(1, maxDim / Math.max(W, H));
+  const dW = Math.round(W * scale), dH = Math.round(H * scale);
+
+  // Draw original preview immediately
+  origCanvas.width = dW; origCanvas.height = dH;
+  origCanvas.getContext('2d').drawImage(img, 0, 0, dW, dH);
+
+  // Cache source pixels once (used for every composite)
+  hiddenCanvas.width = dW; hiddenCanvas.height = dH;
+  const hctx = hiddenCanvas.getContext('2d');
+  hctx.drawImage(img, 0, 0, dW, dH);
+  storedPixels = hctx.getImageData(0, 0, dW, dH);
+
+  imgInfo.textContent = `${W} × ${H}px`;
+  dropzone.style.display = 'none';
+  resetBtn.style.display = 'inline';
+  resultSection.classList.add('visible');
+  progressWrap.classList.add('visible');
+  setProgress(5, 'Preparing image…');
+  modelStatus.innerHTML = '<span>⏳</span> Running background removal…';
+
+  try {
+    // removeBackground accepts a File, Blob, or URL string.
+    // Passing the File directly avoids any fetch — it reads it locally.
+    setProgress(15, 'Downloading model (first use only)…');
+
+    const resultBlob = await removeBackground(file, {
+      model: 'small',
+      output: { format: 'image/png', quality: 1 },
+      progress: (key, current, total) => {
+        if (total > 0) {
+          const pct = Math.round(15 + (current / total) * 70);
+          setProgress(pct, `${key === 'compute:inference' ? 'Running AI…' : 'Loading model…'}`);
+        }
+      }
+    });
+
+    setProgress(90, 'Rendering result…');
+
+    // Decode the returned PNG blob into an ImageBitmap for fast compositing
+    removedBitmap = await createImageBitmap(resultBlob);
+
+    setProgress(100, 'Done!');
+    progressWrap.classList.remove('visible');
+    modelStatus.innerHTML = '<span>✅</span> Background removed successfully';
+    applyBtn.disabled = false;
+    isProcessing = false;
+
+    compositeResult();
+
+  } catch (err) {
+    console.error(err);
+    progressWrap.classList.remove('visible');
+    statusChip.className = 'status-chip error';
+    statusChip.innerHTML = '<span class="dot"></span> Error: ' + (err.message || 'Processing failed');
+    modelStatus.innerHTML = '<span>❌</span> ' + (err.message || 'Unknown error');
+    isProcessing = false;
+  }
+}
+
+// ─── Composite Result ─────────────────────────────────────────────────────────
+function compositeResult() {
+  if (!removedBitmap || !storedPixels) return;
+
+  const W = storedPixels.width, H = storedPixels.height;
+  const activeTab = document.querySelector('.bg-tab.active')?.dataset.tab || 'transparent';
+
+  resultCanvas.width = W; resultCanvas.height = H;
+  const ctx = resultCanvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  if (activeTab === 'transparent') {
+    // Just draw the already-transparent result at display scale
+    ctx.drawImage(removedBitmap, 0, 0, W, H);
+
+  } else {
+    // 1. Draw background
+    if (activeTab === 'color') {
+      ctx.fillStyle = document.getElementById('solidColor').value;
+      ctx.fillRect(0, 0, W, H);
+    } else if (activeTab === 'gradient') {
+      const c1 = document.getElementById('gradColor1').value;
+      const c2 = document.getElementById('gradColor2').value;
+      const rad = gradDeg * Math.PI / 180;
+      const cx = W / 2, cy = H / 2;
+      const len = Math.abs(W * Math.sin(rad)) + Math.abs(H * Math.cos(rad));
+      const grd = ctx.createLinearGradient(
+        cx - Math.sin(rad) * len / 2, cy - Math.cos(rad) * len / 2,
+        cx + Math.sin(rad) * len / 2, cy + Math.cos(rad) * len / 2
+      );
+      grd.addColorStop(0, c1); grd.addColorStop(1, c2);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+    } else if (activeTab === 'image' && bgImageEl) {
+      ctx.drawImage(bgImageEl, 0, 0, W, H);
+    }
+
+    // 2. Composite the transparent foreground on top
+    ctx.drawImage(removedBitmap, 0, 0, W, H);
+  }
+
+  // Update download link
+  downloadBtn.href = resultCanvas.toDataURL('image/png');
+  downloadBtn.download = 'cutout.png';
+
+  resultWrap.className = 'canvas-wrap' + (activeTab === 'transparent' ? ' checker-bg' : '');
+  statusChip.className = 'status-chip success';
+  statusChip.innerHTML = '<span class="dot"></span> Background removed';
+}
+</script>
+</body>
+</html>
