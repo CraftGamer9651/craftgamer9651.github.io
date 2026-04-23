@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QuickTube — Play & Search YouTube</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
   <style>
     :root{
@@ -58,8 +59,15 @@
       line-height: 1.1;
       margin-bottom: 0.75rem; 
       }
+    h1 em{
+      font-style: normal;
+      color: var(--accent);
+    }
     
-    .lead{margin:0 0 18px;color:var(--muted)}
+    .lead{margin:0 0 18px;
+          color:var(--muted)
+          font-family: 'DM Sans', sans-serif;
+         }
 
     .card{
       width:90%;
@@ -184,7 +192,7 @@
 <body>
 <main class="container">
 
-  <h1 id="logoBtn" style="cursor:pointer;">QuickTube</h1>
+  <h1 id="logoBtn" style="cursor:pointer;">Quick<em>Tube</em></h1>
   <p class="lead">Paste a YouTube link, search videos, or browse trending.</p>
 
   <div style="width:90%;display:flex;justify-content:flex-end">
