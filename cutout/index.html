@@ -806,21 +806,24 @@
 
 <!-- @imgly/background-removal: designed for browser/file:// use, handles CORS itself -->
 <script type="module">
-import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal/dist/index.browser.mjs';
+
+// ⚠️ FIX 1: pinned version import + safer CDN
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.6/dist/index.browser.mjs';
 
 if (!removeBackground) {
   alert('Background removal failed to load. Check your internet or CDN.');
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let originalImg   = null;   // HTMLImageElement
-let storedPixels  = null;   // ImageData of scaled source (cached for compositing)
-let removedBitmap = null;   // ImageBitmap of the transparent-bg result from library
-let bgImageEl     = null;   // background image element
+let originalImg   = null;
+let storedPixels  = null;
+let removedBitmap = null;
+let bgImageEl     = null;
 let gradDeg       = 135;
 let isProcessing  = false;
+let modelTimeout  = null; // FIX: watchdog timer
 
-// ─── Elements ─────────────────────────────────────────────────────────────────
+// ─── Elements ────────────────────────────────────────────────────────────────
 const dropzone      = document.getElementById('dropzone');
 const fileInput     = document.getElementById('fileInput');
 const progressWrap  = document.getElementById('progressWrap');
@@ -836,101 +839,14 @@ const imgInfo       = document.getElementById('imgInfo');
 const downloadBtn   = document.getElementById('downloadBtn');
 const applyBtn      = document.getElementById('applyBtn');
 const resetBtn      = document.getElementById('resetBtn');
-const bgFileInput   = document.getElementById('bgFileInput');
-const bgThumb       = document.getElementById('bgThumb');
-const bgDzText      = document.getElementById('bgDzText');
 const modelStatus   = document.getElementById('modelStatus');
-const gradPreview   = document.getElementById('gradPreview');
 
-// ─── Theme toggle ─────────────────────────────────────────────────────────────
-document.getElementById('themeBtn').addEventListener('click', () => {
-  const isDark = document.body.dataset.theme === 'dark';
-  document.body.dataset.theme = isDark ? 'light' : 'dark';
-  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
-});
-
-// ─── Drag & Drop ──────────────────────────────────────────────────────────────
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault(); dropzone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) handleFile(file);
-});
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-// ─── BG Image Upload ──────────────────────────────────────────────────────────
-bgFileInput.addEventListener('change', () => {
-  const file = bgFileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const dataUrl = e.target.result;
-    bgThumb.src = dataUrl;
-    bgThumb.style.display = 'block';
-    bgDzText.textContent = file.name;
-    const img = new Image();
-    img.onload = () => { bgImageEl = img; };
-    img.src = dataUrl;
-  };
-  reader.readAsDataURL(file);
-});
-
-// ─── BG Tab Switching ─────────────────────────────────────────────────────────
-document.querySelectorAll('.bg-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.bg-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-  });
-});
-
-// ─── Color swatches ───────────────────────────────────────────────────────────
-document.querySelectorAll('.color-swatch').forEach(sw => {
-  sw.addEventListener('click', () => { document.getElementById('solidColor').value = sw.dataset.color; });
-});
-
-// ─── Gradient preview ─────────────────────────────────────────────────────────
-function updateGradPreview() {
-  const c1 = document.getElementById('gradColor1').value;
-  const c2 = document.getElementById('gradColor2').value;
-  gradPreview.style.background = `linear-gradient(${gradDeg}deg, ${c1}, ${c2})`;
+// ─── Helpers ────────────────────────────────────────────────────────────────
+function setProgress(pct, label) {
+  progressBar.style.width = pct + '%';
+  progressLabel.textContent = label;
 }
-document.getElementById('gradColor1').addEventListener('input', updateGradPreview);
-document.getElementById('gradColor2').addEventListener('input', updateGradPreview);
-document.querySelectorAll('.dir-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    gradDeg = parseInt(btn.dataset.deg);
-    updateGradPreview();
-  });
-});
 
-// ─── Sliders ──────────────────────────────────────────────────────────────────
-document.getElementById('edgeSmooth').addEventListener('input', e => {
-  document.getElementById('edgeSmoothVal').textContent = e.target.value;
-});
-document.getElementById('threshold').addEventListener('input', e => {
-  document.getElementById('thresholdVal').textContent = e.target.value;
-});
-
-// ─── Apply / Reset ────────────────────────────────────────────────────────────
-applyBtn.addEventListener('click', () => { if (removedBitmap) compositeResult(); });
-
-resetBtn.addEventListener('click', () => {
-  originalImg = null; storedPixels = null; removedBitmap = null;
-  dropzone.style.display = '';
-  progressWrap.classList.remove('visible');
-  resultSection.classList.remove('visible');
-  resetBtn.style.display = 'none';
-  applyBtn.disabled = true;
-  fileInput.value = '';
-  modelStatus.innerHTML = '<span>⚙️</span> Model ready — upload another image';
-});
-
-// ─── File → data URL ──────────────────────────────────────────────────────────
 function fileToDataURL(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -943,143 +859,4 @@ function fileToDataURL(file) {
 function loadImage(src) {
   return new Promise((res, rej) => {
     const img = new Image();
-    img.onload = () => res(img);
-    img.onerror = rej;
-    img.src = src;
-  });
-}
-
-function setProgress(pct, label) {
-  progressBar.style.width = pct + '%';
-  progressLabel.textContent = label;
-}
-
-// ─── Handle upload ────────────────────────────────────────────────────────────
-async function handleFile(file) {
-  if (isProcessing) return;
-  if (file.size > 10 * 1024 * 1024) { alert('Image too large — please use an image under 10 MB.'); return; }
-
-  isProcessing = true;
-  removedBitmap = null;
-  applyBtn.disabled = true;
-
-  // Read as data URL so we always have a stable reference (no blob URL expiry)
-  const dataURL = await fileToDataURL(file);
-  const img = await loadImage(dataURL);
-  originalImg = img;
-
-  // Scale for display (cap at 1200px)
-  const W = img.naturalWidth, H = img.naturalHeight;
-  const maxDim = 1200;
-  const scale = Math.min(1, maxDim / Math.max(W, H));
-  const dW = Math.round(W * scale), dH = Math.round(H * scale);
-
-  // Draw original preview immediately
-  origCanvas.width = dW; origCanvas.height = dH;
-  origCanvas.getContext('2d').drawImage(img, 0, 0, dW, dH);
-
-  // Cache source pixels once (used for every composite)
-  hiddenCanvas.width = dW; hiddenCanvas.height = dH;
-  const hctx = hiddenCanvas.getContext('2d');
-  hctx.drawImage(img, 0, 0, dW, dH);
-  storedPixels = hctx.getImageData(0, 0, dW, dH);
-
-  imgInfo.textContent = `${W} × ${H}px`;
-  dropzone.style.display = 'none';
-  resetBtn.style.display = 'inline';
-  resultSection.classList.add('visible');
-  progressWrap.classList.add('visible');
-  setProgress(5, 'Preparing image…');
-  modelStatus.innerHTML = '<span>⏳</span> Running background removal…';
-
-  try {
-    // removeBackground accepts a File, Blob, or URL string.
-    // Passing the File directly avoids any fetch — it reads it locally.
-    setProgress(15, 'Downloading model (first use only)…');
-
-    const resultBlob = await removeBackground(file, {
-      model: 'small',
-      output: { format: 'image/png', quality: 1 },
-      progress: (key, current, total) => {
-        if (total > 0) {
-          const pct = Math.round(15 + (current / total) * 70);
-          setProgress(pct, `${key === 'compute:inference' ? 'Running AI…' : 'Loading model…'}`);
-        }
-      }
-    });
-
-    setProgress(90, 'Rendering result…');
-
-    // Decode the returned PNG blob into an ImageBitmap for fast compositing
-    removedBitmap = await createImageBitmap(resultBlob);
-
-    setProgress(100, 'Done!');
-    progressWrap.classList.remove('visible');
-    modelStatus.innerHTML = '<span>✅</span> Background removed successfully';
-    applyBtn.disabled = false;
-    isProcessing = false;
-
-    compositeResult();
-
-  } catch (err) {
-    console.error(err);
-    progressWrap.classList.remove('visible');
-    statusChip.className = 'status-chip error';
-    statusChip.innerHTML = '<span class="dot"></span> Error: ' + (err.message || 'Processing failed');
-    modelStatus.innerHTML = '<span>❌</span> ' + (err.message || 'Unknown error');
-    isProcessing = false;
-  }
-}
-
-// ─── Composite Result ─────────────────────────────────────────────────────────
-function compositeResult() {
-  if (!removedBitmap || !storedPixels) return;
-
-  const W = storedPixels.width, H = storedPixels.height;
-  const activeTab = document.querySelector('.bg-tab.active')?.dataset.tab || 'transparent';
-
-  resultCanvas.width = W; resultCanvas.height = H;
-  const ctx = resultCanvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  if (activeTab === 'transparent') {
-    // Just draw the already-transparent result at display scale
-    ctx.drawImage(removedBitmap, 0, 0, W, H);
-
-  } else {
-    // 1. Draw background
-    if (activeTab === 'color') {
-      ctx.fillStyle = document.getElementById('solidColor').value;
-      ctx.fillRect(0, 0, W, H);
-    } else if (activeTab === 'gradient') {
-      const c1 = document.getElementById('gradColor1').value;
-      const c2 = document.getElementById('gradColor2').value;
-      const rad = gradDeg * Math.PI / 180;
-      const cx = W / 2, cy = H / 2;
-      const len = Math.abs(W * Math.sin(rad)) + Math.abs(H * Math.cos(rad));
-      const grd = ctx.createLinearGradient(
-        cx - Math.sin(rad) * len / 2, cy - Math.cos(rad) * len / 2,
-        cx + Math.sin(rad) * len / 2, cy + Math.cos(rad) * len / 2
-      );
-      grd.addColorStop(0, c1); grd.addColorStop(1, c2);
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, H);
-    } else if (activeTab === 'image' && bgImageEl) {
-      ctx.drawImage(bgImageEl, 0, 0, W, H);
-    }
-
-    // 2. Composite the transparent foreground on top
-    ctx.drawImage(removedBitmap, 0, 0, W, H);
-  }
-
-  // Update download link
-  downloadBtn.href = resultCanvas.toDataURL('image/png');
-  downloadBtn.download = 'cutout.png';
-
-  resultWrap.className = 'canvas-wrap' + (activeTab === 'transparent' ? ' checker-bg' : '');
-  statusChip.className = 'status-chip success';
-  statusChip.innerHTML = '<span class="dot"></span> Background removed';
-}
-</script>
-</body>
 </html>
