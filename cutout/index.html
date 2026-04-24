@@ -643,9 +643,10 @@ async function init(){
 
     console.log("Segmenter ready");
   } catch (e) {
-    console.error("Model init failed:", e);
-    progressWrap.style.display="none";
-    alert("AI model failed to load. Check your connection or try refreshing.");
+      console.error("Model init failed:", e);
+      console.error("Stack:", e?.stack);
+      progressWrap.style.display="none";
+      alert("AI model failed to load. Check console for details.");
   }
 }
 
