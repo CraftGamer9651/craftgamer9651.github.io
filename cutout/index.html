@@ -629,8 +629,7 @@ async function init(){
 
     segmenter = await ImageSegmenter.createFromOptions(vision,{
       baseOptions:{
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass/float32/1/selfie_multiclass.tflite",
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-assets/selfie_segmentation.tflite",
         delegate:"CPU"
       },
       outputCategoryMask:true,
