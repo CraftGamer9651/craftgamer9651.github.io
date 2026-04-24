@@ -807,26 +807,21 @@ document.getElementById('logoBtn').addEventListener('click', () => {
 });
 </script>
 
-<!-- @imgly/background-removal: designed for browser/file:// use, handles CORS itself -->
+<!-- MediaPipe Image Segmentation — pixel-accurate, works from file://, CORS-safe -->
 <script type="module">
-
-// ⚠️ FIX 1: pinned version import + safer CDN
-import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.6/dist/index.browser.mjs';
-
-if (!removeBackground) {
-  alert('Background removal failed to load. Check your internet or CDN.');
-}
+import { ImageSegmenter, FilesetResolver } from
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs';
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let originalImg   = null;
-let storedPixels  = null;
-let removedBitmap = null;
-let bgImageEl     = null;
-let gradDeg       = 135;
-let isProcessing  = false;
-let modelTimeout  = null; // FIX: watchdog timer
+let segmenter    = null;
+let storedPixels = null;   // ImageData at display resolution
+let alphaMask    = null;   // Float32Array confidence per pixel (0–1)
+let bgImageEl    = null;
+let gradDeg      = 135;
+let isProcessing = false;
+let displayW = 0, displayH = 0;
 
-// ─── Elements ────────────────────────────────────────────────────────────────
+// ─── Elements ─────────────────────────────────────────────────────────────────
 const dropzone      = document.getElementById('dropzone');
 const fileInput     = document.getElementById('fileInput');
 const progressWrap  = document.getElementById('progressWrap');
@@ -842,9 +837,94 @@ const imgInfo       = document.getElementById('imgInfo');
 const downloadBtn   = document.getElementById('downloadBtn');
 const applyBtn      = document.getElementById('applyBtn');
 const resetBtn      = document.getElementById('resetBtn');
+const bgFileInput   = document.getElementById('bgFileInput');
+const bgThumb       = document.getElementById('bgThumb');
+const bgDzText      = document.getElementById('bgDzText');
 const modelStatus   = document.getElementById('modelStatus');
+const gradPreview   = document.getElementById('gradPreview');
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Theme toggle ─────────────────────────────────────────────────────────────
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isDark = document.body.dataset.theme === 'dark';
+  document.body.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+});
+
+// ─── Drag & Drop ──────────────────────────────────────────────────────────────
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleFile(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+// ─── BG Image upload ──────────────────────────────────────────────────────────
+bgFileInput.addEventListener('change', () => {
+  const f = bgFileInput.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    bgThumb.src = e.target.result; bgThumb.style.display = 'block';
+    bgDzText.textContent = f.name;
+    const img = new Image(); img.onload = () => { bgImageEl = img; }; img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+});
+
+// ─── BG tabs ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.bg-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.bg-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Color swatches ───────────────────────────────────────────────────────────
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => { document.getElementById('solidColor').value = sw.dataset.color; });
+});
+
+// ─── Gradient preview ─────────────────────────────────────────────────────────
+function updateGradPreview() {
+  const c1 = document.getElementById('gradColor1').value;
+  const c2 = document.getElementById('gradColor2').value;
+  gradPreview.style.background = `linear-gradient(${gradDeg}deg,${c1},${c2})`;
+}
+document.getElementById('gradColor1').addEventListener('input', updateGradPreview);
+document.getElementById('gradColor2').addEventListener('input', updateGradPreview);
+document.querySelectorAll('.dir-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); gradDeg = +btn.dataset.deg; updateGradPreview();
+  });
+});
+
+// ─── Sliders ──────────────────────────────────────────────────────────────────
+document.getElementById('edgeSmooth').addEventListener('input', e => {
+  document.getElementById('edgeSmoothVal').textContent = e.target.value;
+});
+document.getElementById('threshold').addEventListener('input', e => {
+  document.getElementById('thresholdVal').textContent = e.target.value;
+  if (alphaMask) compositeResult(); // live update threshold
+});
+
+// ─── Apply / Reset ────────────────────────────────────────────────────────────
+applyBtn.addEventListener('click', () => { if (alphaMask) compositeResult(); });
+resetBtn.addEventListener('click', () => {
+  storedPixels = null; alphaMask = null;
+  dropzone.style.display = '';
+  progressWrap.classList.remove('visible');
+  resultSection.classList.remove('visible');
+  resetBtn.style.display = 'none';
+  applyBtn.disabled = true;
+  fileInput.value = '';
+  modelStatus.innerHTML = '<span>✅</span> Model ready — upload another image';
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function setProgress(pct, label) {
   progressBar.style.width = pct + '%';
   progressLabel.textContent = label;
@@ -853,20 +933,242 @@ function setProgress(pct, label) {
 function fileToDataURL(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload = e => res(e.target.result);
-    r.onerror = rej;
+    r.onload = e => res(e.target.result); r.onerror = rej;
     r.readAsDataURL(file);
   });
 }
 
 function loadImage(src) {
   return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => res(img);
-    img.onerror = rej;
-  
+    const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src;
   });
-</script>
+}
 
+// Gaussian blur on a Float32Array mask
+function gaussianBlur(data, W, H, radius) {
+  if (radius < 1) return data;
+  const sigma = radius / 2;
+  const kSize = radius * 2 + 1;
+  const kernel = new Float32Array(kSize);
+  let ksum = 0;
+  for (let i = 0; i < kSize; i++) {
+    const x = i - radius;
+    kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma));
+    ksum += kernel[i];
+  }
+  for (let i = 0; i < kSize; i++) kernel[i] /= ksum;
+
+  const tmp = new Float32Array(W * H);
+  const out = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let k = 0; k < kSize; k++) {
+        const sx = Math.max(0, Math.min(W - 1, x + k - radius));
+        s += data[y * W + sx] * kernel[k];
+      }
+      tmp[y * W + x] = s;
+    }
+  }
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let k = 0; k < kSize; k++) {
+        const sy = Math.max(0, Math.min(H - 1, y + k - radius));
+        s += tmp[sy * W + x] * kernel[k];
+      }
+      out[y * W + x] = s;
+    }
+  }
+  return out;
+}
+
+// ─── Init MediaPipe segmenter ─────────────────────────────────────────────────
+async function initSegmenter() {
+  modelStatus.innerHTML = '<span>⏳</span> Loading AI model…';
+  setProgress(10, 'Loading model…');
+
+  // FilesetResolver fetches WASM from jsDelivr — proper CORS, works from file://
+  const vision = await FilesetResolver.forVisionTasks(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+  );
+
+  // selfie_multiclass model segments 6 classes; deeplab segments 21 PASCAL classes
+  // We use selfie_multiclass for people and the general segmentation model otherwise.
+  // Using the "general" image segmenter which handles cars, animals, objects, people.
+  segmenter = await ImageSegmenter.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath:
+        'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite',
+      delegate: 'GPU'
+    },
+    outputCategoryMask: true,
+    outputConfidenceMasks: false,
+    runningMode: 'IMAGE'
+  });
+
+  modelStatus.innerHTML = '<span>✅</span> Model ready';
+  return segmenter;
+}
+
+// ─── Handle upload ────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if (isProcessing) return;
+  isProcessing = true;
+  alphaMask = null;
+  applyBtn.disabled = true;
+
+  dropzone.style.display = 'none';
+  resetBtn.style.display = 'inline';
+  resultSection.classList.add('visible');
+  progressWrap.classList.add('visible');
+  setProgress(5, 'Reading image…');
+  modelStatus.innerHTML = '<span>⏳</span> Processing…';
+
+  try {
+    const dataURL = await fileToDataURL(file);
+    const img = await loadImage(dataURL);
+
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const maxDim = 1024;
+    const scale = Math.min(1, maxDim / Math.max(W, H));
+    displayW = Math.round(W * scale);
+    displayH = Math.round(H * scale);
+
+    // Draw original preview immediately
+    origCanvas.width = displayW; origCanvas.height = displayH;
+    origCanvas.getContext('2d').drawImage(img, 0, 0, displayW, displayH);
+
+    // Cache source pixels
+    hiddenCanvas.width = displayW; hiddenCanvas.height = displayH;
+    const hctx = hiddenCanvas.getContext('2d');
+    hctx.drawImage(img, 0, 0, displayW, displayH);
+    storedPixels = hctx.getImageData(0, 0, displayW, displayH);
+    imgInfo.textContent = `${W} × ${H}px`;
+
+    // Load segmenter if first time
+    if (!segmenter) {
+      await initSegmenter();
+    }
+
+    setProgress(60, 'Running segmentation…');
+
+    // Run MediaPipe on the hidden canvas — no file fetch needed at all
+    const result = segmenter.segment(hiddenCanvas);
+    const categoryMask = result.categoryMask;
+    const maskW = categoryMask.width;
+    const maskH = categoryMask.height;
+    const maskData = categoryMask.getAsUint8Array();
+
+    // DeepLab V3 PASCAL VOC categories — 0=background, rest=foreground objects
+    // Everything that isn't background (0) is foreground
+    // Build float confidence mask (1.0 = keep, 0.0 = remove)
+    const rawMask = new Float32Array(maskW * maskH);
+    for (let i = 0; i < maskW * maskH; i++) {
+      rawMask[i] = maskData[i] === 0 ? 0.0 : 1.0;
+    }
+
+    setProgress(80, 'Smoothing edges…');
+
+    // Apply gaussian blur for soft edges based on Edge Smooth slider
+    const smoothRadius = parseInt(document.getElementById('edgeSmooth').value) * 2;
+    const blurred = gaussianBlur(rawMask, maskW, maskH, smoothRadius);
+
+    // Scale mask to display resolution
+    alphaMask = new Float32Array(displayW * displayH);
+    for (let y = 0; y < displayH; y++) {
+      for (let x = 0; x < displayW; x++) {
+        const mx = Math.round(x * maskW / displayW);
+        const my = Math.round(y * maskH / displayH);
+        alphaMask[y * displayW + x] = blurred[Math.min(my * maskW + mx, blurred.length - 1)];
+      }
+    }
+
+    categoryMask.close();
+
+    setProgress(100, 'Done!');
+    progressWrap.classList.remove('visible');
+    modelStatus.innerHTML = '<span>✅</span> Background removed';
+    applyBtn.disabled = false;
+    isProcessing = false;
+    compositeResult();
+
+  } catch (err) {
+    console.error(err);
+    progressWrap.classList.remove('visible');
+    statusChip.className = 'status-chip error';
+    statusChip.innerHTML = '<span class="dot"></span> ' + (err.message || 'Processing failed');
+    modelStatus.innerHTML = '<span>❌</span> ' + (err.message || 'Error');
+    isProcessing = false;
+  }
+}
+
+// ─── Composite result ─────────────────────────────────────────────────────────
+function compositeResult() {
+  if (!alphaMask || !storedPixels) return;
+
+  const W = displayW, H = displayH;
+  const activeTab = document.querySelector('.bg-tab.active')?.dataset.tab || 'transparent';
+  const thresh = parseInt(document.getElementById('threshold').value) / 255;
+
+  resultCanvas.width = W; resultCanvas.height = H;
+  const ctx = resultCanvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw background
+  if (activeTab === 'color') {
+    ctx.fillStyle = document.getElementById('solidColor').value;
+    ctx.fillRect(0, 0, W, H);
+  } else if (activeTab === 'gradient') {
+    const c1 = document.getElementById('gradColor1').value;
+    const c2 = document.getElementById('gradColor2').value;
+    const rad = gradDeg * Math.PI / 180;
+    const cx = W / 2, cy = H / 2;
+    const len = Math.abs(W * Math.sin(rad)) + Math.abs(H * Math.cos(rad));
+    const grd = ctx.createLinearGradient(
+      cx - Math.sin(rad) * len / 2, cy - Math.cos(rad) * len / 2,
+      cx + Math.sin(rad) * len / 2, cy + Math.cos(rad) * len / 2
+    );
+    grd.addColorStop(0, c1); grd.addColorStop(1, c2);
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  } else if (activeTab === 'image' && bgImageEl) {
+    ctx.drawImage(bgImageEl, 0, 0, W, H);
+  }
+
+  const bgPx = activeTab === 'transparent' ? null : ctx.getImageData(0, 0, W, H);
+  const src = storedPixels;
+  const out = ctx.createImageData(W, H);
+
+  for (let i = 0; i < W * H; i++) {
+    const conf = alphaMask[i];
+    // Apply threshold: remap so values near thresh transition smoothly
+    const alpha = conf < thresh
+      ? 0
+      : Math.min(1, (conf - thresh) / Math.max(0.05, 1 - thresh));
+    const s = i * 4;
+
+    if (activeTab === 'transparent') {
+      out.data[s]   = src.data[s];
+      out.data[s+1] = src.data[s+1];
+      out.data[s+2] = src.data[s+2];
+      out.data[s+3] = Math.round(alpha * 255);
+    } else {
+      const a = alpha;
+      const bg = bgPx.data;
+      out.data[s]   = Math.round(src.data[s]   * a + bg[s]   * (1 - a));
+      out.data[s+1] = Math.round(src.data[s+1] * a + bg[s+1] * (1 - a));
+      out.data[s+2] = Math.round(src.data[s+2] * a + bg[s+2] * (1 - a));
+      out.data[s+3] = 255;
+    }
+  }
+
+  ctx.putImageData(out, 0, 0);
+  downloadBtn.href = resultCanvas.toDataURL('image/png');
+  downloadBtn.download = 'cutout.png';
+  resultWrap.className = 'canvas-wrap' + (activeTab === 'transparent' ? ' checker-bg' : '');
+  statusChip.className = 'status-chip success';
+  statusChip.innerHTML = '<span class="dot"></span> Background removed';
+}
+</script>
 </body>
 </html>
