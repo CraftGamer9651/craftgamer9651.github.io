@@ -629,7 +629,7 @@ async function init(){
 
     segmenter = await ImageSegmenter.createFromOptions(vision,{
       baseOptions:{
-        modelAssetPath: "https://storage.googleapis.com/mediapipe-assets/selfie_segmentation.tflite",
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float32/1/selfie_segmenter.tflite",
         delegate:"CPU"
       },
       outputCategoryMask:true,
@@ -752,27 +752,68 @@ fileInput.addEventListener("change",async e=>{
       }
     }
 
-    const mask=new Float32Array(w*h);
-    for(let i=0;i<mask.length;i++){
-      mask[i]=Math.max(0,Math.min(1,(conf[i]-0.2)/0.8));
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = mw;
+    maskCanvas.height = mh;
+    
+    const mctx = maskCanvas.getContext("2d");
+    
+    // draw raw mask into image data
+    const imgData = mctx.createImageData(mw, mh);
+    
+    for (let i = 0; i < conf.length; i++) {
+      const v = conf[i];
+      imgData.data[i * 4 + 0] = v * 255;
+      imgData.data[i * 4 + 1] = v * 255;
+      imgData.data[i * 4 + 2] = v * 255;
+      imgData.data[i * 4 + 3] = 255;
+    }
+    
+    mctx.putImageData(imgData, 0, 0);
+    
+    // HIGH QUALITY UPSCALE (this is the key improvement)
+    const upCanvas = document.createElement("canvas");
+    upCanvas.width = w;
+    upCanvas.height = h;
+    
+    const upCtx = upCanvas.getContext("2d");
+    
+    upCtx.imageSmoothingEnabled = true;
+    upCtx.imageSmoothingQuality = "high";
+    
+    upCtx.drawImage(maskCanvas, 0, 0, w, h);
+    
+    // extract final mask
+    const upData = upCtx.getImageData(0, 0, w, h).data;
+    
+    alphaMask = refineAlpha(alphaMask, w, h);
+    
+    for (let i = 0; i < w * h; i++) {
+      alphaMask[i] = upData[i * 4] / 255;
     }
 
-    const refined=refine(mask,w,h);
-
-    alphaMask=new Float32Array(w*h);
-
-    const maskObj = res.confidenceMasks?.[0];
-    const mw = maskObj?.width ?? w;
-    const mh = maskObj?.height ?? h;
-
-    for(let y=0;y<h;y++){
-      for(let x=0;x<w;x++){
-        const mx=x*(mw/w);
-        const my=y*(mh/h);
-        alphaMask[y*w+x]=bilinear(refined,mw,mh,mx,my);
+    function refineAlpha(mask, w, h) {
+      const out = new Float32Array(mask);
+    
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = y * w + x;
+    
+          const c = mask[i];
+          const avg =
+            (mask[i - 1] +
+             mask[i + 1] +
+             mask[i - w] +
+             mask[i + w]) * 0.25;
+    
+          // stronger edge preservation than before
+          out[i] = c * 0.6 + avg * 0.4;
+        }
       }
+    
+      return out;
     }
-
+      
     setProgress(100,"Done");
     setTimeout(()=>progressWrap.style.display="none",300);
 
@@ -801,7 +842,10 @@ function render(){
   const thresh=0.5;
 
   for(let i=0;i<w*h;i++){
-    const a=smoothstep(thresh-0.08,thresh+0.08,alphaMask[i]);
+    let a = alphaMask[i];
+
+    // soft clamp curve (reduces harsh edges + halos)
+    a = Math.pow(a, 1.2);
     const s=i*4;
 
     out.data[s]=srcPixels.data[s];
