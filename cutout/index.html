@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CutOut — Background Remover</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
 <style>
-  :root {
+:root {
     --bg: #0f0f13;
     --bg2: #16161d;
     --bg3: #1e1e28;
@@ -519,656 +521,239 @@
   }
 </style>
 </head>
+
 <body data-theme="dark">
 
 <header>
   <div class="logo" id="logoBtn" style="cursor:pointer;">Cut<span>Out</span></div>
   <div class="header-right">
     <span class="badge">AI-Powered</span>
-    <button class="theme-btn" id="themeBtn" title="Toggle light/dark mode">☀️</button>
+    <button class="theme-btn" id="themeBtn">☀️</button>
   </div>
 </header>
 
 <main>
-  <!-- COMPATIBILITY BANNER -->
-  <div class="compat-banner" id="compatBanner">
-    <div class="compat-banner-head">
-      <div class="compat-icon">⚠️</div>
+
+<div class="hero">
+  <h1>Remove backgrounds<br><em>instantly</em></h1>
+  <p>Upload any image — improved AI segmentation with sharper edges and better accuracy.</p>
+</div>
+
+<div class="workspace">
+
+<!-- LEFT -->
+<div class="panel" id="uploadPanel">
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="dz-icon">🖼️</div>
+    <div class="dz-text"><strong>Drop image</strong><br>or click to upload</div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="spinner"></div>
+    <div class="progress-label" id="progressLabel">Loading…</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="canvases-row">
       <div>
-        <div class="compat-title" id="compatTitle">Compatibility issue detected</div>
-        <div class="compat-subtitle" id="compatSubtitle">Some features may not work on this browser or device</div>
+        <div class="canvas-label">Original</div>
+        <div class="canvas-wrap"><canvas id="origCanvas"></canvas></div>
+      </div>
+      <div>
+        <div class="canvas-label">Result</div>
+        <div class="canvas-wrap checker-bg"><canvas id="resultCanvas"></canvas></div>
       </div>
     </div>
-    <div class="compat-body" id="compatBody"></div>
-    <div class="compat-checks" id="compatChecks"></div>
-    <div class="compat-note" id="compatNote"></div>
-    <button class="compat-dismiss" id="compatDismiss">Continue anyway →</button>
+
+    <a id="downloadBtn" class="download-btn" download="cutout.png">⬇ Download PNG</a>
   </div>
 
-  <div class="hero">
-    <h1>Remove backgrounds<br><em>instantly</em></h1>
-    <p>Upload any image — our AI cuts out the subject in seconds. Swap in a new background, color, or gradient.</p>
-  </div>
+</div>
 
-  <div class="workspace">
-    <!-- LEFT: Upload + Result -->
-    <div>
-      <div class="panel" id="uploadPanel">
-        <div class="top-bar">
-          <div class="panel-title">Source Image</div>
-          <button class="reset-link" id="resetBtn" style="display:none">✕ Start over</button>
-        </div>
+<!-- RIGHT -->
+<div class="panel">
 
-        <!-- Drop Zone -->
-        <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept="image/*">
-          <div class="dz-icon">🖼️</div>
-          <div class="dz-text"><strong>Drop an image here</strong><br>or click to browse</div>
-          <div class="dz-hint">PNG, JPG, WEBP · Max 10MB</div>
-        </div>
+<div class="panel-title">Background Options</div>
 
-        <!-- Progress -->
-        <div class="progress-wrap" id="progressWrap">
-          <div class="spinner"></div>
-          <div class="progress-label" id="progressLabel">Loading AI model…</div>
-          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
-        </div>
+<button class="apply-btn" id="applyBtn" disabled>Apply</button>
 
-        <!-- Result Section -->
-        <div class="result-section" id="resultSection">
-          <div class="canvases-row">
-            <div>
-              <div class="canvas-label">Original</div>
-              <div class="canvas-wrap">
-                <canvas id="origCanvas"></canvas>
-              </div>
-            </div>
-            <div>
-              <div class="canvas-label">Result</div>
-              <div class="canvas-wrap checker-bg" id="resultWrap">
-                <canvas id="resultCanvas"></canvas>
-              </div>
-            </div>
-          </div>
+</div>
 
-          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-            <span class="status-chip success" id="statusChip">
-              <span class="dot"></span> Background removed
-            </span>
-            <span id="imgInfo" style="font-size:12px; color:var(--text3);"></span>
-          </div>
-
-          <a id="downloadBtn" class="download-btn" download="cutout.png">
-            ⬇ Download PNG
-          </a>
-        </div>
-      </div>
-
-      <!-- Hidden canvases for processing -->
-      <canvas id="hiddenCanvas" style="display:none"></canvas>
-    </div>
-
-    <!-- RIGHT: Controls -->
-    <div>
-      <div class="panel">
-        <div class="panel-title">Background Options</div>
-
-        <!-- BACKGROUND TYPE TABS -->
-        <div class="bg-tabs">
-          <button class="bg-tab active" data-tab="transparent">Transparent</button>
-          <button class="bg-tab" data-tab="color">Color</button>
-          <button class="bg-tab" data-tab="gradient">Gradient</button>
-          <button class="bg-tab" data-tab="image">Image</button>
-        </div>
-
-        <!-- Transparent -->
-        <div class="bg-option active" id="tab-transparent">
-          <p style="font-size:13px; color:var(--text2); line-height:1.5;">Keep the background transparent — perfect for logos, stickers, and design assets. Downloads as PNG.</p>
-        </div>
-
-        <!-- Solid Color -->
-        <div class="bg-option" id="tab-color">
-          <div class="color-row">
-            <input type="color" id="solidColor" value="#ffffff">
-            <label>Pick a background color</label>
-          </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-            <div class="color-swatch" data-color="#ffffff" style="width:24px;height:24px;border-radius:6px;background:#ffffff;border:1px solid var(--border2);cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#000000" style="width:24px;height:24px;border-radius:6px;background:#000000;cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#f5f4fa" style="width:24px;height:24px;border-radius:6px;background:#f5f4fa;border:1px solid var(--border2);cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#1e1e28" style="width:24px;height:24px;border-radius:6px;background:#1e1e28;cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#a78bfa" style="width:24px;height:24px;border-radius:6px;background:#a78bfa;cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#34d399" style="width:24px;height:24px;border-radius:6px;background:#34d399;cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#f87171" style="width:24px;height:24px;border-radius:6px;background:#f87171;cursor:pointer;"></div>
-            <div class="color-swatch" data-color="#fbbf24" style="width:24px;height:24px;border-radius:6px;background:#fbbf24;cursor:pointer;"></div>
-          </div>
-        </div>
-
-        <!-- Gradient -->
-        <div class="bg-option" id="tab-gradient">
-          <div style="font-size:13px; color:var(--text2); margin-bottom:8px;">Gradient colors</div>
-          <div class="gradient-row">
-            <input type="color" id="gradColor1" value="#a78bfa">
-            <span style="font-size:13px;color:var(--text3);">→</span>
-            <input type="color" id="gradColor2" value="#34d399">
-          </div>
-          <div style="font-size:13px; color:var(--text2); margin-bottom:6px;">Direction</div>
-          <div class="grad-dir">
-            <button class="dir-btn active" data-deg="135">↘</button>
-            <button class="dir-btn" data-deg="0">→</button>
-            <button class="dir-btn" data-deg="90">↓</button>
-            <button class="dir-btn" data-deg="45">↗</button>
-            <button class="dir-btn" data-deg="180">←</button>
-            <button class="dir-btn" data-deg="270">↑</button>
-          </div>
-          <div style="margin-top:10px;">
-            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Preview</div>
-            <div id="gradPreview" style="height:36px;border-radius:8px;background:linear-gradient(135deg,#a78bfa,#34d399);border:1px solid var(--border2);"></div>
-          </div>
-        </div>
-
-        <!-- Custom Image -->
-        <div class="bg-option" id="tab-image">
-          <div class="bg-dropzone" id="bgDropzone">
-            <input type="file" id="bgFileInput" accept="image/*">
-            <img id="bgThumb" class="bg-thumb">
-            <div id="bgDzText">📷 Click or drop a background image</div>
-          </div>
-        </div>
-
-        <button class="apply-btn" id="applyBtn" disabled>Apply Background</button>
-
-        <hr class="divider">
-
-        <div class="section-title">Processing Settings</div>
-
-        <div class="slider-row">
-          <label>Edge Smooth</label>
-          <input type="range" min="0" max="10" value="3" step="1" id="edgeSmooth">
-          <span class="slider-val" id="edgeSmoothVal">3</span>
-        </div>
-        <div class="slider-row">
-          <label>Threshold</label>
-          <input type="range" min="80" max="220" value="140" step="5" id="threshold">
-          <span class="slider-val" id="thresholdVal">140</span>
-        </div>
-
-        <div class="model-status" id="modelStatus">
-          <span>⚙️</span> Model not loaded — upload an image to begin
-        </div>
-      </div>
-    </div>
-  </div>
+</div>
 </main>
 
-<!-- Compatibility detection (runs synchronously before module) -->
-<script>
-(function() {
-  const checks = [];
-  const ua = navigator.userAgent;
-
-  // 1. ES Modules support
-  const esModules = 'noModule' in HTMLScriptElement.prototype;
-  checks.push({ label: 'ES Modules', pass: esModules, fatal: true });
-
-  // 2. WebAssembly (required by Transformers.js)
-  const wasm = typeof WebAssembly === 'object' && typeof WebAssembly.instantiate === 'function';
-  checks.push({ label: 'WebAssembly', pass: wasm, fatal: true });
-
-  // 3. Canvas 2D API
-  const canvas = (function() {
-    try { const c = document.createElement('canvas'); return !!c.getContext('2d'); } catch(e) { return false; }
-  })();
-  checks.push({ label: 'Canvas API', pass: canvas, fatal: true });
-
-  // 4. Fetch API
-  const fetchOk = typeof fetch === 'function';
-  checks.push({ label: 'Fetch API', pass: fetchOk, fatal: true });
-
-  // 5. SharedArrayBuffer / cross-origin isolation (needed for ONNX threaded backend)
-  const sab = typeof SharedArrayBuffer !== 'undefined';
-  checks.push({ label: 'SharedArrayBuffer', pass: sab, fatal: false });
-
-  // 6. OffscreenCanvas (used by some Transformers.js paths)
-  const offscreen = typeof OffscreenCanvas !== 'undefined';
-  checks.push({ label: 'OffscreenCanvas', pass: offscreen, fatal: false });
-
-  // 7. Detect iOS (WebKit blocks WASM JIT on iOS < 16.4 and in non-Safari browsers)
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const iOSVersion = isIOS ? (ua.match(/OS (\d+)_/) || [])[1] : null;
-  const iOSUnsupported = isIOS && iOSVersion && parseInt(iOSVersion) < 16;
-  if (isIOS) checks.push({ label: 'iOS 16.4+ required', pass: !iOSUnsupported, fatal: iOSUnsupported });
-
-  // 8. Internet Explorer
-  const isIE = /Trident|MSIE/.test(ua);
-  if (isIE) checks.push({ label: 'Modern browser required', pass: false, fatal: true });
-
-  // Determine overall severity
-  const fatalFails = checks.filter(c => !c.pass && c.fatal);
-  const warnFails  = checks.filter(c => !c.pass && !c.fatal);
-  const hasIssue   = fatalFails.length > 0 || warnFails.length > 0;
-
-  if (!hasIssue) return; // All good — don't show banner
-
-  // Build banner
-  window.addEventListener('DOMContentLoaded', function() {
-    const banner   = document.getElementById('compatBanner');
-    const title    = document.getElementById('compatTitle');
-    const subtitle = document.getElementById('compatSubtitle');
-    const body     = document.getElementById('compatBody');
-    const checksEl = document.getElementById('compatChecks');
-    const note     = document.getElementById('compatNote');
-    const dismiss  = document.getElementById('compatDismiss');
-
-    if (!banner) return;
-
-    if (fatalFails.length > 0) {
-      title.textContent = 'Browser not supported';
-      title.style.color = 'var(--red)';
-      subtitle.textContent = 'CutOut requires features your browser does not support';
-      body.textContent = 'The AI background removal model uses WebAssembly and ES Modules to run entirely in your browser. One or more critical requirements are missing. Please switch to a supported browser to use this tool.';
-      dismiss.textContent = 'Try anyway (may not work) →';
-    } else {
-      title.textContent = 'Partial compatibility';
-      title.style.color = '#fbbf24';
-      banner.style.borderColor = 'rgba(251,191,36,0.3)';
-      document.querySelector('.compat-icon').textContent = '⚡';
-      subtitle.textContent = 'Most features will work, but performance may vary';
-      body.textContent = 'Your browser is missing some optional features. Background removal should still work, but processing may be slower or use a single-threaded fallback.';
-      dismiss.textContent = 'Got it, continue →';
-    }
-
-    // Render check items
-    checks.forEach(function(c) {
-      const div = document.createElement('div');
-      const status = c.pass ? 'pass' : (c.fatal ? 'fail' : 'warn');
-      div.className = 'compat-check ' + status;
-      div.innerHTML = '<span class="ci"></span><span class="cl">' + c.label + '</span>';
-      checksEl.appendChild(div);
-    });
-
-    // Recommended browsers note
-    const browserNote = isIOS
-      ? 'On iOS, use <a href="https://www.apple.com/safari/" target="_blank">Safari 16.4+</a> for best compatibility. Third-party browsers on iOS share the same WebKit engine and may have additional restrictions.'
-      : 'For best results, use the latest version of <a href="https://www.google.com/chrome/" target="_blank">Chrome</a>, <a href="https://www.microsoft.com/edge" target="_blank">Edge</a>, or <a href="https://www.mozilla.org/firefox/" target="_blank">Firefox</a>.';
-    note.innerHTML = '💡 ' + browserNote;
-
-    banner.classList.add('visible');
-
-    dismiss.addEventListener('click', function() {
-      banner.style.opacity = '0';
-      banner.style.transition = 'opacity 0.3s';
-      setTimeout(function() { banner.style.display = 'none'; }, 300);
-    });
-  });
-})();
-document.getElementById('logoBtn').addEventListener('click', () => {
-  window.location.href = 'https://craftgamer9651.github.io' // go back to home
-});
-</script>
-
-<!-- MediaPipe Image Segmentation — pixel-accurate, works from file://, CORS-safe -->
+<!-- ================= JS ================= -->
 <script type="module">
-import { ImageSegmenter, FilesetResolver } from
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs';
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let segmenter    = null;
-let storedPixels = null;   // ImageData at display resolution
-let alphaMask    = null;   // Float32Array confidence per pixel (0–1)
-let bgImageEl    = null;
-let gradDeg      = 135;
-let isProcessing = false;
-let displayW = 0, displayH = 0;
+import {
+  ImageSegmenter,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs";
 
-// ─── Elements ─────────────────────────────────────────────────────────────────
-const dropzone      = document.getElementById('dropzone');
-const fileInput     = document.getElementById('fileInput');
-const progressWrap  = document.getElementById('progressWrap');
-const progressBar   = document.getElementById('progressBar');
-const progressLabel = document.getElementById('progressLabel');
-const resultSection = document.getElementById('resultSection');
-const origCanvas    = document.getElementById('origCanvas');
-const resultCanvas  = document.getElementById('resultCanvas');
-const hiddenCanvas  = document.getElementById('hiddenCanvas');
-const resultWrap    = document.getElementById('resultWrap');
-const statusChip    = document.getElementById('statusChip');
-const imgInfo       = document.getElementById('imgInfo');
-const downloadBtn   = document.getElementById('downloadBtn');
-const applyBtn      = document.getElementById('applyBtn');
-const resetBtn      = document.getElementById('resetBtn');
-const bgFileInput   = document.getElementById('bgFileInput');
-const bgThumb       = document.getElementById('bgThumb');
-const bgDzText      = document.getElementById('bgDzText');
-const modelStatus   = document.getElementById('modelStatus');
-const gradPreview   = document.getElementById('gradPreview');
+let segmenter = null;
+let alphaMask = null;
+let srcPixels = null;
+let W = 0, H = 0;
 
-// ─── Theme toggle ─────────────────────────────────────────────────────────────
-document.getElementById('themeBtn').addEventListener('click', () => {
-  const isDark = document.body.dataset.theme === 'dark';
-  document.body.dataset.theme = isDark ? 'light' : 'dark';
-  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
-});
+const fileInput = document.getElementById("fileInput");
+const canvasO = document.getElementById("origCanvas");
+const canvasR = document.getElementById("resultCanvas");
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const progressLabel = document.getElementById("progressLabel");
+const resultSection = document.getElementById("resultSection");
+const applyBtn = document.getElementById("applyBtn");
+const downloadBtn = document.getElementById("downloadBtn");
 
-// ─── Drag & Drop ──────────────────────────────────────────────────────────────
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault(); dropzone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith('image/')) handleFile(f);
-});
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-// ─── BG Image upload ──────────────────────────────────────────────────────────
-bgFileInput.addEventListener('change', () => {
-  const f = bgFileInput.files[0]; if (!f) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    bgThumb.src = e.target.result; bgThumb.style.display = 'block';
-    bgDzText.textContent = f.name;
-    const img = new Image(); img.onload = () => { bgImageEl = img; }; img.src = e.target.result;
-  };
-  reader.readAsDataURL(f);
-});
-
-// ─── BG tabs ──────────────────────────────────────────────────────────────────
-document.querySelectorAll('.bg-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.bg-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-  });
-});
-
-// ─── Color swatches ───────────────────────────────────────────────────────────
-document.querySelectorAll('.color-swatch').forEach(sw => {
-  sw.addEventListener('click', () => { document.getElementById('solidColor').value = sw.dataset.color; });
-});
-
-// ─── Gradient preview ─────────────────────────────────────────────────────────
-function updateGradPreview() {
-  const c1 = document.getElementById('gradColor1').value;
-  const c2 = document.getElementById('gradColor2').value;
-  gradPreview.style.background = `linear-gradient(${gradDeg}deg,${c1},${c2})`;
-}
-document.getElementById('gradColor1').addEventListener('input', updateGradPreview);
-document.getElementById('gradColor2').addEventListener('input', updateGradPreview);
-document.querySelectorAll('.dir-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active'); gradDeg = +btn.dataset.deg; updateGradPreview();
-  });
-});
-
-// ─── Sliders ──────────────────────────────────────────────────────────────────
-document.getElementById('edgeSmooth').addEventListener('input', e => {
-  document.getElementById('edgeSmoothVal').textContent = e.target.value;
-});
-document.getElementById('threshold').addEventListener('input', e => {
-  document.getElementById('thresholdVal').textContent = e.target.value;
-  if (alphaMask) compositeResult(); // live update threshold
-});
-
-// ─── Apply / Reset ────────────────────────────────────────────────────────────
-applyBtn.addEventListener('click', () => { if (alphaMask) compositeResult(); });
-resetBtn.addEventListener('click', () => {
-  storedPixels = null; alphaMask = null;
-  dropzone.style.display = '';
-  progressWrap.classList.remove('visible');
-  resultSection.classList.remove('visible');
-  resetBtn.style.display = 'none';
-  applyBtn.disabled = true;
-  fileInput.value = '';
-  modelStatus.innerHTML = '<span>✅</span> Model ready — upload another image';
-});
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function setProgress(pct, label) {
-  progressBar.style.width = pct + '%';
-  progressLabel.textContent = label;
+function setProgress(p, t){
+  progressBar.style.width = p + "%";
+  progressLabel.textContent = t;
 }
 
-function fileToDataURL(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = e => res(e.target.result); r.onerror = rej;
-    r.readAsDataURL(file);
-  });
+function smoothstep(a,b,x){
+  const t = Math.min(1, Math.max(0,(x-a)/(b-a)));
+  return t*t*(3-2*t);
 }
 
-function loadImage(src) {
-  return new Promise((res, rej) => {
-    const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src;
-  });
+function bilinear(mask,w,h,x,y){
+  const x0=Math.floor(x), y0=Math.floor(y);
+  const x1=Math.min(x0+1,w-1);
+  const y1=Math.min(y0+1,h-1);
+
+  const dx=x-x0, dy=y-y0;
+
+  const i00=y0*w+x0;
+  const i10=y0*w+x1;
+  const i01=y1*w+x0;
+  const i11=y1*w+x1;
+
+  return (
+    mask[i00]*(1-dx)*(1-dy)+
+    mask[i10]*dx*(1-dy)+
+    mask[i01]*(1-dx)*dy+
+    mask[i11]*dx*dy
+  );
 }
 
-// Gaussian blur on a Float32Array mask
-function gaussianBlur(data, W, H, radius) {
-  if (radius < 1) return data;
-  const sigma = radius / 2;
-  const kSize = radius * 2 + 1;
-  const kernel = new Float32Array(kSize);
-  let ksum = 0;
-  for (let i = 0; i < kSize; i++) {
-    const x = i - radius;
-    kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma));
-    ksum += kernel[i];
-  }
-  for (let i = 0; i < kSize; i++) kernel[i] /= ksum;
-
-  const tmp = new Float32Array(W * H);
-  const out = new Float32Array(W * H);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      let s = 0;
-      for (let k = 0; k < kSize; k++) {
-        const sx = Math.max(0, Math.min(W - 1, x + k - radius));
-        s += data[y * W + sx] * kernel[k];
-      }
-      tmp[y * W + x] = s;
-    }
-  }
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      let s = 0;
-      for (let k = 0; k < kSize; k++) {
-        const sy = Math.max(0, Math.min(H - 1, y + k - radius));
-        s += tmp[sy * W + x] * kernel[k];
-      }
-      out[y * W + x] = s;
+function refine(mask,w,h){
+  const out=new Float32Array(mask);
+  for(let y=1;y<h-1;y++){
+    for(let x=1;x<w-1;x++){
+      const i=y*w+x;
+      const c=mask[i];
+      const avg=(mask[i-1]+mask[i+1]+mask[i-w]+mask[i+w])*0.25;
+      out[i]=c*0.7+avg*0.3;
     }
   }
   return out;
 }
 
-// ─── Init MediaPipe segmenter ─────────────────────────────────────────────────
-async function initSegmenter() {
-  modelStatus.innerHTML = '<span>⏳</span> Loading AI model…';
-  setProgress(10, 'Loading model…');
-
-  // FilesetResolver fetches WASM from jsDelivr — proper CORS, works from file://
+async function init(){
   const vision = await FilesetResolver.forVisionTasks(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
   );
 
-  // selfie_multiclass model segments 6 classes; deeplab segments 21 PASCAL classes
-  // We use selfie_multiclass for people and the general segmentation model otherwise.
-  // Using the "general" image segmenter which handles cars, animals, objects, people.
-  segmenter = await ImageSegmenter.createFromOptions(vision, {
-    baseOptions: {
+  segmenter = await ImageSegmenter.createFromOptions(vision,{
+    baseOptions:{
       modelAssetPath:
-        'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite',
-      delegate: 'GPU'
+        "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass/float32/1/selfie_multiclass.tflite",
+      delegate:"GPU"
     },
-    outputCategoryMask: true,
-    outputConfidenceMasks: false,
-    runningMode: 'IMAGE'
+    outputCategoryMask:true,
+    outputConfidenceMasks:true,
+    runningMode:"IMAGE"
   });
-
-  modelStatus.innerHTML = '<span>✅</span> Model ready';
-  return segmenter;
 }
 
-// ─── Handle upload ────────────────────────────────────────────────────────────
-async function handleFile(file) {
-  if (isProcessing) return;
-  isProcessing = true;
-  alphaMask = null;
-  applyBtn.disabled = true;
+fileInput.addEventListener("change",async e=>{
+  const file=e.target.files[0];
+  if(!file) return;
 
-  dropzone.style.display = 'none';
-  resetBtn.style.display = 'inline';
-  resultSection.classList.add('visible');
-  progressWrap.classList.add('visible');
-  setProgress(5, 'Reading image…');
-  modelStatus.innerHTML = '<span>⏳</span> Processing…';
+  progressWrap.style.display="flex";
+  setProgress(10,"Loading image...");
 
-  try {
-    const dataURL = await fileToDataURL(file);
-    const img = await loadImage(dataURL);
+  const img=new Image();
+  img.src=URL.createObjectURL(file);
+  await img.decode();
 
-    const W = img.naturalWidth, H = img.naturalHeight;
-    const maxDim = 1024;
-    const scale = Math.min(1, maxDim / Math.max(W, H));
-    displayW = Math.round(W * scale);
-    displayH = Math.round(H * scale);
+  W=img.width;
+  H=img.height;
 
-    // Draw original preview immediately
-    origCanvas.width = displayW; origCanvas.height = displayH;
-    origCanvas.getContext('2d').drawImage(img, 0, 0, displayW, displayH);
+  const scale=Math.min(1,1024/Math.max(W,H));
+  const w=Math.round(W*scale);
+  const h=Math.round(H*scale);
 
-    // Cache source pixels
-    hiddenCanvas.width = displayW; hiddenCanvas.height = displayH;
-    const hctx = hiddenCanvas.getContext('2d');
-    hctx.drawImage(img, 0, 0, displayW, displayH);
-    storedPixels = hctx.getImageData(0, 0, displayW, displayH);
-    imgInfo.textContent = `${W} × ${H}px`;
+  canvasO.width=w;
+  canvasO.height=h;
+  canvasO.getContext("2d").drawImage(img,0,0,w,h);
 
-    // Load segmenter if first time
-    if (!segmenter) {
-      await initSegmenter();
-    }
+  const tmp=document.createElement("canvas");
+  tmp.width=w; tmp.height=h;
+  tmp.getContext("2d").drawImage(img,0,0,w,h);
 
-    setProgress(60, 'Running segmentation…');
+  srcPixels=tmp.getContext("2d").getImageData(0,0,w,h);
 
-    // Run MediaPipe on the hidden canvas — no file fetch needed at all
-    const result = segmenter.segment(hiddenCanvas);
-    const categoryMask = result.categoryMask;
-    const maskW = categoryMask.width;
-    const maskH = categoryMask.height;
-    const maskData = categoryMask.getAsUint8Array();
+  if(!segmenter) await init();
 
-    // DeepLab V3 PASCAL VOC categories — 0=background, rest=foreground objects
-    // Everything that isn't background (0) is foreground
-    // Build float confidence mask (1.0 = keep, 0.0 = remove)
-    const rawMask = new Float32Array(maskW * maskH);
-    for (let i = 0; i < maskW * maskH; i++) {
-      rawMask[i] = maskData[i] === 0 ? 0.0 : 1.0;
-    }
+  setProgress(50,"Segmenting...");
 
-    setProgress(80, 'Smoothing edges…');
+  const res=segmenter.segment(tmp);
 
-    // Apply gaussian blur for soft edges based on Edge Smooth slider
-    const smoothRadius = parseInt(document.getElementById('edgeSmooth').value) * 2;
-    const blurred = gaussianBlur(rawMask, maskW, maskH, smoothRadius);
+  const conf=res.confidenceMasks[0].getAsFloat32Array();
 
-    // Scale mask to display resolution
-    alphaMask = new Float32Array(displayW * displayH);
-    for (let y = 0; y < displayH; y++) {
-      for (let x = 0; x < displayW; x++) {
-        const mx = Math.round(x * maskW / displayW);
-        const my = Math.round(y * maskH / displayH);
-        alphaMask[y * displayW + x] = blurred[Math.min(my * maskW + mx, blurred.length - 1)];
-      }
-    }
-
-    categoryMask.close();
-
-    setProgress(100, 'Done!');
-    progressWrap.classList.remove('visible');
-    modelStatus.innerHTML = '<span>✅</span> Background removed';
-    applyBtn.disabled = false;
-    isProcessing = false;
-    compositeResult();
-
-  } catch (err) {
-    console.error(err);
-    progressWrap.classList.remove('visible');
-    statusChip.className = 'status-chip error';
-    statusChip.innerHTML = '<span class="dot"></span> ' + (err.message || 'Processing failed');
-    modelStatus.innerHTML = '<span>❌</span> ' + (err.message || 'Error');
-    isProcessing = false;
-  }
-}
-
-// ─── Composite result ─────────────────────────────────────────────────────────
-function compositeResult() {
-  if (!alphaMask || !storedPixels) return;
-
-  const W = displayW, H = displayH;
-  const activeTab = document.querySelector('.bg-tab.active')?.dataset.tab || 'transparent';
-  const thresh = parseInt(document.getElementById('threshold').value) / 255;
-
-  resultCanvas.width = W; resultCanvas.height = H;
-  const ctx = resultCanvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  // Draw background
-  if (activeTab === 'color') {
-    ctx.fillStyle = document.getElementById('solidColor').value;
-    ctx.fillRect(0, 0, W, H);
-  } else if (activeTab === 'gradient') {
-    const c1 = document.getElementById('gradColor1').value;
-    const c2 = document.getElementById('gradColor2').value;
-    const rad = gradDeg * Math.PI / 180;
-    const cx = W / 2, cy = H / 2;
-    const len = Math.abs(W * Math.sin(rad)) + Math.abs(H * Math.cos(rad));
-    const grd = ctx.createLinearGradient(
-      cx - Math.sin(rad) * len / 2, cy - Math.cos(rad) * len / 2,
-      cx + Math.sin(rad) * len / 2, cy + Math.cos(rad) * len / 2
-    );
-    grd.addColorStop(0, c1); grd.addColorStop(1, c2);
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
-  } else if (activeTab === 'image' && bgImageEl) {
-    ctx.drawImage(bgImageEl, 0, 0, W, H);
+  const mask=new Float32Array(w*h);
+  for(let i=0;i<mask.length;i++){
+    mask[i]=Math.max(0,Math.min(1,(conf[i]-0.2)/0.8));
   }
 
-  const bgPx = activeTab === 'transparent' ? null : ctx.getImageData(0, 0, W, H);
-  const src = storedPixels;
-  const out = ctx.createImageData(W, H);
+  const refined=refine(mask,w,h);
 
-  for (let i = 0; i < W * H; i++) {
-    const conf = alphaMask[i];
-    // Apply threshold: remap so values near thresh transition smoothly
-    const alpha = conf < thresh
-      ? 0
-      : Math.min(1, (conf - thresh) / Math.max(0.05, 1 - thresh));
-    const s = i * 4;
-
-    if (activeTab === 'transparent') {
-      out.data[s]   = src.data[s];
-      out.data[s+1] = src.data[s+1];
-      out.data[s+2] = src.data[s+2];
-      out.data[s+3] = Math.round(alpha * 255);
-    } else {
-      const a = alpha;
-      const bg = bgPx.data;
-      out.data[s]   = Math.round(src.data[s]   * a + bg[s]   * (1 - a));
-      out.data[s+1] = Math.round(src.data[s+1] * a + bg[s+1] * (1 - a));
-      out.data[s+2] = Math.round(src.data[s+2] * a + bg[s+2] * (1 - a));
-      out.data[s+3] = 255;
+  alphaMask=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const mx=x*(res.confidenceMasks[0].width/w);
+      const my=y*(res.confidenceMasks[0].height/h);
+      alphaMask[y*w+x]=bilinear(refined,res.confidenceMasks[0].width,res.confidenceMasks[0].height,mx,my);
     }
   }
 
-  ctx.putImageData(out, 0, 0);
-  downloadBtn.href = resultCanvas.toDataURL('image/png');
-  downloadBtn.download = 'cutout.png';
-  resultWrap.className = 'canvas-wrap' + (activeTab === 'transparent' ? ' checker-bg' : '');
-  statusChip.className = 'status-chip success';
-  statusChip.innerHTML = '<span class="dot"></span> Background removed';
+  setProgress(100,"Done");
+  progressWrap.style.display="none";
+
+  resultSection.classList.add("visible");
+  applyBtn.disabled=false;
+
+  render();
+});
+
+function render(){
+  const w=canvasO.width,h=canvasO.height;
+  canvasR.width=w; canvasR.height=h;
+
+  const ctx=canvasR.getContext("2d");
+  const out=ctx.createImageData(w,h);
+
+  const thresh=0.5;
+
+  for(let i=0;i<w*h;i++){
+    const a=smoothstep(thresh-0.08,thresh+0.08,alphaMask[i]);
+    const s=i*4;
+
+    out.data[s]=srcPixels.data[s];
+    out.data[s+1]=srcPixels.data[s+1];
+    out.data[s+2]=srcPixels.data[s+2];
+    out.data[s+3]=Math.round(a*255);
+  }
+
+  ctx.putImageData(out,0,0);
+  downloadBtn.href=canvasR.toDataURL("image/png");
 }
+
+applyBtn.onclick=render;
+
 </script>
 </body>
 </html>
