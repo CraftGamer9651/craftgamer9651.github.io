@@ -585,15 +585,15 @@
 </div>
 </main>
 
-<!-- ================= JS ================= -->
 <script type="module">
-
 import {
   ImageSegmenter,
   FilesetResolver
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs";
 
 let segmenter = null;
+let segmenterPromise = null;
+
 let alphaMask = null;
 let srcPixels = null;
 let W = 0, H = 0;
@@ -608,11 +608,55 @@ const resultSection = document.getElementById("resultSection");
 const applyBtn = document.getElementById("applyBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 
+/* -------------------------
+   UI helpers
+------------------------- */
 function setProgress(p, t){
   progressBar.style.width = p + "%";
   progressLabel.textContent = t;
 }
 
+/* -------------------------
+   INIT MODEL (FIXED)
+   - runs immediately on load
+   - prevents first-upload freeze
+------------------------- */
+async function init(){
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
+    );
+
+    segmenter = await ImageSegmenter.createFromOptions(vision,{
+      baseOptions:{
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass/float32/1/selfie_multiclass.tflite",
+        delegate:"CPU"
+      },
+      outputCategoryMask:true,
+      outputConfidenceMasks:true,
+      runningMode:"IMAGE"
+    });
+
+    setProgress(100, "AI ready");
+    setTimeout(()=>progressWrap.style.display="none", 400);
+
+    console.log("Segmenter ready");
+  } catch (e) {
+    console.error("Model init failed:", e);
+    progressWrap.style.display="none";
+    alert("AI model failed to load. Check your connection or try refreshing.");
+  }
+}
+
+/* preload immediately (IMPORTANT FIX) */
+progressWrap.style.display = "flex";
+setProgress(5, "Loading AI model...");
+segmenterPromise = init();
+
+/* -------------------------
+   Math helpers
+------------------------- */
 function smoothstep(a,b,x){
   const t = Math.min(1, Math.max(0,(x-a)/(b-a)));
   return t*t*(3-2*t);
@@ -643,31 +687,16 @@ function refine(mask,w,h){
   for(let y=1;y<h-1;y++){
     for(let x=1;x<w-1;x++){
       const i=y*w+x;
-      const c=mask[i];
       const avg=(mask[i-1]+mask[i+1]+mask[i-w]+mask[i+w])*0.25;
-      out[i]=c*0.7+avg*0.3;
+      out[i]=mask[i]*0.7+avg*0.3;
     }
   }
   return out;
 }
 
-async function init(){
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
-  );
-
-  segmenter = await ImageSegmenter.createFromOptions(vision,{
-    baseOptions:{
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass/float32/1/selfie_multiclass.tflite",
-      delegate:"GPU"
-    },
-    outputCategoryMask:true,
-    outputConfidenceMasks:true,
-    runningMode:"IMAGE"
-  });
-}
-
+/* -------------------------
+   IMAGE UPLOAD
+------------------------- */
 fileInput.addEventListener("change",async e=>{
   const file=e.target.files[0];
   if(!file) return;
@@ -688,47 +717,80 @@ fileInput.addEventListener("change",async e=>{
 
   canvasO.width=w;
   canvasO.height=h;
-  canvasO.getContext("2d").drawImage(img,0,0,w,h);
+  const ctx = canvasO.getContext("2d");
+  ctx.drawImage(img,0,0,w,h);
+  srcPixels = ctx.getImageData(0,0,w,h);
 
-  const tmp=document.createElement("canvas");
-  tmp.width=w; tmp.height=h;
-  tmp.getContext("2d").drawImage(img,0,0,w,h);
+  /* wait for model (PRELOADED so usually instant) */
+  await segmenterPromise;
 
-  srcPixels=tmp.getContext("2d").getImageData(0,0,w,h);
-
-  if(!segmenter) await init();
-
-  setProgress(50,"Segmenting...");
-
-  const res=segmenter.segment(tmp);
-
-  const conf=res.confidenceMasks[0].getAsFloat32Array();
-
-  const mask=new Float32Array(w*h);
-  for(let i=0;i<mask.length;i++){
-    mask[i]=Math.max(0,Math.min(1,(conf[i]-0.2)/0.8));
+  if(!segmenter || !segmenter.segment){
+    progressWrap.style.display="none";
+    alert("AI model not ready yet. Try again.");
+    return;
   }
 
-  const refined=refine(mask,w,h);
+  setProgress(55,"Segmenting...");
 
-  alphaMask=new Float32Array(w*h);
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      const mx=x*(res.confidenceMasks[0].width/w);
-      const my=y*(res.confidenceMasks[0].height/h);
-      alphaMask[y*w+x]=bilinear(refined,res.confidenceMasks[0].width,res.confidenceMasks[0].height,mx,my);
+  try {
+    const res = await Promise.race([
+      segmenter.segment(canvasO),
+      new Promise((_,rej)=>setTimeout(()=>rej("timeout"),15000))
+    ]);
+
+    if(!res) throw new Error("No segmentation result");
+
+    let conf;
+
+    if (res.confidenceMasks?.length) {
+      conf = res.confidenceMasks[0].getAsFloat32Array();
+    } else {
+      const cat = res.categoryMask.getAsUint8Array();
+      conf = new Float32Array(cat.length);
+      for (let i = 0; i < cat.length; i++) {
+        conf[i] = cat[i] === 0 ? 0 : 1;
+      }
     }
+
+    const mask=new Float32Array(w*h);
+    for(let i=0;i<mask.length;i++){
+      mask[i]=Math.max(0,Math.min(1,(conf[i]-0.2)/0.8));
+    }
+
+    const refined=refine(mask,w,h);
+
+    alphaMask=new Float32Array(w*h);
+
+    const maskObj = res.confidenceMasks?.[0];
+    const mw = maskObj?.width ?? w;
+    const mh = maskObj?.height ?? h;
+
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const mx=x*(mw/w);
+        const my=y*(mh/h);
+        alphaMask[y*w+x]=bilinear(refined,mw,mh,mx,my);
+      }
+    }
+
+    setProgress(100,"Done");
+    setTimeout(()=>progressWrap.style.display="none",300);
+
+    resultSection.classList.add("visible");
+    applyBtn.disabled=false;
+
+    render();
+
+  } catch(err){
+    console.error("Segmentation error:", err);
+    progressWrap.style.display="none";
+    alert("Background removal failed. Try a smaller image or refresh.");
   }
-
-  setProgress(100,"Done");
-  progressWrap.style.display="none";
-
-  resultSection.classList.add("visible");
-  applyBtn.disabled=false;
-
-  render();
 });
 
+/* -------------------------
+   RENDER OUTPUT
+------------------------- */
 function render(){
   const w=canvasO.width,h=canvasO.height;
   canvasR.width=w; canvasR.height=h;
@@ -751,9 +813,6 @@ function render(){
   ctx.putImageData(out,0,0);
   downloadBtn.href=canvasR.toDataURL("image/png");
 }
-
-applyBtn.onclick=render;
-
 </script>
 </body>
 </html>
