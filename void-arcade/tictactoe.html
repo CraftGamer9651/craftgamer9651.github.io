@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe — VOID ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#050810; --surface:#0a0f1e; --card:#0d1428; --border:#1a2444;
+    --accent:#7b4fff; --text:#e8eaf6; --muted:#4a5580;
+    --x-color:#7b4fff; --o-color:#ff6bff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--text); font-family:'Syne',sans-serif;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(123,79,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123,79,255,0.025) 1px, transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+  .glow {
+    position:fixed; top:-300px; left:50%; transform:translateX(-50%);
+    width:800px; height:600px;
+    background:radial-gradient(ellipse, rgba(123,79,255,0.1) 0%, transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  nav {
+    position:relative; z-index:1; width:100%; padding:20px 32px;
+    display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border);
+  }
+  .back-btn {
+    color:var(--accent); text-decoration:none; font-size:13px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center;
+    gap:8px; transition:gap 0.2s;
+  }
+  .back-btn:hover { gap:12px; }
+  .nav-title { font-size:13px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; }
+  .nav-sep { color:var(--muted); }
+  main {
+    position:relative; z-index:1; display:flex; flex-direction:column;
+    align-items:center; padding:36px 20px 60px; gap:18px; width:100%; max-width:520px;
+  }
+  .game-title { text-align:center; }
+  .game-title h1 {
+    font-size:48px; font-weight:800; letter-spacing:-2px;
+    background:linear-gradient(135deg, var(--accent), var(--o-color));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .game-title p { font-size:12px; color:var(--muted); letter-spacing:4px; text-transform:uppercase; margin-top:4px; }
+
+  .toggle-row {
+    display:flex; gap:8px; padding:5px;
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+  }
+  .tog-btn {
+    padding:9px 22px; border-radius:8px; border:1px solid transparent; cursor:pointer;
+    font-family:'Syne',sans-serif; font-size:12px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; transition:all 0.2s;
+    background:transparent; color:var(--muted);
+  }
+  .tog-btn.active { background:rgba(123,79,255,0.2); color:var(--accent); border-color:rgba(123,79,255,0.3); }
+
+  .diff-row {
+    display:flex; gap:8px; padding:5px;
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    transition:opacity 0.25s;
+  }
+  .diff-row.hidden { opacity:0.3; pointer-events:none; }
+  .diff-btn {
+    padding:9px 20px; border-radius:8px; border:1px solid transparent; cursor:pointer;
+    font-family:'Syne',sans-serif; font-size:12px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; transition:all 0.2s;
+    background:transparent; color:var(--muted);
+  }
+  .diff-btn.easy.active   { background:rgba(0,255,136,0.12); color:#00ff88; border-color:rgba(0,255,136,0.3); }
+  .diff-btn.medium.active { background:rgba(255,200,0,0.12); color:#ffc800; border-color:rgba(255,200,0,0.3); }
+  .diff-btn.hard.active   { background:rgba(255,68,102,0.12); color:#ff4466; border-color:rgba(255,68,102,0.3); }
+
+  .status {
+    font-size:17px; font-weight:700; letter-spacing:1px; text-align:center; min-height:28px;
+    transition:color 0.3s;
+  }
+  .status.x-turn { color:var(--x-color); }
+  .status.o-turn { color:var(--o-color); }
+  .status.winner { color:#ffd700; }
+  .status.draw   { color:var(--muted); }
+
+  .scores { display:flex; gap:32px; align-items:center; }
+  .score-item { text-align:center; }
+  .score-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; margin-bottom:4px; }
+  .score-label.x-label { color:var(--x-color); }
+  .score-label.o-label { color:var(--o-color); }
+  .score-label.d-label { color:var(--muted); }
+  .score-val { font-size:32px; font-weight:800; color:var(--text); }
+
+  .board {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+    padding:16px; background:var(--card); border:1px solid var(--border);
+    border-radius:16px; box-shadow:0 0 40px rgba(123,79,255,0.08);
+  }
+  .cell {
+    width:110px; height:110px; border-radius:10px;
+    background:var(--surface); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:52px; font-weight:800; cursor:pointer;
+    transition:background 0.15s, border-color 0.15s, transform 0.1s; user-select:none;
+  }
+  .cell:hover:not(.filled):not(.disabled) {
+    background:rgba(123,79,255,0.08); border-color:rgba(123,79,255,0.3); transform:scale(1.03);
+  }
+  .cell.filled, .cell.disabled { cursor:default; }
+  .cell.x-cell { color:var(--x-color); border-color:rgba(123,79,255,0.4); background:rgba(123,79,255,0.06); }
+  .cell.o-cell { color:var(--o-color); border-color:rgba(255,107,255,0.4); background:rgba(255,107,255,0.06); }
+  .cell.win-cell { border-color:#ffd700 !important; background:rgba(255,215,0,0.08) !important; animation:win-pulse 0.8s ease; }
+  @keyframes win-pulse { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  .cell-symbol {
+    opacity:0; transform:scale(0.5) rotate(-10deg); display:block;
+    transition:opacity 0.15s, transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  .cell.filled .cell-symbol { opacity:1; transform:scale(1) rotate(0deg); }
+
+  .btn {
+    padding:12px 32px; background:rgba(123,79,255,0.1); border:1px solid rgba(123,79,255,0.3);
+    border-radius:8px; color:var(--accent); font-family:'Syne',sans-serif;
+    font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .btn:hover { background:rgba(123,79,255,0.2); box-shadow:0 0 20px rgba(123,79,255,0.2); }
+  .scanlines {
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+    pointer-events:none; z-index:999;
+  }
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="glow"></div>
+<nav>
+  <a class="back-btn" href="index.html">← Back</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">Tic-Tac-Toe</span>
+</nav>
+<main>
+  <div class="game-title">
+    <h1>TIC-TAC-TOE</h1>
+    <p>X vs O — Classic Strategy</p>
+  </div>
+
+  <div class="toggle-row">
+    <button class="tog-btn active" id="btn-bot" onclick="setMode('bot')">vs Bot</button>
+    <button class="tog-btn" id="btn-2p" onclick="setMode('2p')">2 Players</button>
+  </div>
+
+  <div class="diff-row" id="diff-row">
+    <button class="diff-btn easy active" id="d-easy"   onclick="setDiff('easy')">Easy</button>
+    <button class="diff-btn medium"      id="d-medium" onclick="setDiff('medium')">Medium</button>
+    <button class="diff-btn hard"        id="d-hard"   onclick="setDiff('hard')">Hard</button>
+  </div>
+
+  <div class="scores">
+    <div class="score-item"><div class="score-label x-label">X</div><div class="score-val" id="score-x">0</div></div>
+    <div class="score-item"><div class="score-label d-label">Draw</div><div class="score-val" id="score-d">0</div></div>
+    <div class="score-item"><div class="score-label o-label">O</div><div class="score-val" id="score-o">0</div></div>
+  </div>
+
+  <div class="status x-turn" id="status">X's turn</div>
+
+  <div class="board" id="board">
+    <div class="cell" onclick="cellClick(0)"><span class="cell-symbol" id="c0"></span></div>
+    <div class="cell" onclick="cellClick(1)"><span class="cell-symbol" id="c1"></span></div>
+    <div class="cell" onclick="cellClick(2)"><span class="cell-symbol" id="c2"></span></div>
+    <div class="cell" onclick="cellClick(3)"><span class="cell-symbol" id="c3"></span></div>
+    <div class="cell" onclick="cellClick(4)"><span class="cell-symbol" id="c4"></span></div>
+    <div class="cell" onclick="cellClick(5)"><span class="cell-symbol" id="c5"></span></div>
+    <div class="cell" onclick="cellClick(6)"><span class="cell-symbol" id="c6"></span></div>
+    <div class="cell" onclick="cellClick(7)"><span class="cell-symbol" id="c7"></span></div>
+    <div class="cell" onclick="cellClick(8)"><span class="cell-symbol" id="c8"></span></div>
+  </div>
+
+  <button class="btn" onclick="resetBoard()">New Game</button>
+</main>
+<script>
+let board = Array(9).fill(null);
+let currentPlayer = 'X';
+let gameOver = false;
+let mode = 'bot';
+let difficulty = 'easy';
+let scores = {X:0, O:0, D:0};
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-bot').classList.toggle('active', m==='bot');
+  document.getElementById('btn-2p').classList.toggle('active', m==='2p');
+  document.getElementById('diff-row').classList.toggle('hidden', m==='2p');
+  resetBoard();
+}
+
+function setDiff(d) {
+  difficulty = d;
+  ['easy','medium','hard'].forEach(x => document.getElementById('d-'+x).classList.toggle('active', x===d));
+  resetBoard();
+}
+
+function resetBoard() {
+  board = Array(9).fill(null);
+  currentPlayer = 'X';
+  gameOver = false;
+  document.querySelectorAll('.cell').forEach((cell, i) => {
+    cell.className = 'cell';
+    document.getElementById('c'+i).textContent = '';
+  });
+  setStatus(`X's turn`, 'x-turn');
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + cls;
+}
+
+function cellClick(i) {
+  if (gameOver || board[i]) return;
+  if (mode==='bot' && currentPlayer==='O') return;
+  makeMove(i, currentPlayer);
+}
+
+function makeMove(i, player) {
+  board[i] = player;
+  const cell = document.querySelectorAll('.cell')[i];
+  cell.classList.add('filled', player==='X' ? 'x-cell' : 'o-cell');
+  document.getElementById('c'+i).textContent = player;
+  const win = checkWin(player);
+  if (win) {
+    win.forEach(idx => document.querySelectorAll('.cell')[idx].classList.add('win-cell'));
+    setStatus(`${player} wins! 🎉`, 'winner');
+    scores[player]++;
+    document.getElementById('score-'+player.toLowerCase()).textContent = scores[player];
+    gameOver = true; return;
+  }
+  if (board.every(Boolean)) {
+    setStatus("It's a draw!", 'draw');
+    scores.D++;
+    document.getElementById('score-d').textContent = scores.D;
+    gameOver = true; return;
+  }
+  currentPlayer = player==='X' ? 'O' : 'X';
+  if (mode==='bot' && currentPlayer==='O' && !gameOver) {
+    setStatus("Bot thinking...", 'o-turn');
+    setTimeout(botMove, 380);
+  } else {
+    setStatus(`${currentPlayer}'s turn`, currentPlayer==='X'?'x-turn':'o-turn');
+  }
+}
+
+function checkWin(p) {
+  for(const line of WINS) if(line.every(i=>board[i]===p)) return line;
+  return null;
+}
+
+// ── Bot ──────────────────────────────────
+function botMove() {
+  let move;
+  if      (difficulty==='easy')   move = easyMove();
+  else if (difficulty==='medium') move = mediumMove();
+  else                            move = hardMove();
+  makeMove(move, 'O');
+}
+
+// Easy: pure random
+function easyMove() {
+  const empty = board.reduce((a,v,i)=>v===null?[...a,i]:a,[]);
+  return empty[Math.floor(Math.random()*empty.length)];
+}
+
+// Medium: win/block, then random (no lookahead forks)
+function mediumMove() {
+  let m = findWinningMove('O'); if(m!==-1) return m;
+  m = findWinningMove('X');     if(m!==-1) return m;
+  // Take centre if free
+  if(!board[4]) return 4;
+  return easyMove();
+}
+
+function findWinningMove(p) {
+  for(let i=0;i<9;i++) {
+    if(!board[i]) {
+      board[i]=p;
+      const w = checkWin(p);
+      board[i]=null;
+      if(w) return i;
+    }
+  }
+  return -1;
+}
+
+// Hard: perfect minimax with alpha-beta
+function hardMove() {
+  let best=-Infinity, bestMove=-1;
+  for(let i=0;i<9;i++) {
+    if(!board[i]) {
+      board[i]='O';
+      const s = minimax(board,0,false,-Infinity,Infinity);
+      board[i]=null;
+      if(s>best) { best=s; bestMove=i; }
+    }
+  }
+  return bestMove;
+}
+
+function minimax(b,depth,isMax,alpha,beta) {
+  if(checkWin('O')) return 10-depth;
+  if(checkWin('X')) return depth-10;
+  if(b.every(Boolean)) return 0;
+  if(isMax) {
+    let best=-Infinity;
+    for(let i=0;i<9;i++) { if(!b[i]) { b[i]='O'; best=Math.max(best,minimax(b,depth+1,false,alpha,beta)); b[i]=null; alpha=Math.max(alpha,best); if(beta<=alpha) break; } }
+    return best;
+  } else {
+    let best=Infinity;
+    for(let i=0;i<9;i++) { if(!b[i]) { b[i]='X'; best=Math.min(best,minimax(b,depth+1,true,alpha,beta)); b[i]=null; beta=Math.min(beta,best); if(beta<=alpha) break; } }
+    return best;
+  }
+}
+</script>
+</body>
+</html>
