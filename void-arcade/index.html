@@ -204,6 +204,14 @@
   .card--dino .play-btn { background: rgba(0,207,130,0.1); color: #00cf82; border-color: rgba(0,207,130,0.2); }
   .card--dino .play-btn:hover { background: rgba(0,207,130,0.2); }
 
+  .card--signin { border-color: rgba(255,200,0,0.3); }
+  .card--signin .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,200,0,0.08) 0%, transparent 70%); }
+  .card--signin:hover { border-color: #ffc800; }
+  .card--signin .card-num { color: #ffc800; }
+  .card--signin .card-tag { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
+  .card--signin .play-btn { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
+  .card--signin .play-btn:hover { background: rgba(255,200,0,0.2); }
+
   .card-visual {
     height: 160px;
     display: flex; align-items: center; justify-content: center;
@@ -306,6 +314,7 @@
   .card:nth-child(4) { animation-delay: 0.4s; }
 
   .card:nth-child(5) { animation-delay: 0.5s; }
+  .card:nth-child(6) { animation-delay: 0.6s; }
 
   header .logo-bar, header h1, header .subtitle, .divider {
     opacity: 0;
@@ -433,10 +442,25 @@
       </div>
     </a>
 
+    <!-- Sign In -->
+    <a class="card card--signin" href="signin.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🔐</div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-num">// 06</span>
+          <span class="card-tag">1 Player</span>
+        </div>
+        <h2>Sign In</h2>
+        <p>Attempt to log into a website. Complete 10 absurd sign-in methods, survive 8 impossible CAPTCHAs, and still fail.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
   </div>
 </div>
 
-<footer>VOID ARCADE &nbsp;·&nbsp; 5 Games &nbsp;·&nbsp; All Rights Reserved</footer>
+<footer>VOID ARCADE &nbsp;·&nbsp; 6 Games &nbsp;·&nbsp; All Rights Reserved</footer>
 
 </body>
 </html>
