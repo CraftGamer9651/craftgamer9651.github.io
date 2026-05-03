@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — VOID ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#050810; --surface:#0a0f1e; --card:#0d1428; --border:#1a2444;
+  --accent:#00ff88; --accent2:#7b4fff; --accent3:#00cfff; --accent4:#ff6bff;
+  --warn:#ffc800; --danger:#ff4466;
+  --text:#e8eaf6; --muted:#4a5580;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,255,136,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,136,0.02) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+.glow-tl{position:fixed;top:-200px;left:-200px;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(123,79,255,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.glow-br{position:fixed;bottom:-200px;right:-200px;width:700px;height:700px;
+  background:radial-gradient(circle,rgba(0,207,255,0.08) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.scanlines{position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;z-index:999;}
+
+nav{position:relative;z-index:1;width:100%;padding:20px 32px;
+  display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);}
+.back-btn{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .2s;}
+.back-btn:hover{gap:12px;}
+.nav-title{font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.nav-sep{color:var(--muted);}
+
+/* ── Main shell ── */
+#app{position:relative;z-index:1;width:100%;max-width:560px;padding:32px 20px 80px;
+  display:flex;flex-direction:column;align-items:center;gap:0;}
+
+/* ── Progress bar ── */
+.progress-wrap{width:100%;margin-bottom:24px;}
+.progress-label{display:flex;justify-content:space-between;
+  font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.progress-track{height:4px;background:var(--border);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));
+  border-radius:4px;transition:width .5s ease;}
+
+/* ── Card shell ── */
+.card{
+  width:100%;background:var(--card);border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,255,136,0.04);
+  animation:slideIn .35s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.card-header{padding:24px 28px 0;}
+.site-chrome{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;margin-bottom:20px;
+}
+.browser-dots{display:flex;gap:6px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.url-bar{flex:1;text-align:center;font-size:12px;color:var(--muted);letter-spacing:1px;}
+.site-title{font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.site-sub{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;}
+
+.card-body{padding:0 28px 28px;}
+
+/* Step title */
+.step-title{
+  font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:6px;
+}
+.step-desc{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:18px;}
+.step-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:-10px;margin-bottom:16px;font-style:italic;}
+
+/* ── Generic input ── */
+.field{
+  width:100%;padding:12px 16px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:'Syne',sans-serif;font-size:14px;
+  outline:none;transition:border-color .2s;margin-bottom:12px;
+}
+.field:focus{border-color:rgba(0,255,136,.4);}
+.field::placeholder{color:var(--muted);}
+
+/* ── Buttons ── */
+.btn{
+  width:100%;padding:14px;border-radius:10px;
+  background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);
+  color:var(--accent);font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;margin-top:4px;
+}
+.btn:hover{background:rgba(0,255,136,.2);box-shadow:0 0 20px rgba(0,255,136,.15);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.danger{background:rgba(255,68,102,.1);border-color:rgba(255,68,102,.3);color:var(--danger);}
+.btn.warn{background:rgba(255,200,0,.1);border-color:rgba(255,200,0,.3);color:var(--warn);}
+.btn.purple{background:rgba(123,79,255,.1);border-color:rgba(123,79,255,.3);color:var(--accent2);}
+.btn.small{padding:10px 20px;width:auto;font-size:11px;}
+
+/* ── OAuth buttons ── */
+.oauth-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.oauth-btn{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;text-align:left;
+}
+.oauth-btn:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.04);}
+.oauth-btn .icon{font-size:20px;width:24px;text-align:center;}
+.oauth-btn .check{margin-left:auto;color:var(--accent);font-size:16px;opacity:0;transition:opacity .3s;}
+.oauth-btn.done .check{opacity:1;}
+.oauth-btn.done{border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.04);}
+
+/* ── Checkbox / radio group ── */
+.check-group{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.check-item{
+  display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);cursor:pointer;
+  transition:border-color .2s;
+}
+.check-item:hover{border-color:rgba(0,255,136,.25);}
+.check-item input{margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.check-item label{font-size:13px;line-height:1.5;cursor:pointer;}
+
+/* ── Slider ── */
+.slider-wrap{margin-bottom:16px;}
+.slider-row{display:flex;align-items:center;gap:12px;}
+input[type=range]{
+  flex:1;accent-color:var(--accent);cursor:pointer;
+  height:6px;border-radius:3px;
+}
+.slider-val{
+  min-width:48px;text-align:center;font-size:15px;font-weight:800;color:var(--accent);
+}
+
+/* ── Code / OTP ── */
+.otp-wrap{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.otp-box{
+  width:48px;height:56px;border-radius:10px;text-align:center;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+  outline:none;transition:border-color .2s;
+}
+.otp-box:focus{border-color:rgba(0,255,136,.4);}
+
+/* ── CAPTCHA specifics ── */
+.captcha-img-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;
+}
+.cap-tile{
+  aspect-ratio:1;border-radius:8px;background:var(--surface);border:2px solid var(--border);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:32px;transition:all .2s;user-select:none;
+  position:relative;overflow:hidden;
+}
+.cap-tile:hover{border-color:rgba(0,255,136,.3);}
+.cap-tile.selected{border-color:var(--accent);background:rgba(0,255,136,.08);}
+.cap-tile .cap-label{font-size:10px;margin-top:4px;color:var(--muted);letter-spacing:1px;}
+
+.cap-math{
+  font-size:36px;font-weight:800;text-align:center;
+  color:var(--accent3);margin-bottom:12px;letter-spacing:2px;
+  text-shadow:0 0 20px rgba(0,207,255,.3);
+}
+
+/* scrambled text */
+.cap-scramble{
+  font-size:28px;font-weight:800;letter-spacing:6px;text-align:center;
+  color:var(--warn);margin-bottom:12px;font-style:italic;
+  text-decoration:wavy underline;text-underline-offset:6px;
+  transform:skewX(-8deg);display:block;
+}
+
+/* slider captcha */
+.slide-track{
+  position:relative;height:40px;background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;margin-bottom:14px;overflow:hidden;cursor:pointer;
+}
+.slide-thumb{
+  position:absolute;top:4px;left:4px;width:32px;height:32px;
+  background:var(--accent);border-radius:50%;transition:left .05s;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  cursor:grab;user-select:none;
+}
+.slide-track-fill{
+  position:absolute;top:0;left:0;height:100%;
+  background:rgba(0,255,136,.12);border-radius:20px;transition:width .05s;
+}
+
+/* ── Timer bar ── */
+.timer-bar{
+  height:3px;background:var(--danger);border-radius:3px;
+  transition:width .1s linear;margin-bottom:16px;
+}
+
+/* ── Outcome screen ── */
+.outcome{
+  text-align:center;padding:20px 0;
+}
+.outcome-icon{font-size:64px;margin-bottom:16px;display:block;}
+.outcome-title{font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.outcome-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.outcome-score{
+  display:inline-block;padding:8px 24px;border-radius:8px;
+  background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);
+  font-size:13px;font-weight:700;letter-spacing:2px;color:var(--accent);
+  margin-bottom:20px;
+}
+
+/* ── Misc ── */
+.divider{
+  display:flex;align-items:center;gap:12px;margin:12px 0;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.divider span{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+.tag{
+  display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;
+}
+.tag.warn{background:rgba(255,200,0,.12);color:var(--warn);border:1px solid rgba(255,200,0,.25);}
+.tag.danger{background:rgba(255,68,102,.12);color:var(--danger);border:1px solid rgba(255,68,102,.25);}
+.tag.info{background:rgba(0,207,255,.12);color:var(--accent3);border:1px solid rgba(0,207,255,.25);}
+
+.shake{animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+
+.error-msg{color:var(--danger);font-size:12px;margin-top:-8px;margin-bottom:10px;
+  display:none;letter-spacing:.5px;}
+.error-msg.show{display:block;}
+
+.flip-container{perspective:800px;}
+.flip-text{
+  font-size:28px;font-weight:800;letter-spacing:4px;text-align:center;
+  color:var(--accent4);margin-bottom:12px;display:block;
+  text-shadow:0 0 20px rgba(255,107,255,.4);
+}
+
+/* Loading spinner */
+.spinner{
+  width:32px;height:32px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;margin:20px auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.loading-text{text-align:center;font-size:13px;color:var(--muted);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+
+/* step counter badge */
+.step-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;background:rgba(0,255,136,.08);
+  border:1px solid rgba(0,255,136,.2);font-size:11px;font-weight:700;
+  color:var(--accent);letter-spacing:1px;margin-bottom:16px;
+}
+
+/* phone input */
+.phone-wrap{display:flex;gap:8px;margin-bottom:12px;}
+.country-select{
+  padding:12px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;cursor:pointer;
+}
+
+/* personality quiz */
+.quiz-option{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);cursor:pointer;
+  transition:all .2s;margin-bottom:8px;
+}
+.quiz-option:hover{border-color:rgba(123,79,255,.3);}
+.quiz-option.picked{border-color:var(--accent2);background:rgba(123,79,255,.08);}
+.quiz-option .q-emoji{font-size:22px;width:28px;text-align:center;}
+.quiz-option .q-label{font-size:13px;}
+
+/* security question */
+.sq-select{
+  width:100%;padding:12px 16px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:'Syne',sans-serif;font-size:13px;
+  outline:none;margin-bottom:12px;cursor:pointer;
+}
+
+/* biometric */
+.bio-scan{
+  width:120px;height:120px;border-radius:50%;border:3px solid var(--accent3);
+  margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+  font-size:56px;position:relative;cursor:pointer;
+  box-shadow:0 0 0 0 rgba(0,207,255,.4);
+  transition:box-shadow .2s;
+}
+.bio-scan.scanning{
+  animation:pulse-ring 1.2s ease infinite;
+}
+@keyframes pulse-ring{
+  0%{box-shadow:0 0 0 0 rgba(0,207,255,.5);}
+  70%{box-shadow:0 0 0 20px rgba(0,207,255,.0);}
+  100%{box-shadow:0 0 0 0 rgba(0,207,255,.0);}
+}
+.bio-label{text-align:center;font-size:12px;color:var(--muted);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:16px;}
+
+/* passport upload fake */
+.upload-zone{
+  border:2px dashed var(--border);border-radius:12px;padding:28px;
+  text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:14px;
+}
+.upload-zone:hover{border-color:rgba(0,255,136,.3);}
+.upload-zone .up-icon{font-size:36px;margin-bottom:8px;}
+.upload-zone .up-label{font-size:13px;color:var(--muted);}
+
+/* ── Confetti ── */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:900;overflow:hidden;}
+.conf{
+  position:absolute;top:-20px;width:10px;height:10px;
+  border-radius:2px;animation:fall linear forwards;
+}
+@keyframes fall{
+  to{transform:translateY(110vh) rotate(720deg);opacity:0;}
+}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="glow-tl"></div>
+<div class="glow-br"></div>
+<div class="confetti-wrap" id="confetti"></div>
+
+<nav>
+  <a class="back-btn" href="index.html">← Back</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">Sign In</span>
+</nav>
+
+<div id="app"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+//  Game State
+// ─────────────────────────────────────────────────────────────────
+const STATE = {
+  phase: 'signin',   // 'signin' | 'captcha' | 'outcome'
+  signinStep: 0,
+  captchaStep: 0,
+  totalAttempts: 0,
+  captchasFailed: 0,
+  startTime: Date.now(),
+  isCreatingAccount: false,
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  Sign-in steps
+// ─────────────────────────────────────────────────────────────────
+const SIGNIN_STEPS = [
+  {
+    id:'email',
+    render() {
+      return `
+        <div class="step-badge">Step 1 of ${SIGNIN_STEPS.length} — Identity</div>
+        <div class="step-title">Primary Authentication</div>
+        <div class="step-desc">Enter your email address to get started. It must be a real email. We will not check, but we will judge.</div>
+        <input class="field" id="f-email" type="email" placeholder="definitely.real.email@gmail.com">
+        <div class="error-msg" id="e-email">⚠ That doesn't look like an email (or does it? we don't know)</div>
+        <button class="btn" onclick="nextSignin()">Continue →</button>`;
+    },
+    validate() {
+      const v = document.getElementById('f-email').value;
+      if (!v.includes('@')) { showError('e-email'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'oauth',
+    render() {
+      const providers = [
+        {icon:'🔵',name:'Continue with Facebook'},
+        {icon:'🔴',name:'Continue with Google'},
+        {icon:'🍎',name:'Continue with Apple'},
+        {icon:'🐦',name:'Continue with Twitter / X'},
+        {icon:'💼',name:'Continue with LinkedIn'},
+        {icon:'🎮',name:'Continue with Discord'},
+        {icon:'🟣',name:'Continue with Twitch'},
+        {icon:'🔶',name:'Continue with Amazon'},
+        {icon:'📱',name:'Continue with TikTok'},
+        {icon:'🐙',name:'Continue with GitHub'},
+        {icon:'📘',name:'Continue with MySpace (legacy)'},
+        {icon:'🪣',name:'Continue with AOL (we don\'t know why)'},
+      ];
+      return `
+        <div class="step-badge">Step 2 of ${SIGNIN_STEPS.length} — Social Verification</div>
+        <div class="step-title">Social Sign-In</div>
+        <div class="step-desc">Please sign in with ALL of the following services. Yes, all of them. We need to be very sure.</div>
+        <div class="oauth-grid" id="oauth-grid">
+          ${providers.map((p,i)=>`
+            <button class="oauth-btn" id="oauth-${i}" onclick="clickOAuth(${i})">
+              <span class="icon">${p.icon}</span>
+              <span>${p.name}</span>
+              <span class="check">✓</span>
+            </button>`).join('')}
+        </div>
+        <div class="error-msg" id="e-oauth">⚠ You must connect ALL accounts. Even MySpace.</div>
+        <button class="btn" onclick="nextSignin()">Verify All Connected →</button>`;
+    },
+    validate() {
+      const btns = document.querySelectorAll('.oauth-btn');
+      const all = [...btns].every(b => b.classList.contains('done'));
+      if (!all) { showError('e-oauth'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'password',
+    render() {
+      return `
+        <div class="step-badge">Step 3 of ${SIGNIN_STEPS.length} — Password Ritual</div>
+        <div class="step-title">Create a Secure Password</div>
+        <div class="step-desc">Your password must contain:</div>
+        <div class="check-group" style="margin-bottom:14px;">
+          ${[
+            'At least 32 characters',
+            'At least 3 uppercase letters',
+            'At least 1 number',
+            'At least 1 symbol (!@#$%)',
+            'At least 1 emoji (🔥 counts)',
+            'Your mother\'s maiden name (as a word, not a name)',
+            'No letter "e" (for security)',
+            'Must rhyme with "purple"',
+            'Must not contain the word "password" (nice try)',
+            'Must be pronounceable in Klingon',
+          ].map(r=>`<div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);padding:4px 0;">
+            <span style="color:var(--accent);flex-shrink:0;">✓</span>${r}</div>`).join('')}
+        </div>
+        <input class="field" id="f-pw" type="password" placeholder="Enter password" oninput="checkPw()">
+        <div id="pw-strength" style="font-size:11px;color:var(--muted);margin:-8px 0 10px;letter-spacing:1px;"></div>
+        <input class="field" id="f-pw2" type="password" placeholder="Confirm password">
+        <div class="error-msg" id="e-pw">⚠ Password must be at least 32 characters</div>
+        <button class="btn" onclick="nextSignin()">Set Password →</button>`;
+    },
+    validate() {
+      const pw = document.getElementById('f-pw').value;
+      if (pw.length < 32) { showError('e-pw'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'phone',
+    render() {
+      return `
+        <div class="step-badge">Step 4 of ${SIGNIN_STEPS.length} — Phone Verification</div>
+        <div class="step-title">Enter Your Phone Number</div>
+        <div class="step-desc">We'll send you a 6-digit code. Then we'll call you. Then we'll send another code. Then a carrier pigeon. Please be available.</div>
+        <div class="phone-wrap">
+          <select class="country-select">
+            <option>🇺🇸 +1</option><option>🇬🇧 +44</option><option>🇯🇵 +81</option>
+            <option>🏴‍☠️ +??</option><option>🌍 +0</option><option>🚀 +∞</option>
+          </select>
+          <input class="field" id="f-phone" type="tel" placeholder="(555) 867-5309" style="margin:0;flex:1;">
+        </div>
+        <button class="btn warn" onclick="sendOtp()" id="send-otp-btn">Send Code</button>
+        <div id="otp-section" style="display:none;margin-top:14px;">
+          <div class="step-desc" style="margin-bottom:12px;">Enter the 6-digit code. The code is <strong style="color:var(--accent)">000000</strong>. We told you for your convenience. Security isn't really our thing.</div>
+          <div class="otp-wrap" id="otp-wrap">
+            ${[0,1,2,3,4,5].map(i=>`<input class="otp-box" id="otp-${i}" maxlength="1" oninput="otpNext(${i})" type="text" inputmode="numeric">`).join('')}
+          </div>
+        </div>
+        <div class="error-msg" id="e-phone">⚠ Enter phone number first</div>
+        <div class="error-msg" id="e-otp">⚠ The code is literally 000000. Come on.</div>
+        <button class="btn" onclick="nextSignin()" id="verify-otp-btn" style="display:none;">Verify Code →</button>`;
+    },
+    validate() {
+      const ph = document.getElementById('f-phone').value;
+      if (!ph) { showError('e-phone'); return false; }
+      const otpSection = document.getElementById('otp-section');
+      if (otpSection.style.display === 'none') { showError('e-phone'); return false; }
+      const code = [0,1,2,3,4,5].map(i=>document.getElementById('otp-'+i).value).join('');
+      if (code !== '000000') { showError('e-otp'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'security',
+    render() {
+      return `
+        <div class="step-badge">Step 5 of ${SIGNIN_STEPS.length} — Memory Test</div>
+        <div class="step-title">Security Questions</div>
+        <div class="step-desc">Please answer all three security questions. Answers are case-sensitive, emotionally sensitive, and will be judged.</div>
+
+        <select class="sq-select"><option>What was the name of your first pet?</option><option>What street did you grow up on?</option><option>What is the airspeed velocity of an unladen swallow?</option><option>What would you name a star if you owned one?</option><option>What is your villain origin story in 3 words?</option></select>
+        <input class="field" placeholder="Answer #1" id="sq1">
+
+        <select class="sq-select"><option>What is your mother's maiden name?</option><option>What was your childhood nickname?</option><option>If you were a soup, what soup would you be?</option><option>Name a sound that makes you irrationally angry</option></select>
+        <input class="field" placeholder="Answer #2" id="sq2">
+
+        <select class="sq-select"><option>Where were you on the night of January 6, 1994?</option><option>What is your deepest regret?</option><option>Describe your soul as a hex color code</option></select>
+        <input class="field" placeholder="Answer #3" id="sq3">
+
+        <div class="error-msg" id="e-sq">⚠ Please answer all security questions (even the weird ones)</div>
+        <button class="btn" onclick="nextSignin()">Submit Answers →</button>`;
+    },
+    validate() {
+      if (!document.getElementById('sq1').value || !document.getElementById('sq2').value || !document.getElementById('sq3').value) {
+        showError('e-sq'); return false;
+      }
+      return true;
+    }
+  },
+  {
+    id:'biometric',
+    render() {
+      return `
+        <div class="step-badge">Step 6 of ${SIGNIN_STEPS.length} — Biometric</div>
+        <div class="step-title">Biometric Verification</div>
+        <div class="step-desc">Please complete all biometric checks. Our scanner uses cutting-edge technology (a webcam pointed at a poster of an eye).</div>
+        <div class="bio-scan" id="bio-face" onclick="doBio('face')">😐</div>
+        <div class="bio-label" id="bio-face-label">Click to scan face</div>
+        <div class="bio-scan" id="bio-thumb" onclick="doBio('thumb')">👍</div>
+        <div class="bio-label" id="bio-thumb-label">Click to scan thumbprint</div>
+        <div class="bio-scan" id="bio-retina" onclick="doBio('retina')">👁</div>
+        <div class="bio-label" id="bio-retina-label">Click to scan retina</div>
+        <div class="error-msg" id="e-bio">⚠ All biometrics must be verified</div>
+        <button class="btn" onclick="nextSignin()">Confirm Identity →</button>`;
+    },
+    validate() {
+      const done = ['face','thumb','retina'].every(k => window._bioDone && window._bioDone[k]);
+      if (!done) { showError('e-bio'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'tos',
+    render() {
+      const clauses = [
+        'I agree to the Terms of Service (812 pages, updated 3 minutes ago)',
+        'I agree to the Privacy Policy (we know where you live — for legal reasons)',
+        'I consent to receiving emails about emails about our email policy',
+        'I confirm I am not a robot (unverified)',
+        'I confirm I am also not a particularly clever dog using a computer',
+        'I accept that cookies will be placed on my device, my phone, and my soul',
+        'I agree to tell three friends about this service (honor system)',
+        'I waive my right to complain on social media (you won\'t follow this)',
+        'I acknowledge that the website is "as-is," "as-was," and "as-will-be"',
+        'I consent to my browsing data being sold to a company called "Definitely Not Evil LLC"',
+        'I agree that any disputes will be settled by a best-of-3 thumb war',
+        'I have read and understood the Terms (ha)',
+      ];
+      return `
+        <div class="step-badge">Step 7 of ${SIGNIN_STEPS.length} — Legal Stuff</div>
+        <div class="step-title">Terms & Conditions</div>
+        <div class="step-desc">Please read and accept each term individually. We know you won't read them. We also know that you know that we know. This is fine.</div>
+        <div class="check-group" id="tos-group">
+          ${clauses.map((c,i)=>`
+            <label class="check-item">
+              <input type="checkbox" id="tos-${i}" onchange="checkTos()">
+              <label for="tos-${i}" style="font-size:12px;line-height:1.5;">${c}</label>
+            </label>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="btn small purple" onclick="checkAllTos()">Accept All (boring)</button>
+          <button class="btn small warn" onclick="uncheckAllTos()">Decline All (brave)</button>
+        </div>
+        <div class="error-msg" id="e-tos">⚠ You must accept ALL terms. Even the thumb war one.</div>
+        <button class="btn" onclick="nextSignin()">I Accept Everything →</button>`;
+    },
+    validate() {
+      const boxes = document.querySelectorAll('[id^="tos-"]');
+      const all = [...boxes].every(b => b.checked);
+      if (!all) { showError('e-tos'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'personality',
+    render() {
+      const questions = [
+        { q:'You find a wallet on the street. You:', opts:[{e:'💰',l:'Keep it, obviously'},{e:'🤲',l:'Return it'},{e:'🎲',l:'Flip a coin'},{e:'🔥',l:'Set it on fire for art'}] },
+        { q:'Your ideal weekend is:', opts:[{e:'🏔',l:'Hiking'},{e:'🛋',l:'Couch + snacks'},{e:'🎉',l:'Party'},{e:'📚',l:'Reading ominously'}] },
+        { q:'You see a "wet paint" sign. You:', opts:[{e:'✋',l:'Touch it anyway'},{e:'🚶',l:'Walk past'},{e:'📸',l:'Take a photo'},{e:'🤔',l:'Question reality'}] },
+      ];
+      window._quizAnswers = {};
+      return `
+        <div class="step-badge">Step 8 of ${SIGNIN_STEPS.length} — Profiling</div>
+        <div class="step-title">Personality Assessment</div>
+        <div class="step-desc">We need to understand who you are as a person before granting access. This data will absolutely not be used to sell you things.</div>
+        ${questions.map((q,qi)=>`
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text);">${q.q}</div>
+          <div style="margin-bottom:16px;">
+            ${q.opts.map((o,oi)=>`
+              <div class="quiz-option" id="qo-${qi}-${oi}" onclick="pickQuiz(${qi},${oi})">
+                <span class="q-emoji">${o.e}</span>
+                <span class="q-label">${o.l}</span>
+              </div>`).join('')}
+          </div>`).join('')}
+        <div class="error-msg" id="e-quiz">⚠ We must judge all of your answers first</div>
+        <button class="btn" onclick="nextSignin()">Submit My Soul →</button>`;
+    },
+    validate() {
+      const answered = Object.keys(window._quizAnswers || {}).length;
+      if (answered < 3) { showError('e-quiz'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'upload',
+    render() {
+      return `
+        <div class="step-badge">Step 9 of ${SIGNIN_STEPS.length} — Documentation</div>
+        <div class="step-title">Identity Documents</div>
+        <div class="step-desc">Please upload the following. All documents must be high-resolution, notarized, and at least mildly embarrassing.</div>
+
+        <div class="tag info">Government-Issued ID</div>
+        <div class="upload-zone" id="up-1" onclick="fakeUpload('up-1','📄 passport_scan.jpg — Uploaded ✓')">
+          <div class="up-icon">🛂</div>
+          <div class="up-label">Passport, Driver's License, or Grocery Loyalty Card</div>
+        </div>
+
+        <div class="tag info">Proof of Existence</div>
+        <div class="upload-zone" id="up-2" onclick="fakeUpload('up-2','📄 birth_certificate.pdf — Uploaded ✓')">
+          <div class="up-icon">👶</div>
+          <div class="up-label">Birth Certificate or Sworn Affidavit That You Were Born</div>
+        </div>
+
+        <div class="tag warn">Optional (Required)</div>
+        <div class="upload-zone" id="up-3" onclick="fakeUpload('up-3','📄 childhood_photo.jpg — Uploaded ✓')">
+          <div class="up-icon">📸</div>
+          <div class="up-label">Embarrassing childhood photo (for "security purposes")</div>
+        </div>
+
+        <div class="error-msg" id="e-upload">⚠ Please upload all required (and optional) documents</div>
+        <button class="btn" onclick="nextSignin()">Submit Documents →</button>`;
+    },
+    validate() {
+      const done = [1,2,3].every(i=>{
+        const el = document.getElementById('up-'+i);
+        return el && el.dataset.done === '1';
+      });
+      if (!done) { showError('e-upload'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'final',
+    render() {
+      return `
+        <div class="step-badge">Step 10 of ${SIGNIN_STEPS.length} — Almost There</div>
+        <div class="step-title">One More Thing™</div>
+        <div class="step-desc">You're almost signed in! Just a few final questions before we proceed to the CAPTCHA phase.</div>
+        <div class="tag warn">Important</div>
+
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Estimated age of your first pet (in human years)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" min="0" max="200" value="7" id="sl-age" oninput="document.getElementById('sl-age-val').textContent=this.value">
+            <span class="slider-val" id="sl-age-val">7</span>
+          </div>
+        </div>
+
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">How many bones have you broken? (honesty encouraged)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" min="0" max="50" value="0" id="sl-bones" oninput="document.getElementById('sl-bones-val').textContent=this.value">
+            <span class="slider-val" id="sl-bones-val">0</span>
+          </div>
+        </div>
+
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Rate your current vibe (1–10)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" min="1" max="10" value="5" id="sl-vibe" oninput="document.getElementById('sl-vibe-val').textContent=this.value">
+            <span class="slider-val" id="sl-vibe-val">5</span>
+          </div>
+        </div>
+
+        <input class="field" placeholder="What is your spirit animal? (required)" id="f-spirit">
+        <input class="field" placeholder="Describe yourself as a font (e.g. 'Comic Sans but make it cry')" id="f-font">
+
+        <div class="error-msg" id="e-final">⚠ We need all of this information. Especially the font one.</div>
+        <button class="btn" onclick="nextSignin()">Proceed to CAPTCHA →</button>`;
+    },
+    validate() {
+      if (!document.getElementById('f-spirit').value || !document.getElementById('f-font').value) {
+        showError('e-final'); return false;
+      }
+      return true;
+    }
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────
+//  CAPTCHA steps
+// ─────────────────────────────────────────────────────────────────
+const CAPTCHA_STEPS = [
+  {
+    id:'image-select',
+    timeLimit: 20,
+    render() {
+      const items = [
+        {e:'🚗',l:'Car'},{e:'🚌',l:'Bus'},{e:'🚲',l:'Bike'},
+        {e:'🛵',l:'Scooter'},{e:'🚁',l:'Helicopter'},{e:'🚀',l:'Rocket'},
+        {e:'🐴',l:'Horse'},{e:'🛸',l:'UFO'},{e:'🦆',l:'Duck (not a vehicle)'},
+      ];
+      window._capTargets = new Set([0,1,3]); // car, bus, scooter
+      window._capSelected = new Set();
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Select all images that contain <strong style="color:var(--accent)">vehicles</strong>.<br>Note: a duck on a skateboard does not count.</div>
+        <div class="captcha-img-grid" id="cap-grid">
+          ${items.map((it,i)=>`
+            <div class="cap-tile" id="ct-${i}" onclick="toggleCapTile(${i})">
+              <span style="font-size:36px;">${it.e}</span>
+              <span class="cap-label">${it.l}</span>
+            </div>`).join('')}
+        </div>
+        <div class="error-msg" id="e-cap">⚠ Incorrect. Please try again.</div>
+        <button class="btn" onclick="nextCaptcha()">Verify →</button>`;
+    },
+    validate() {
+      const correct = window._capTargets;
+      const sel = window._capSelected;
+      const ok = sel.size === correct.size && [...correct].every(i=>sel.has(i));
+      if (!ok) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'math',
+    timeLimit: 15,
+    render() {
+      window._capMathAnswer = 847;
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Solve the following equation to prove you are human.<br><em style="color:var(--muted);font-size:12px;">(Humans love math. This is known.)</em></div>
+        <div class="cap-math">((17 × 49) + 42) ÷ (√4) = ?</div>
+        <div class="step-note">Hint: The answer is a whole number. Or is it?</div>
+        <input class="field" id="cap-math-input" type="number" placeholder="Your answer">
+        <div class="error-msg" id="e-cap">⚠ Incorrect. A calculator would also get this wrong.</div>
+        <button class="btn" onclick="nextCaptcha()">Submit Answer →</button>`;
+    },
+    validate() {
+      const v = parseInt(document.getElementById('cap-math-input').value);
+      // ((17*49)+42)/2 = (833+42)/2 = 875/2 = 437.5 → we accept anything with a note
+      // Actually let's just accept any answer — they'll fail anyway at the end
+      if (!document.getElementById('cap-math-input').value) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'text',
+    timeLimit: 30,
+    render() {
+      window._capTextAnswer = 'G7mK9p';
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Type the characters you see below. They are definitely legible. We promise.</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 2px,transparent 2px,transparent 8px);"></div>
+          <span class="cap-scramble" id="cap-scramble-text" style="font-size:36px;letter-spacing:10px;filter:blur(0.5px);">G7mK9p</span>
+          <div style="position:absolute;top:30%;left:10%;width:80%;height:2px;background:rgba(255,107,255,0.3);transform:rotate(-3deg);"></div>
+          <div style="position:absolute;top:60%;left:5%;width:90%;height:1px;background:rgba(0,207,255,0.2);transform:rotate(2deg);"></div>
+        </div>
+        <button class="btn small warn" style="margin-bottom:12px;" onclick="document.getElementById('cap-scramble-text').style.filter='blur('+(Math.random()*3+1)+'px)'">🔄 Refresh (makes it worse)</button>
+        <input class="field" id="cap-text-input" placeholder="Type characters here">
+        <div class="error-msg" id="e-cap">⚠ Incorrect. It's case sensitive. And font sensitive. And vibe sensitive.</div>
+        <button class="btn" onclick="nextCaptcha()">Verify →</button>`;
+    },
+    validate() {
+      const v = document.getElementById('cap-text-input').value;
+      if (!v) { showError('e-cap'); return false; }
+      if (v !== window._capTextAnswer) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'audio',
+    timeLimit: 25,
+    render() {
+      const words = ['banana','seventeen','purple','elephant','Tuesday'];
+      window._capAudioAnswer = words[2];
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Click the button to hear an audio clip. Type what you hear. The audio is perfectly clear and not distorted at all.</div>
+        <div style="text-align:center;margin-bottom:16px;">
+          <button class="btn warn small" onclick="playFakeAudio()" style="margin-bottom:8px;">🔊 Play Audio Clip</button>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;">Note: audio plays at 0.3x speed underwater</div>
+        </div>
+        <div id="audio-transcript" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--muted);font-style:italic;">
+          "[unintelligible]... prrrrrr... ${Array(20).fill('bzt').join(' ')}... something... END"
+        </div>
+        <input class="field" id="cap-audio-input" placeholder="What did you hear?">
+        <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:12px;">Hint: it's a color, or a day, or a fruit, or a number, or an animal. Could be anything really.</div>
+        <div class="error-msg" id="e-cap">⚠ Incorrect. It was "${window._capAudioAnswer}" — how did you not get that?</div>
+        <button class="btn" onclick="nextCaptcha()">Submit →</button>`;
+    },
+    validate() {
+      const v = (document.getElementById('cap-audio-input').value || '').toLowerCase().trim();
+      if (v !== window._capAudioAnswer) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'slider-captcha',
+    timeLimit: 20,
+    render() {
+      window._sliderDone = false;
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Slide the puzzle piece to complete the puzzle. The puzzle piece is a dinosaur emoji. The puzzle is your dignity.</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;position:relative;height:100px;overflow:hidden;">
+          <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:28px;opacity:0.3;" id="hole-emoji">🦕</div>
+          <div id="slide-track-cap" style="position:absolute;bottom:16px;left:20px;right:20px;height:40px;background:var(--card);border:1px solid var(--border);border-radius:20px;">
+            <div id="slide-fill-cap" style="position:absolute;top:0;left:0;height:100%;background:rgba(0,255,136,.1);border-radius:20px;width:36px;"></div>
+            <div id="slide-thumb-cap" style="position:absolute;top:4px;left:4px;width:32px;height:32px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:grab;user-select:none;">🦕</div>
+          </div>
+        </div>
+        <div id="slide-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;letter-spacing:1px;">Slide the dino to the right →</div>
+        <div class="error-msg" id="e-cap">⚠ Please complete the slider</div>
+        <button class="btn" onclick="nextCaptcha()">Confirm →</button>`;
+    },
+    validate() {
+      if (!window._sliderDone) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'sequence',
+    timeLimit: 20,
+    render() {
+      const seq = ['🟥','🟦','🟨','🟩'];
+      window._capSeq = seq;
+      window._capSeqInput = [];
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Watch the sequence, then repeat it. The sequence will be shown once. If you blink, that's on you.</div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-bottom:16px;" id="seq-display">
+          ${seq.map((s,i)=>`<div style="font-size:36px;opacity:0.3;transition:opacity .2s;" id="seq-${i}">${s}</div>`).join('')}
+        </div>
+        <button class="btn warn small" style="margin-bottom:14px;" id="play-seq-btn" onclick="playSequence()">▶ Show Sequence</button>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;text-align:center;">Click the squares in order:</div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-bottom:14px;">
+          ${seq.map((s,i)=>`<div style="font-size:36px;cursor:pointer;" onclick="inputSeq(${i})" title="Click me">${s}</div>`).join('')}
+        </div>
+        <div style="text-align:center;font-size:13px;color:var(--accent);letter-spacing:1px;min-height:20px;" id="seq-status"></div>
+        <div class="error-msg" id="e-cap">⚠ Wrong sequence. Were you even watching?</div>
+        <button class="btn" onclick="nextCaptcha()">Verify →</button>`;
+    },
+    validate() {
+      const correct = [0,1,2,3];
+      const input = window._capSeqInput || [];
+      const ok = input.length === 4 && input.every((v,i)=>v===correct[i]);
+      if (!ok) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'riddle',
+    timeLimit: 30,
+    render() {
+      const riddles = [
+        { q:"I speak without a mouth and hear without ears. I have no body, but I come alive with wind. Also I owe you $5. What am I?", a:"echo" },
+        { q:"The more you take, the more you leave behind. Also I stole your left sock. What am I?", a:"footsteps" },
+        { q:"I have cities, but no houses live there. I have mountains, but no trees grow. I have water, but no fish swim. What am I?", a:"map" },
+      ];
+      const r = riddles[Math.floor(Math.random()*riddles.length)];
+      window._riddleAnswer = r.a;
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length}</div>
+        <div class="step-desc">Answer this riddle to prove you have a human brain (or a very dedicated bot).</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;">
+          <div style="font-size:14px;line-height:1.7;color:var(--text);font-style:italic;">"${r.q}"</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;">One word answer. All lowercase. No punctuation. Don't overthink it.</div>
+        <input class="field" id="cap-riddle-input" placeholder="Your answer...">
+        <div class="error-msg" id="e-cap">⚠ Wrong. The answer is "${r.a}". Think harder next time.</div>
+        <button class="btn" onclick="nextCaptcha()">Submit →</button>`;
+    },
+    validate() {
+      const v = (document.getElementById('cap-riddle-input').value || '').toLowerCase().trim();
+      if (v !== window._riddleAnswer) { showError('e-cap'); return false; }
+      return true;
+    }
+  },
+  {
+    id:'impossible',
+    timeLimit: 15,
+    render() {
+      // This one always fails
+      window._impossibleClicks = [];
+      return `
+        <div class="step-title">CAPTCHA ${STATE.captchaStep+1} of ${CAPTCHA_STEPS.length} — Final Check</div>
+        <div class="tag danger">ADVANCED SECURITY</div>
+        <div class="step-desc">Click the button <strong style="color:var(--accent)">exactly</strong> when the counter reaches zero. The counter counts at a random speed. Clicking too early or too late will reset it. No, you cannot disable this.</div>
+        <div style="text-align:center;margin:20px 0;">
+          <div id="countdown-display" style="font-size:72px;font-weight:800;color:var(--accent);text-shadow:0 0 30px rgba(0,255,136,.5);line-height:1;">–</div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:8px;">CLICK AT EXACTLY 0</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn warn" onclick="startImpossibleCounter()" id="imp-start-btn">Start Counter</button>
+          <button class="btn" onclick="clickAtZero()" id="imp-click-btn" disabled>CLICK NOW</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;" id="imp-feedback"></div>
+        <div class="error-msg" id="e-cap">⚠ Too slow. Or too fast. Impossible to say.</div>`;
+    },
+    validate() {
+      // Always return true — the step logic auto-fails via timer
+      return true;
+    }
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────
+//  Render engine
+// ─────────────────────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  const totalSteps = STATE.phase === 'signin'
+    ? SIGNIN_STEPS.length
+    : CAPTCHA_STEPS.length;
+  const currentStep = STATE.phase === 'signin'
+    ? STATE.signinStep
+    : STATE.captchaStep;
+
+  const progressPct = STATE.phase === 'outcome' ? 100
+    : Math.round((currentStep / totalSteps) * 100);
+
+  let innerContent = '';
+  if (STATE.phase === 'signin') {
+    innerContent = SIGNIN_STEPS[STATE.signinStep].render();
+  } else if (STATE.phase === 'captcha') {
+    innerContent = CAPTCHA_STEPS[STATE.captchaStep].render();
+  } else {
+    innerContent = renderOutcome();
+  }
+
+  const label = STATE.phase === 'signin'
+    ? `Sign-In Step ${STATE.signinStep+1}/${SIGNIN_STEPS.length}`
+    : STATE.phase === 'captcha'
+    ? `CAPTCHA ${STATE.captchaStep+1}/${CAPTCHA_STEPS.length}`
+    : 'Complete';
+
+  app.innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>${STATE.isCreatingAccount ? '📝 Creating Account' : '🔐 Signing In'}</span>
+        <span>${label}</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${progressPct}%"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="site-chrome">
+          <div class="browser-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <div class="url-bar">🔒 definitely-real-website.com/auth/signin/verify/confirm/final</div>
+        </div>
+        <div class="site-title">${STATE.isCreatingAccount ? 'Create Your Account' : 'Welcome Back!'}</div>
+        <div class="site-sub">${STATE.isCreatingAccount ? 'Just a few (hundred) steps' : 'Quick and easy sign-in (3-7 business hours)'}</div>
+      </div>
+      <div class="card-body">
+        ${STATE.phase === 'captcha' ? `<div class="timer-bar" id="timer-bar" style="width:100%"></div>` : ''}
+        ${innerContent}
+      </div>
+    </div>`;
+
+  // Post-render hooks
+  if (STATE.phase === 'captcha') {
+    startTimer(CAPTCHA_STEPS[STATE.captchaStep].timeLimit || 20);
+    postRenderCaptcha();
+  }
+  if (STATE.phase === 'signin') {
+    postRenderSignin();
+  }
+}
+
+function postRenderSignin() {
+  // Biometric state
+  window._bioDone = window._bioDone || {};
+}
+
+function postRenderCaptcha() {
+  const step = CAPTCHA_STEPS[STATE.captchaStep];
+  if (step.id === 'slider-captcha') initSliderCaptcha();
+  if (step.id === 'impossible') {}
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Navigation
+// ─────────────────────────────────────────────────────────────────
+function nextSignin() {
+  const step = SIGNIN_STEPS[STATE.signinStep];
+  if (!step.validate()) {
+    shakeCard();
+    return;
+  }
+  STATE.signinStep++;
+  if (STATE.signinStep >= SIGNIN_STEPS.length) {
+    STATE.phase = 'captcha';
+    STATE.captchaStep = 0;
+  }
+  render();
+}
+
+function nextCaptcha() {
+  const step = CAPTCHA_STEPS[STATE.captchaStep];
+  if (!step.validate()) {
+    shakeCard();
+    return;
+  }
+  clearTimer();
+  STATE.captchaStep++;
+  if (STATE.captchaStep >= CAPTCHA_STEPS.length) {
+    // All captchas done — trigger outcome
+    triggerOutcome();
+    return;
+  }
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Timer
+// ─────────────────────────────────────────────────────────────────
+let _timerInterval = null;
+function startTimer(seconds) {
+  clearTimer();
+  let remaining = seconds;
+  const bar = () => document.getElementById('timer-bar');
+  if (bar()) bar().style.width = '100%';
+  _timerInterval = setInterval(() => {
+    remaining -= 0.1;
+    const pct = Math.max(0, (remaining / seconds) * 100);
+    if (bar()) bar().style.width = pct + '%';
+    if (remaining <= 0) {
+      clearTimer();
+      // Time expired on a captcha — fail it
+      STATE.captchasFailed++;
+      showTimerExpired();
+    }
+  }, 100);
+}
+function clearTimer() {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+}
+function showTimerExpired() {
+  // Stop the impossible counter if it was running — otherwise its interval
+  // keeps firing and tries to update DOM elements that no longer exist.
+  clearInterval(_impTimer);
+  _impRunning = false;
+  _impVal = null;
+
+  const cb = document.querySelector('.card-body');
+  if (!cb) return;
+  cb.innerHTML = `
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:48px;margin-bottom:12px;">⏱</div>
+      <div style="font-size:20px;font-weight:800;color:var(--danger);margin-bottom:8px;">TIME'S UP</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">You took too long. The CAPTCHA has expired.<br>Don't worry, there are only ${CAPTCHA_STEPS.length - STATE.captchaStep} more to go.</div>
+      <button class="btn" onclick="retryCurrentCaptcha()">Try Again (same CAPTCHA)</button>
+    </div>`;
+}
+function retryCurrentCaptcha() {
+  // Always fully reset the impossible counter before re-rendering,
+  // so _impRunning is false and the buttons come back enabled correctly.
+  clearInterval(_impTimer);
+  _impRunning = false;
+  _impVal = null;
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Step-specific helpers
+// ─────────────────────────────────────────────────────────────────
+function clickOAuth(i) {
+  const btn = document.getElementById('oauth-'+i);
+  if (btn.classList.contains('done')) return;
+  btn.style.opacity = '.5';
+  btn.style.pointerEvents = 'none';
+  setTimeout(() => {
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.classList.add('done');
+  }, 800 + Math.random() * 600);
+}
+
+function sendOtp() {
+  const ph = document.getElementById('f-phone').value;
+  if (!ph) { showError('e-phone'); return; }
+  const btn = document.getElementById('send-otp-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  setTimeout(() => {
+    btn.textContent = 'Code Sent ✓';
+    document.getElementById('otp-section').style.display = 'block';
+    document.getElementById('verify-otp-btn').style.display = 'block';
+  }, 1500);
+}
+
+function otpNext(i) {
+  const val = document.getElementById('otp-'+i).value;
+  if (val && i < 5) document.getElementById('otp-'+(i+1)).focus();
+}
+
+function doBio(type) {
+  const el = document.getElementById('bio-'+type);
+  const lbl = document.getElementById('bio-'+type+'-label');
+  if (window._bioDone[type]) return;
+  el.classList.add('scanning');
+  lbl.textContent = 'Scanning...';
+  setTimeout(() => {
+    const fail = Math.random() < 0.4;
+    if (fail) {
+      lbl.textContent = '❌ Scan failed — try again';
+      el.classList.remove('scanning');
+    } else {
+      window._bioDone[type] = true;
+      el.style.borderColor = 'var(--accent)';
+      el.style.background = 'rgba(0,255,136,.08)';
+      el.classList.remove('scanning');
+      lbl.textContent = '✓ Verified';
+      lbl.style.color = 'var(--accent)';
+    }
+  }, 2000 + Math.random() * 1000);
+}
+
+function fakeUpload(id, label) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div style="color:var(--accent);font-size:13px;font-weight:700;">${label}</div>`;
+  el.style.borderColor = 'rgba(0,255,136,.3)';
+  el.dataset.done = '1';
+}
+
+function checkAllTos() {
+  document.querySelectorAll('[id^="tos-"]').forEach(b => b.checked = true);
+}
+function uncheckAllTos() {
+  document.querySelectorAll('[id^="tos-"]').forEach(b => b.checked = false);
+}
+function checkTos() { /* live update could go here */ }
+
+function pickQuiz(qi, oi) {
+  // Deselect same question
+  for (let i=0;i<4;i++) {
+    const el = document.getElementById(`qo-${qi}-${i}`);
+    if (el) el.classList.remove('picked');
+  }
+  const el = document.getElementById(`qo-${qi}-${oi}`);
+  if (el) el.classList.add('picked');
+  window._quizAnswers[qi] = oi;
+}
+
+function checkPw() {
+  const pw = document.getElementById('f-pw').value;
+  const el = document.getElementById('pw-strength');
+  if (!el) return;
+  if (pw.length === 0) { el.textContent = ''; return; }
+  if (pw.length < 8) el.textContent = '🔴 Weak (also, really?)';
+  else if (pw.length < 16) el.textContent = '🟡 Medium (try harder)';
+  else if (pw.length < 32) el.textContent = '🟠 Strong (but not strong enough)';
+  else el.textContent = '🟢 Valid — but does it rhyme with purple?';
+}
+
+// CAPTCHA helpers
+function toggleCapTile(i) {
+  const el = document.getElementById('ct-'+i);
+  if (!el) return;
+  if (window._capSelected.has(i)) {
+    window._capSelected.delete(i);
+    el.classList.remove('selected');
+  } else {
+    window._capSelected.add(i);
+    el.classList.add('selected');
+  }
+}
+
+function playFakeAudio() {
+  document.getElementById('audio-transcript').style.display = 'block';
+}
+
+function playSequence() {
+  const btn = document.getElementById('play-seq-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  const seq = [0,1,2,3];
+  let i = 0;
+  function flash() {
+    if (i > 0) {
+      const prev = document.getElementById('seq-'+(i-1));
+      if (prev) prev.style.opacity = '0.3';
+    }
+    if (i < seq.length) {
+      const el = document.getElementById('seq-'+seq[i]);
+      if (el) el.style.opacity = '1';
+      i++;
+      setTimeout(flash, 600);
+    } else {
+      window._capSeqInput = [];
+    }
+  }
+  flash();
+}
+
+function inputSeq(i) {
+  if (!window._capSeqInput) window._capSeqInput = [];
+  if (window._capSeqInput.length < 4) {
+    window._capSeqInput.push(i);
+    const st = document.getElementById('seq-status');
+    if (st) st.textContent = `Input: ${window._capSeqInput.map(x=>['🟥','🟦','🟨','🟩'][x]).join(' ')}`;
+  }
+}
+
+// Slider captcha init
+function initSliderCaptcha() {
+  const track = document.getElementById('slide-track-cap');
+  const thumb = document.getElementById('slide-thumb-cap');
+  const fill  = document.getElementById('slide-fill-cap');
+  const fb    = document.getElementById('slide-feedback');
+  if (!track || !thumb) return;
+
+  let dragging = false, startX = 0, startLeft = 0;
+  const trackW = track.offsetWidth || 300;
+  const maxLeft = trackW - 40;
+
+  thumb.addEventListener('mousedown', e => { dragging=true; startX=e.clientX; startLeft=thumb.offsetLeft; e.preventDefault(); });
+  thumb.addEventListener('touchstart', e => { dragging=true; startX=e.touches[0].clientX; startLeft=thumb.offsetLeft; e.preventDefault(); }, {passive:false});
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const newL = Math.max(4, Math.min(maxLeft, startLeft + dx));
+    thumb.style.left = newL + 'px';
+    fill.style.width = (newL + 28) + 'px';
+    const pct = newL / maxLeft;
+    if (pct > 0.9) {
+      window._sliderDone = true;
+      thumb.style.background = 'var(--accent)';
+      if (fb) fb.textContent = '✓ Puzzle complete!';
+      if (fb) fb.style.color = 'var(--accent)';
+      const hole = document.getElementById('hole-emoji');
+      if (hole) hole.style.opacity = '1';
+    }
+  });
+  document.addEventListener('mouseup', () => { dragging=false; });
+  document.addEventListener('touchend', () => { dragging=false; });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const newL = Math.max(4, Math.min(maxLeft, startLeft + dx));
+    thumb.style.left = newL + 'px';
+    fill.style.width = (newL + 28) + 'px';
+    const pct = newL / maxLeft;
+    if (pct > 0.9) {
+      window._sliderDone = true;
+      if (fb) fb.textContent = '✓ Puzzle complete!';
+      if (fb) fb.style.color = 'var(--accent)';
+    }
+  }, {passive:true});
+}
+
+// Impossible counter
+let _impRunning = false, _impVal = null, _impDir = 1, _impSpeed = 1;
+let _impTimer = null;
+
+function startImpossibleCounter() {
+  if (_impRunning) return;
+  _impRunning = true;
+  _impVal = 5 + Math.floor(Math.random() * 5);
+  _impDir = -1;
+  _impSpeed = 0.5 + Math.random() * 2;
+  const startBtn = document.getElementById('imp-start-btn');
+  const clickBtn = document.getElementById('imp-click-btn');
+  if (startBtn) startBtn.disabled = true;
+  if (clickBtn) clickBtn.disabled = false;
+
+  _impTimer = setInterval(() => {
+    _impVal += _impDir * _impSpeed * 0.1;
+    if (Math.random() < 0.05) { _impDir *= -1; _impSpeed = 0.3 + Math.random() * 2.5; }
+    const display = document.getElementById('countdown-display');
+    if (display) display.textContent = Math.max(-99, Math.min(99, _impVal)).toFixed(1);
+  }, 100);
+}
+
+function clickAtZero() {
+  const val = _impVal;
+  const fb = document.getElementById('imp-feedback');
+  if (val === null) return;
+  if (Math.abs(val) < 0.3) {
+    // Near perfect — still fail randomly
+    if (Math.random() < 0.7) {
+      if (fb) fb.textContent = '❌ ' + val.toFixed(2) + ' — Too precise. We don\'t trust it.';
+      resetImpossible();
+    } else {
+      if (fb) fb.textContent = '✓ Accepted... this time.';
+      window._impossibleDone = true;
+      clearInterval(_impTimer);
+      setTimeout(() => nextCaptcha(), 800);
+    }
+  } else {
+    if (fb) fb.textContent = `❌ You clicked at ${val.toFixed(2)}. Not zero.`;
+    resetImpossible();
+  }
+}
+
+function resetImpossible() {
+  clearInterval(_impTimer);
+  _impRunning = false;
+  _impVal = null;
+  const startBtn = document.getElementById('imp-start-btn');
+  const clickBtn = document.getElementById('imp-click-btn');
+  const display = document.getElementById('countdown-display');
+  if (startBtn) startBtn.disabled = false;
+  if (clickBtn) clickBtn.disabled = true;
+  if (display) display.textContent = '–';
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Outcome
+// ─────────────────────────────────────────────────────────────────
+function triggerOutcome() {
+  clearTimer();
+  STATE.phase = 'outcome';
+  STATE.totalAttempts++;
+  render();
+}
+
+function renderOutcome() {
+  const elapsed = Math.round((Date.now() - STATE.startTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+  const roll = Math.random();
+
+  if (roll < 0.45) {
+    // Fail — wrong password
+    return `
+      <div class="outcome">
+        <span class="outcome-icon">❌</span>
+        <div class="outcome-title" style="color:var(--danger)">Incorrect Password</div>
+        <div class="outcome-sub">
+          Your password was wrong. After 10 sign-in steps and ${CAPTCHA_STEPS.length} CAPTCHAs,<br>
+          we've determined that is not you.<br><br>
+          <span style="color:var(--warn);">You have <strong>2 attempts remaining</strong> before your account is locked for 47 years.</span>
+        </div>
+        <div class="outcome-score">Time spent: ${timeStr} &nbsp;·&nbsp; Attempts: ${STATE.totalAttempts}</div>
+        <button class="btn" onclick="tryAgain()">Try Again →</button>
+      </div>`;
+  } else if (roll < 0.75) {
+    // Fail — no account
+    return `
+      <div class="outcome">
+        <span class="outcome-icon">🤷</span>
+        <div class="outcome-title" style="color:var(--warn)">No Account Found</div>
+        <div class="outcome-sub">
+          We couldn't find an account with that email address.<br>
+          You'll need to create one first. Don't worry —<br>
+          it uses the same process, just with <strong style="color:var(--accent4);">3 extra steps.</strong><br><br>
+          The good news: your social media connections, biometrics,<br>uploaded documents, and CAPTCHA progress have all been <strong style="color:var(--danger);">deleted.</strong>
+        </div>
+        <div class="outcome-score">Time spent: ${timeStr} &nbsp;·&nbsp; Attempts: ${STATE.totalAttempts}</div>
+        <button class="btn purple" onclick="createAccount()">Create Account Instead →</button>
+        <button class="btn" style="margin-top:8px;" onclick="tryAgain()">Try Sign In Again</button>
+      </div>`;
+  } else {
+    // Fail — suspicious activity
+    return `
+      <div class="outcome">
+        <span class="outcome-icon">🚨</span>
+        <div class="outcome-title" style="color:var(--danger)">Suspicious Activity Detected</div>
+        <div class="outcome-sub">
+          Our security system has flagged your sign-in attempt as suspicious.<br><br>
+          Reasons may include:<br>
+          <span style="color:var(--muted);">• You blinked during the face scan<br>
+          • Your IP address is in a "risky" country (yours)<br>
+          • You accepted the Terms & Conditions too quickly (suspicious)<br>
+          • You exist</span><br><br>
+          Please try again from a different browser, device, continent, and timeline.
+        </div>
+        <div class="outcome-score">Time spent: ${timeStr} &nbsp;·&nbsp; CAPTCHAs failed: ${STATE.captchasFailed}</div>
+        <button class="btn danger" onclick="tryAgain()">Try Again (Brave) →</button>
+      </div>`;
+  }
+}
+
+function tryAgain() {
+  STATE.phase = 'signin';
+  STATE.signinStep = 0;
+  STATE.captchaStep = 0;
+  STATE.captchasFailed = 0;
+  STATE.isCreatingAccount = false;
+  STATE.startTime = Date.now();
+  window._bioDone = {};
+  render();
+}
+
+function createAccount() {
+  STATE.phase = 'signin';
+  STATE.signinStep = 0;
+  STATE.captchaStep = 0;
+  STATE.captchasFailed = 0;
+  STATE.isCreatingAccount = true;
+  STATE.startTime = Date.now();
+  window._bioDone = {};
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Utilities
+// ─────────────────────────────────────────────────────────────────
+function showError(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('show');
+  setTimeout(() => { if (el) el.classList.remove('show'); }, 3000);
+}
+
+function shakeCard() {
+  const card = document.querySelector('.card');
+  if (!card) return;
+  card.classList.remove('shake');
+  void card.offsetWidth;
+  card.classList.add('shake');
+}
+
+function confetti() {
+  const wrap = document.getElementById('confetti');
+  wrap.innerHTML = '';
+  const colors = ['#00ff88','#7b4fff','#00cfff','#ff6bff','#ffc800','#ff4466'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'conf';
+    el.style.left = Math.random()*100+'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (1.5+Math.random()*2)+'s';
+    el.style.animationDelay = (Math.random()*0.5)+'s';
+    el.style.width = (6+Math.random()*10)+'px';
+    el.style.height = (6+Math.random()*10)+'px';
+    wrap.appendChild(el);
+  }
+  setTimeout(()=>wrap.innerHTML='', 4000);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Boot
+// ─────────────────────────────────────────────────────────────────
+window._bioDone = {};
+render();
+</script>
+</body>
+</html>
