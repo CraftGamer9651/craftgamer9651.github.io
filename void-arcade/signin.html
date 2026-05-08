@@ -765,11 +765,11 @@ const CAPTCHA_STEPS = [
         <div class="step-desc">Type the characters you see below. They are definitely legible. We promise.</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden;">
           <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 2px,transparent 2px,transparent 8px);"></div>
-          <span class="cap-scramble" id="cap-scramble-text" style="font-size:36px;letter-spacing:10px;filter:blur(3px);">G7mK9p</span>
+          <span class="cap-scramble" id="cap-scramble-text" style="font-size:36px;letter-spacing:10px;filter:blur(3.5px);">G7mK9p</span>
           <div style="position:absolute;top:30%;left:10%;width:80%;height:2px;background:rgba(255,107,255,0.3);transform:rotate(-3deg);"></div>
           <div style="position:absolute;top:60%;left:5%;width:90%;height:1px;background:rgba(0,207,255,0.2);transform:rotate(2deg);"></div>
         </div>
-        <button class="btn small warn" style="margin-bottom:12px;" onclick="document.getElementById('cap-scramble-text').style.filter='blur('+(Math.random()*3+1)+'px)'">🔄 Refresh (makes it worse)</button>
+        <button class="btn small warn" style="margin-bottom:12px;" onclick="document.getElementById('cap-scramble-text').style.filter='blur('+(Math.random()*3+1)+'px)'">🔄 Refresh</button>
         <input class="field" id="cap-text-input" placeholder="Type characters here">
         <div class="error-msg" id="e-cap">⚠ Incorrect. It's case sensitive. And font sensitive. And vibe sensitive.</div>
         <button class="btn" onclick="nextCaptcha()">Verify →</button>`;
