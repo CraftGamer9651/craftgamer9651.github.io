@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Pack Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0d14;
+    --bg2: #0f1520;
+    --bg3: #141c2e;
+    --bg4: #1a2440;
+    --border: #1e2f50;
+    --border2: #263a60;
+    --blue: #3b82f6;
+    --blue2: #60a5fa;
+    --blue3: #1d4ed8;
+    --green: #22c55e;
+    --green2: #4ade80;
+    --green3: #166534;
+    --purple: #a855f7;
+    --purple2: #c084fc;
+    --purple3: #6b21a8;
+    --teal: #14b8a6;
+    --teal2: #2dd4bf;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --accent: #22c55e;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --glow-blue: 0 0 20px rgba(59,130,246,0.3);
+    --glow-green: 0 0 20px rgba(34,197,94,0.3);
+    --glow-purple: 0 0 20px rgba(168,85,247,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(34,197,94,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,13,20,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: var(--glow-green);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    background: linear-gradient(90deg, var(--green2), var(--blue2), var(--purple2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-badge {
+    background: linear-gradient(135deg, var(--green3), var(--blue3));
+    border: 1px solid var(--green);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--green2);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* Nav */
+  .main-nav {
+    display: flex;
+    gap: 4px;
+    padding: 0 32px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .nav-tab {
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active {
+    color: var(--green2);
+    border-bottom-color: var(--green);
+  }
+
+  .nav-tab .tab-icon { font-size: 15px; }
+
+  /* Layout */
+  .content { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* Form elements */
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+  select option { background: var(--bg3); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--green3), var(--blue3));
+    color: #fff;
+    border: 1px solid var(--green);
+  }
+  .btn-primary:hover { box-shadow: var(--glow-green); transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--bg4);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-secondary:hover { border-color: var(--blue2); color: var(--blue2); }
+
+  .btn-purple {
+    background: linear-gradient(135deg, var(--purple3), var(--blue3));
+    color: #fff;
+    border: 1px solid var(--purple);
+  }
+  .btn-purple:hover { box-shadow: var(--glow-purple); transform: translateY(-1px); }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* Pack info hero */
+  .pack-hero {
+    background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pack-hero::after {
+    content: '⛏';
+    position: absolute;
+    right: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 80px;
+    opacity: 0.06;
+  }
+
+  .pack-hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    background: linear-gradient(90deg, var(--green2), var(--teal2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .pack-hero-sub { color: var(--text2); font-size: 14px; }
+
+  .form-row { margin-bottom: 16px; }
+  .form-row-inline { display: flex; gap: 12px; align-items: flex-end; }
+  .form-row-inline .form-field { flex: 1; }
+
+  .section-header {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+
+  .badge-green { background: rgba(34,197,94,0.1); border-color: var(--green3); color: var(--green2); }
+  .badge-purple { background: rgba(168,85,247,0.1); border-color: var(--purple3); color: var(--purple2); }
+  .badge-blue { background: rgba(59,130,246,0.1); border-color: var(--blue3); color: var(--blue2); }
+
+  /* ─── TEXTURE EDITOR ─── */
+  .texture-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .texture-sidebar::-webkit-scrollbar { width: 4px; }
+  .texture-sidebar::-webkit-scrollbar-track { background: var(--bg); }
+  .texture-sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  .texture-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+
+  .texture-item:hover { border-color: var(--blue); background: var(--bg4); }
+  .texture-item.active { border-color: var(--green); background: rgba(34,197,94,0.08); color: var(--green2); }
+
+  .texture-preview-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    image-rendering: pixelated;
+    flex-shrink: 0;
+  }
+
+  .texture-category {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 14px 4px;
+  }
+
+  .editor-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .canvas-area {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    align-items: stretch;
+    flex: 1;
+  }
+
+  .canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    background: repeating-conic-gradient(#1a2440 0% 25%, #141c2e 0% 50%) 0 0 / 16px 16px;
+    border-radius: 10px;
+    border: 2px solid var(--border2);
+    overflow: hidden;
+  }
+
+  .paint-canvas {
+    image-rendering: pixelated;
+    cursor: crosshair;
+    display: block;
+    /* size set dynamically by JS to fit container */
+  }
+
+  .canvas-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 200px;
+    flex-shrink: 0;
+  }
+
+  .tools-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .tool-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+
+  .tool-btn:hover { border-color: var(--blue2); }
+  .tool-btn.active { border-color: var(--green); background: rgba(34,197,94,0.12); }
+
+  .color-palette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+
+  .palette-color {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s;
+  }
+
+  .palette-color:hover { transform: scale(1.15); }
+  .palette-color.selected { border-color: #fff; }
+
+  .color-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type="color"] {
+    width: 40px;
+    height: 36px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--bg4);
+    padding: 2px;
+  }
+
+  .brush-size-slider {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--bg4);
+    outline: none;
+  }
+
+  .brush-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+  }
+
+  /* ─── MINIMESSAGE EDITOR ─── */
+  .mm-preview {
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    min-height: 50px;
+    word-break: break-all;
+    line-height: 1.8;
+  }
+
+  .tag-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .tag-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+  }
+
+  .tag-btn:hover { border-color: var(--purple2); color: var(--purple2); }
+
+  /* Color tags */
+  .mc-black { color: #000; }
+  .mc-dark-blue { color: #0000AA; }
+  .mc-dark-green { color: #00AA00; }
+  .mc-dark-aqua { color: #00AAAA; }
+  .mc-dark-red { color: #AA0000; }
+  .mc-dark-purple { color: #AA00AA; }
+  .mc-gold { color: #FFAA00; }
+  .mc-gray { color: #AAAAAA; }
+  .mc-dark-gray { color: #555555; }
+  .mc-blue { color: #5555FF; }
+  .mc-green { color: #55FF55; }
+  .mc-aqua { color: #55FFFF; }
+  .mc-red { color: #FF5555; }
+  .mc-light-purple { color: #FF55FF; }
+  .mc-yellow { color: #FFFF55; }
+  .mc-white { color: #FFFFFF; }
+  .mc-bold { font-weight: bold; }
+  .mc-italic { font-style: italic; }
+  .mc-underline { text-decoration: underline; }
+  .mc-strikethrough { text-decoration: line-through; }
+  .mc-obfuscated { filter: blur(3px); }
+
+  /* ─── MODEL EDITOR ─── */
+  .model-canvas {
+    background: linear-gradient(135deg, #111827, #1f2937);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cube-3d {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: rotateCube 12s linear infinite;
+    transform: rotateX(-20deg) rotateY(0deg);
+  }
+
+  @keyframes rotateCube {
+    0% { transform: rotateX(-20deg) rotateY(0deg); }
+    100% { transform: rotateX(-20deg) rotateY(360deg); }
+  }
+
+  .cube-face {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border: 2px solid rgba(34,197,94,0.5);
+    background: rgba(34,197,94,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    image-rendering: pixelated;
+    background-size: cover;
+  }
+
+  .cube-face.front  { transform: translateZ(60px); }
+  .cube-face.back   { transform: rotateY(180deg) translateZ(60px); }
+  .cube-face.right  { transform: rotateY(90deg) translateZ(60px); }
+  .cube-face.left   { transform: rotateY(-90deg) translateZ(60px); }
+  .cube-face.top    { transform: rotateX(90deg) translateZ(60px); }
+  .cube-face.bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+  /* ─── SOUND MANAGER ─── */
+  .sound-event-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .sound-event-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sound-event-name {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--teal2);
+  }
+
+  /* ─── JSON FORMAT EDITOR ─── */
+  .json-output {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+    color: #e6edf3;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .json-key { color: #79c0ff; }
+  .json-string { color: #a5d6ff; }
+  .json-bool { color: #ff7b72; }
+  .json-num { color: #f0883e; }
+
+  /* MC color format picker */
+  .mc-color-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .mc-color-chip {
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    transition: transform 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .mc-color-chip:hover { transform: scale(1.05); }
+  .mc-color-chip.selected { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+  /* Export section */
+  .export-hero {
+    background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1));
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .export-icon { font-size: 48px; margin-bottom: 12px; }
+  .export-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; color: var(--green2); margin-bottom: 8px; }
+  .export-sub { color: var(--text2); font-size: 14px; }
+
+  .checklist { display: flex; flex-direction: column; gap: 10px; }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text2);
+  }
+
+  .check-icon { font-size: 18px; }
+
+  /* Notifications */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--green);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    color: var(--green2);
+    font-size: 14px;
+    font-weight: 500;
+    display: none;
+    z-index: 9999;
+    box-shadow: var(--glow-green), var(--shadow);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-gap { display: flex; align-items: center; gap: 10px; }
+
+  .info-box {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--blue2);
+    margin-bottom: 16px;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .font-preview-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .font-chars {
+    font-size: 20px;
+    letter-spacing: 2px;
+    flex: 1;
+  }
+
+  /* Range inputs */
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--bg4);
+    outline: none;
+    width: 100%;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--purple);
+    cursor: pointer;
+  }
+
+  /* File drop */
+  .drop-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text2);
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--green);
+    background: rgba(34,197,94,0.05);
+    color: var(--green2);
+  }
+
+  .drop-zone-icon { font-size: 36px; margin-bottom: 10px; }
+  .drop-zone-text { font-size: 14px; }
+
+  .version-select-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .version-chip {
+    padding: 6px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    background: var(--bg3);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+    color: var(--text2);
+  }
+  .version-chip:hover { border-color: var(--blue2); color: var(--blue2); }
+  .version-chip.selected { border-color: var(--green); background: rgba(34,197,94,0.1); color: var(--green2); }
+
+  .tab-content { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--bg4);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* Texture list filter tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .filter-tab {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .filter-tab.active { border-color: var(--green); background: rgba(34,197,94,0.1); color: var(--green2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎮</div>
+    <span class="logo-text">MC Pack Studio</span>
+  </div>
+  <span class="header-badge">Java Edition</span>
+</header>
+
+<nav class="main-nav">
+  <button class="nav-tab active" onclick="showSection('pack')" data-section="pack">
+    <span class="tab-icon">📦</span> Pack Info
+  </button>
+  <button class="nav-tab" onclick="showSection('textures')" data-section="textures">
+    <span class="tab-icon">🖼️</span> Textures
+  </button>
+  <button class="nav-tab" onclick="showSection('models')" data-section="models">
+    <span class="tab-icon">📐</span> Models
+  </button>
+  <button class="nav-tab" onclick="showSection('sounds')" data-section="sounds">
+    <span class="tab-icon">🔊</span> Sounds
+  </button>
+  <button class="nav-tab" onclick="showSection('fonts')" data-section="fonts">
+    <span class="tab-icon">🔤</span> Fonts
+  </button>
+  <button class="nav-tab" onclick="showSection('format')" data-section="format">
+    <span class="tab-icon">🎨</span> Text Format
+  </button>
+  <button class="nav-tab" onclick="showSection('export')" data-section="export">
+    <span class="tab-icon">⬇️</span> Export
+  </button>
+</nav>
+
+<div class="content">
+
+  <!-- ═══════════ PACK INFO ═══════════ -->
+  <div id="section-pack" class="section active tab-content">
+    <div class="pack-hero">
+      <div class="pack-hero-title" id="pack-name-display">My Resource Pack</div>
+      <div class="pack-hero-sub">Configure your pack metadata and settings below</div>
+    </div>
+
+    <div class="grid-2" style="gap:20px">
+      <div class="card">
+        <div class="card-title">📋 Pack Metadata</div>
+        <div class="form-row">
+          <label>Pack Name</label>
+          <input type="text" id="pack-name" value="My Resource Pack" oninput="updatePackName()" placeholder="My Awesome Pack">
+        </div>
+        <div class="form-row">
+          <label>Description</label>
+          <textarea id="pack-desc" rows="3" placeholder="A custom Minecraft resource pack...">A custom resource pack created with MC Pack Studio.</textarea>
+        </div>
+        <div class="form-row">
+          <label>Author</label>
+          <input type="text" id="pack-author" placeholder="YourUsername" value="">
+        </div>
+        <div class="form-row">
+          <label>Version</label>
+          <input type="text" id="pack-version" placeholder="1.0.0" value="1.0.0">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ Pack Settings</div>
+        <div class="form-row">
+          <label>Target Minecraft Version</label>
+          <div class="version-select-row" id="version-chips">
+            <div class="version-chip" onclick="selectVersion(this, 9)" >1.19</div>
+            <div class="version-chip" onclick="selectVersion(this, 13)">1.20</div>
+            <div class="version-chip selected" onclick="selectVersion(this, 18)">1.21</div>
+            <div class="version-chip" onclick="selectVersion(this, 46)">1.21.4</div>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:16px">
+          <label>Pack Format Number</label>
+          <input type="number" id="pack-format" value="18" min="1" max="99">
+        </div>
+        <div class="form-row">
+          <label>Pack Icon (64×64 PNG)</label>
+          <div class="drop-zone" onclick="document.getElementById('icon-upload').click()" id="icon-dropzone">
+            <div class="drop-zone-icon">🖼️</div>
+            <div class="drop-zone-text">Click or drag to upload pack.png</div>
+          </div>
+          <input type="file" id="icon-upload" accept="image/*" style="display:none" onchange="handleIconUpload(event)">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <div class="card-title">📄 Generated pack.mcmeta</div>
+      <div class="json-output" id="mcmeta-preview">
+{
+  <span class="json-key">"pack"</span>: {
+    <span class="json-key">"pack_format"</span>: <span class="json-num">18</span>,
+    <span class="json-key">"description"</span>: <span class="json-string">"A custom resource pack created with MC Pack Studio."</span>
+  }
+}
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="updateMcmeta()">🔄 Refresh Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TEXTURES ═══════════ -->
+  <div id="section-textures" class="section tab-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="section-header" style="margin-bottom:0">
+        🖼️ Texture Editor
+        <span class="badge badge-green" id="texture-count-badge">0 edited</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12px;color:var(--text2)">Load vanilla textures from a default pack .zip:</span>
+        <button class="btn btn-purple btn-sm" onclick="document.getElementById('default-pack-upload').click()">📦 Load Default Pack</button>
+        <input type="file" id="default-pack-upload" accept=".zip" style="display:none" onchange="loadDefaultPack(event)">
+      </div>
+    </div>
+
+    <div id="default-pack-status" style="display:none" class="info-box" style="margin-bottom:12px"></div>
+
+    <div class="filter-tabs">
+      <div class="filter-tab active" onclick="filterTextures('all', this)">All</div>
+      <div class="filter-tab" onclick="filterTextures('block', this)">Blocks</div>
+      <div class="filter-tab" onclick="filterTextures('item', this)">Items</div>
+      <div class="filter-tab" onclick="filterTextures('entity', this)">Entities</div>
+      <div class="filter-tab" onclick="filterTextures('gui', this)">GUI</div>
+      <div class="filter-tab" onclick="filterTextures('environment', this)">Environment</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 220px 1fr; gap:20px; height: calc(100vh - 280px); min-height: 500px">
+      <div>
+        <div class="texture-sidebar" id="texture-list">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="editor-main" style="height:100%;overflow:hidden">
+        <div class="card" style="padding:16px">
+          <div class="flex-between" style="margin-bottom:12px">
+            <div>
+              <div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px" id="editing-name">Select a texture to edit</div>
+              <div style="font-size:12px;color:var(--text3);font-family:monospace" id="editing-path">—</div>
+            </div>
+            <div class="flex-gap">
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('tex-upload').click()">📁 Import PNG</button>
+              <input type="file" id="tex-upload" accept="image/png" style="display:none" onchange="importTexture(event)">
+              <button class="btn btn-secondary btn-sm" onclick="clearCanvas()">🗑️ Clear</button>
+              <button class="btn btn-primary btn-sm" onclick="saveCurrentTexture()">💾 Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-area">
+          <!-- Canvas fills the left -->
+          <div class="canvas-wrapper">
+            <canvas id="paint-canvas" class="paint-canvas" width="16" height="16"></canvas>
+          </div>
+
+          <!-- Controls sidebar on right -->
+          <div class="canvas-controls">
+            <!-- Tools -->
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Tools</div>
+              <div class="tools-row">
+                <button class="tool-btn active" id="tool-pencil" title="Pencil" onclick="setTool('pencil')">✏️</button>
+                <button class="tool-btn" id="tool-fill" title="Fill" onclick="setTool('fill')">🪣</button>
+                <button class="tool-btn" id="tool-eraser" title="Eraser" onclick="setTool('eraser')">🧹</button>
+                <button class="tool-btn" id="tool-eyedropper" title="Eyedropper" onclick="setTool('eyedropper')">💉</button>
+                <button class="tool-btn" title="Undo" onclick="undo()">↩️</button>
+                <button class="tool-btn" title="Redo" onclick="redo()">↪️</button>
+              </div>
+            </div>
+
+            <!-- Brush -->
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Brush Size — <span id="brush-label">1px</span></div>
+              <input type="range" class="brush-size-slider" id="brush-size" min="1" max="8" value="1" style="width:100%">
+            </div>
+
+            <!-- Primary / secondary -->
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Colors</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+                <div style="position:relative">
+                  <input type="color" id="current-color" value="#55aa00" onchange="setColor(this.value)" style="width:44px;height:44px;border-radius:10px">
+                  <div style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:6px;border:2px solid var(--bg3);overflow:hidden">
+                    <input type="color" id="secondary-color" value="#ffffff" style="width:28px;height:28px;margin:-3px">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-family:monospace;font-size:12px;color:var(--text2)" id="hex-label">#55aa00</div>
+                  <div style="font-size:10px;color:var(--text3)">L-click / R-click</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Palette -->
+            <div style="flex:1;min-height:0">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Palette</div>
+              <div class="color-palette" id="color-palette"></div>
+            </div>
+
+            <div style="font-size:10px;color:var(--text3);line-height:1.5">Canvas 16×16 (pixel art)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODELS ═══════════ -->
+  <div id="section-models" class="section tab-content">
+    <div class="section-header">📐 Model Editor</div>
+    <div class="grid-2" style="gap:20px">
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">🧱 Block Model</div>
+          <div class="form-row">
+            <label>Model Name</label>
+            <input type="text" id="model-name" value="custom_block" placeholder="block/custom_block">
+          </div>
+          <div class="form-row">
+            <label>Parent Model</label>
+            <select id="model-parent">
+              <option value="block/cube_all">block/cube_all (same texture on all sides)</option>
+              <option value="block/cube">block/cube (6 separate textures)</option>
+              <option value="block/cube_column">block/cube_column (top/bottom + side)</option>
+              <option value="block/cross">block/cross (plants)</option>
+              <option value="block/leaves">block/leaves</option>
+              <option value="item/generated">item/generated (flat item)</option>
+              <option value="item/handheld">item/handheld (tool)</option>
+            </select>
+          </div>
+
+          <div id="texture-slots">
+            <label>Texture Slots</label>
+            <div id="texture-slot-list" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
+          </div>
+
+          <div style="margin-top:16px">
+            <button class="btn btn-secondary btn-sm" onclick="updateModelSlots()">🔄 Update Slots</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📄 JSON Output</div>
+          <div class="json-output" id="model-json" style="max-height:200px"></div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="generateModelJson()">🔄 Generate JSON</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">👁️ 3D Preview</div>
+          <div class="model-canvas">
+            <div style="perspective:600px">
+              <div class="cube-3d" id="preview-cube">
+                <div class="cube-face front" id="face-front">⬜</div>
+                <div class="cube-face back" id="face-back">⬜</div>
+                <div class="cube-face right" id="face-right">⬜</div>
+                <div class="cube-face left" id="face-left">⬜</div>
+                <div class="cube-face top" id="face-top">⬜</div>
+                <div class="cube-face bottom" id="face-bottom">⬜</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-size:13px;color:var(--text3);text-align:center">Cube rotates automatically — use textures from saved textures above</div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+          <div class="card-title">✨ Display Settings</div>
+          <div class="form-row">
+            <label>GUI Scale X</label>
+            <input type="range" min="0.1" max="3" step="0.1" value="1" id="gui-scale-x" oninput="updateDisplayJson()">
+          </div>
+          <div class="form-row">
+            <label>Rotation Y</label>
+            <input type="range" min="0" max="360" step="5" value="0" id="rot-y" oninput="updateDisplayJson()">
+          </div>
+          <div class="form-row">
+            <label>Translation Y</label>
+            <input type="range" min="-20" max="20" step="1" value="0" id="trans-y" oninput="updateDisplayJson()">
+          </div>
+          <div class="json-output" id="display-json" style="font-size:11px;max-height:120px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SOUNDS ═══════════ -->
+  <div id="section-sounds" class="section tab-content">
+    <div class="section-header">🔊 Sound Manager</div>
+
+    <div class="info-box">💡 Upload .ogg files and assign them to sound events. The generated sounds.json will be included in your pack.</div>
+
+    <div class="grid-2" style="gap:20px">
+      <div class="card">
+        <div class="card-title flex-between">
+          Sound Events
+          <button class="btn btn-primary btn-sm" onclick="addSoundEvent()">+ Add Event</button>
+        </div>
+        <div class="sound-event-list" id="sound-event-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📄 sounds.json Preview</div>
+        <div class="json-output" id="sounds-json" style="max-height:400px"></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="updateSoundsJson()">🔄 Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FONTS ═══════════ -->
+  <div id="section-fonts" class="section tab-content">
+    <div class="section-header">🔤 Font Editor</div>
+
+    <div class="grid-2" style="gap:20px">
+      <div class="card">
+        <div class="card-title">📝 Font Configuration</div>
+        <div class="form-row">
+          <label>Font Namespace</label>
+          <input type="text" id="font-ns" value="minecraft" placeholder="minecraft">
+        </div>
+        <div class="form-row">
+          <label>Font Name</label>
+          <input type="text" id="font-name-field" value="default" placeholder="default / alt / uniform">
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-title">🖼️ Bitmap Provider</div>
+        <div class="form-row">
+          <label>Texture File</label>
+          <input type="text" id="font-texture" value="minecraft:font/ascii.png" placeholder="namespace:font/file.png">
+        </div>
+        <div class="form-row">
+          <label>ASCII Height (px)</label>
+          <input type="number" id="font-height" value="8" min="1" max="32">
+        </div>
+        <div class="form-row">
+          <label>Ascent</label>
+          <input type="number" id="font-ascent" value="7" min="0" max="32">
+        </div>
+        <div class="form-row">
+          <label>Characters (one per row)</label>
+          <textarea id="font-chars" rows="5" placeholder="ABCDEFGHIJKLMNOP&#10;QRSTUVWXYZ012345"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="generateFontJson()" style="margin-top:8px">🔄 Generate JSON</button>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">👁️ Font Preview</div>
+          <div class="font-preview-card">
+            <div class="font-chars" id="font-preview-chars" style="font-family:'JetBrains Mono',monospace;color:var(--green2)">AaBbCcDd 0123</div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-family:serif;font-size:18px;color:var(--text)">Serif: The quick brown fox</div>
+            <div style="font-family:monospace;font-size:18px;color:var(--blue2)">Mono: The quick brown fox</div>
+            <div style="font-family:fantasy;font-size:18px;color:var(--purple2)">Fantasy: The quick brown fox</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📄 Font JSON Output</div>
+          <div class="json-output" id="font-json" style="max-height:280px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TEXT FORMAT ═══════════ -->
+  <div id="section-format" class="section tab-content">
+    <div class="section-header">🎨 Text Formatting</div>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;width:fit-content">
+      <button class="btn btn-secondary" id="ftab-mm" onclick="showFormatTab('mm')" style="font-size:12px;padding:7px 16px">MiniMessage</button>
+      <button class="btn btn-primary" id="ftab-legacy" onclick="showFormatTab('legacy')" style="font-size:12px;padding:7px 16px">Legacy §</button>
+      <button class="btn btn-secondary" id="ftab-json" onclick="showFormatTab('json')" style="font-size:12px;padding:7px 16px">JSON Text</button>
+    </div>
+
+    <!-- MiniMessage -->
+    <div id="ftab-mm-content" class="tab-content" style="display:none">
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">🏷️ MiniMessage Tags</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Click to insert at cursor position</div>
+        <div class="tag-buttons" id="mm-tag-buttons"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✏️ Editor</div>
+        <div class="form-row">
+          <label>MiniMessage Input</label>
+          <textarea id="mm-input" rows="4" placeholder="<gradient:green:aqua>Hello</gradient> <bold><yellow>World!</yellow></bold>" oninput="renderMiniMessage()"><gradient:#22c55e:#60a5fa>Welcome to </gradient><bold><#c084fc>MC Pack Studio</#c084fc></bold></textarea>
+        </div>
+        <div class="form-row">
+          <label>Preview (approximate)</label>
+          <div class="mm-preview" id="mm-preview"></div>
+        </div>
+        <div class="form-row">
+          <label>Raw Output (for use in configs)</label>
+          <div class="json-output" id="mm-raw" style="max-height:80px;font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legacy -->
+    <div id="ftab-legacy-content" class="tab-content">
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">🎨 Minecraft Color Codes</div>
+        <div class="mc-color-grid" id="mc-color-grid"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          <button class="tag-btn" onclick="insertLegacy('§l')">§l Bold</button>
+          <button class="tag-btn" onclick="insertLegacy('§o')">§o Italic</button>
+          <button class="tag-btn" onclick="insertLegacy('§n')">§n Underline</button>
+          <button class="tag-btn" onclick="insertLegacy('§m')">§m Strike</button>
+          <button class="tag-btn" onclick="insertLegacy('§k')">§k Obfuscated</button>
+          <button class="tag-btn" onclick="insertLegacy('§r')">§r Reset</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">✏️ Legacy Text Editor</div>
+        <div class="form-row">
+          <label>Input</label>
+          <textarea id="legacy-input" rows="3" oninput="renderLegacy()">§aHello §r§l§bWorld!</textarea>
+        </div>
+        <div class="form-row">
+          <label>Preview</label>
+          <div class="mm-preview" id="legacy-preview" style="background:#1a1a1a"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JSON Text -->
+    <div id="ftab-json-content" class="tab-content" style="display:none">
+      <div class="grid-2" style="gap:20px">
+        <div class="card">
+          <div class="card-title">⚙️ Component Builder</div>
+          <div class="form-row">
+            <label>Text</label>
+            <input type="text" id="jt-text" value="Hello World" oninput="buildJsonText()">
+          </div>
+          <div class="form-row">
+            <label>Color</label>
+            <select id="jt-color" onchange="buildJsonText()">
+              <option value="">none</option>
+              <option value="black">black</option>
+              <option value="dark_blue">dark_blue</option>
+              <option value="dark_green">dark_green</option>
+              <option value="dark_aqua">dark_aqua</option>
+              <option value="dark_red">dark_red</option>
+              <option value="dark_purple">dark_purple</option>
+              <option value="gold">gold</option>
+              <option value="gray">gray</option>
+              <option value="dark_gray">dark_gray</option>
+              <option value="blue">blue</option>
+              <option value="green" selected>green</option>
+              <option value="aqua">aqua</option>
+              <option value="red">red</option>
+              <option value="light_purple">light_purple</option>
+              <option value="yellow">yellow</option>
+              <option value="white">white</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Formatting</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <label style="text-transform:none;display:flex;gap:5px;align-items:center"><input type="checkbox" id="jt-bold" onchange="buildJsonText()"> Bold</label>
+              <label style="text-transform:none;display:flex;gap:5px;align-items:center"><input type="checkbox" id="jt-italic" onchange="buildJsonText()"> Italic</label>
+              <label style="text-transform:none;display:flex;gap:5px;align-items:center"><input type="checkbox" id="jt-underline" onchange="buildJsonText()"> Underline</label>
+              <label style="text-transform:none;display:flex;gap:5px;align-items:center"><input type="checkbox" id="jt-strike" onchange="buildJsonText()"> Strikethrough</label>
+              <label style="text-transform:none;display:flex;gap:5px;align-items:center"><input type="checkbox" id="jt-obf" onchange="buildJsonText()"> Obfuscated</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Click Event Action</label>
+            <select id="jt-click-action" onchange="buildJsonText()">
+              <option value="">none</option>
+              <option value="run_command">run_command</option>
+              <option value="suggest_command">suggest_command</option>
+              <option value="open_url">open_url</option>
+              <option value="copy_to_clipboard">copy_to_clipboard</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Click Event Value</label>
+            <input type="text" id="jt-click-val" placeholder="/say hello" oninput="buildJsonText()">
+          </div>
+          <div class="form-row">
+            <label>Hover Text</label>
+            <input type="text" id="jt-hover" placeholder="Tooltip text" oninput="buildJsonText()">
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">Preview</div>
+            <div class="mm-preview" id="jt-preview"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">JSON Output</div>
+            <div class="json-output" id="jt-json" style="max-height:220px"></div>
+            <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="copyJsonText()">📋 Copy JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EXPORT ═══════════ -->
+  <div id="section-export" class="section tab-content">
+    <div class="export-hero">
+      <div class="export-icon">📦</div>
+      <div class="export-title">Export Resource Pack</div>
+      <div class="export-sub">Download a .zip file ready to drop into your resourcepacks folder</div>
+    </div>
+
+    <div class="grid-2" style="gap:20px">
+      <div class="card">
+        <div class="card-title">📋 Pack Contents</div>
+        <div class="checklist" id="export-checklist"></div>
+        <div class="divider"></div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px">
+          The .zip will contain all configured assets in the standard Minecraft resource pack structure.
+        </div>
+        <button class="btn btn-primary" onclick="exportPack()" style="width:100%;justify-content:center;padding:14px">
+          ⬇️ Download Resource Pack (.zip)
+        </button>
+        <div class="progress-bar" id="export-progress" style="display:none;margin-top:10px">
+          <div class="progress-fill" id="export-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📁 Pack Structure Preview</div>
+        <div class="json-output" id="structure-preview" style="max-height:400px;font-size:12px"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────
+const state = {
+  packFormat: 18,
+  packIcon: null,
+  textures: {},        // path -> ImageData
+  sounds: [],
+  currentTexture: null,
+  tool: 'pencil',
+  color: '#55aa00',
+  secondaryColor: '#ffffff',
+  brushSize: 1,
+  undoStack: [],
+  redoStack: [],
+  modelJson: {},
+  soundsJson: {},
+  fontJson: {},
+};
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelector(`[data-section="${name}"]`).classList.add('active');
+  if (name === 'export') updateExportPreview();
+  if (name === 'textures') requestAnimationFrame(fitCanvas);
+}
+
+// ─── PACK INFO ───────────────────────────────────────────────────────
+function updatePackName() {
+  const v = document.getElementById('pack-name').value || 'My Resource Pack';
+  document.getElementById('pack-name-display').textContent = v;
+  updateMcmeta();
+}
+
+function selectVersion(el, fmt) {
+  document.querySelectorAll('.version-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('pack-format').value = fmt;
+  state.packFormat = fmt;
+  updateMcmeta();
+}
+
+function updateMcmeta() {
+  const name = document.getElementById('pack-name').value || 'My Resource Pack';
+  const desc = document.getElementById('pack-desc').value || '';
+  const fmt = parseInt(document.getElementById('pack-format').value) || 18;
+  const author = document.getElementById('pack-author').value;
+  state.packFormat = fmt;
+
+  let obj = { pack: { pack_format: fmt, description: desc } };
+  if (author) obj.pack.author = author;
+
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: (\d+)/g, ': <span class="json-num">$1</span>');
+  document.getElementById('mcmeta-preview').innerHTML = pretty;
+}
+
+function handleIconUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.packIcon = ev.target.result;
+    document.getElementById('icon-dropzone').innerHTML = `<img src="${ev.target.result}" style="width:64px;height:64px;image-rendering:pixelated;border-radius:8px">`;
+    toast('✅ Pack icon uploaded!');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── TEXTURES ────────────────────────────────────────────────────────
+const TEXTURES = [
+  { cat: 'block', name: 'Grass Top',      path: 'textures/block/grass_block_top.png' },
+  { cat: 'block', name: 'Grass Side',     path: 'textures/block/grass_block_side.png' },
+  { cat: 'block', name: 'Dirt',           path: 'textures/block/dirt.png' },
+  { cat: 'block', name: 'Stone',          path: 'textures/block/stone.png' },
+  { cat: 'block', name: 'Oak Log Top',    path: 'textures/block/oak_log_top.png' },
+  { cat: 'block', name: 'Oak Log Side',   path: 'textures/block/oak_log.png' },
+  { cat: 'block', name: 'Oak Planks',     path: 'textures/block/oak_planks.png' },
+  { cat: 'block', name: 'Cobblestone',    path: 'textures/block/cobblestone.png' },
+  { cat: 'block', name: 'Sand',           path: 'textures/block/sand.png' },
+  { cat: 'block', name: 'Gravel',         path: 'textures/block/gravel.png' },
+  { cat: 'block', name: 'Diamond Ore',    path: 'textures/block/diamond_ore.png' },
+  { cat: 'block', name: 'Netherrack',     path: 'textures/block/netherrack.png' },
+  { cat: 'block', name: 'Water Still',    path: 'textures/block/water_still.png' },
+  { cat: 'block', name: 'Lava Still',     path: 'textures/block/lava_still.png' },
+  { cat: 'block', name: 'Deepslate',      path: 'textures/block/deepslate.png' },
+  { cat: 'block', name: 'Deepslate Top',  path: 'textures/block/deepslate_top.png' },
+  { cat: 'block', name: 'Obsidian',       path: 'textures/block/obsidian.png' },
+  { cat: 'block', name: 'Bedrock',        path: 'textures/block/bedrock.png' },
+  { cat: 'block', name: 'Birch Log',      path: 'textures/block/birch_log.png' },
+  { cat: 'block', name: 'Birch Log Top',  path: 'textures/block/birch_log_top.png' },
+  { cat: 'block', name: 'Birch Planks',   path: 'textures/block/birch_planks.png' },
+  { cat: 'block', name: 'Spruce Log',     path: 'textures/block/spruce_log.png' },
+  { cat: 'block', name: 'Spruce Planks',  path: 'textures/block/spruce_planks.png' },
+  { cat: 'block', name: 'Acacia Log',     path: 'textures/block/acacia_log.png' },
+  { cat: 'block', name: 'Acacia Planks',  path: 'textures/block/acacia_planks.png' },
+  { cat: 'block', name: 'Crafting Table Top', path: 'textures/block/crafting_table_top.png' },
+  { cat: 'block', name: 'Furnace Front',  path: 'textures/block/furnace_front.png' },
+  { cat: 'block', name: 'Glass',          path: 'textures/block/glass.png' },
+  { cat: 'block', name: 'TNT Side',       path: 'textures/block/tnt_side.png' },
+  { cat: 'block', name: 'TNT Top',        path: 'textures/block/tnt_top.png' },
+  { cat: 'item',  name: 'Diamond Sword',  path: 'textures/item/diamond_sword.png' },
+  { cat: 'item',  name: 'Diamond Pickaxe',path: 'textures/item/diamond_pickaxe.png' },
+  { cat: 'item',  name: 'Apple',          path: 'textures/item/apple.png' },
+  { cat: 'item',  name: 'Golden Apple',   path: 'textures/item/golden_apple.png' },
+  { cat: 'item',  name: 'Arrow',          path: 'textures/item/arrow.png' },
+  { cat: 'item',  name: 'Bow',            path: 'textures/item/bow.png' },
+  { cat: 'item',  name: 'Fishing Rod',    path: 'textures/item/fishing_rod.png' },
+  { cat: 'item',  name: 'Bucket',         path: 'textures/item/bucket.png' },
+  { cat: 'item',  name: 'Water Bucket',   path: 'textures/item/water_bucket.png' },
+  { cat: 'item',  name: 'Compass',        path: 'textures/item/compass_16.png' },
+  { cat: 'item',  name: 'Clock',          path: 'textures/item/clock_00.png' },
+  { cat: 'item',  name: 'Flint & Steel',  path: 'textures/item/flint_and_steel.png' },
+  { cat: 'item',  name: 'Ender Pearl',    path: 'textures/item/ender_pearl.png' },
+  { cat: 'item',  name: 'Blaze Rod',      path: 'textures/item/blaze_rod.png' },
+  { cat: 'entity',name: 'Creeper',        path: 'textures/entity/creeper/creeper.png' },
+  { cat: 'entity',name: 'Zombie',         path: 'textures/entity/zombie/zombie.png' },
+  { cat: 'entity',name: 'Skeleton',       path: 'textures/entity/skeleton/skeleton.png' },
+  { cat: 'entity',name: 'Pig (Temperate)',path: 'textures/entity/pig/pig_temperate.png' },
+  { cat: 'entity',name: 'Steve',          path: 'textures/entity/player/wide/steve.png' },
+  { cat: 'entity',name: 'Alex',           path: 'textures/entity/player/wide/alex.png' },
+  { cat: 'entity',name: 'Enderman',       path: 'textures/entity/enderman/enderman.png' },
+  { cat: 'entity',name: 'Spider',         path: 'textures/entity/spider/spider.png' },
+  { cat: 'gui',   name: 'Inventory',      path: 'textures/gui/container/inventory.png' },
+  { cat: 'gui',   name: 'Slot Button',    path: 'textures/gui/sprites/widget/slot_frame.png' },
+  { cat: 'environment', name: 'Sun',      path: 'textures/environment/celestial/sun.png' },
+  { cat: 'environment', name: 'Full Moon',path: 'textures/environment/celestial/moon/full_moon.png' },
+  { cat: 'environment', name: 'Rain',     path: 'textures/environment/rain.png' },
+];
+
+let currentFilter = 'all';
+
+function filterTextures(cat, el) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTextureList();
+}
+
+function renderTextureList() {
+  const list = document.getElementById('texture-list');
+  list.innerHTML = '';
+  const cats = [...new Set(TEXTURES.map(t => t.cat))];
+
+  cats.forEach(cat => {
+    if (currentFilter !== 'all' && cat !== currentFilter) return;
+    const items = TEXTURES.filter(t => t.cat === cat);
+    if (!items.length) return;
+
+    const catEl = document.createElement('div');
+    catEl.className = 'texture-category';
+    catEl.textContent = cat.toUpperCase();
+    list.appendChild(catEl);
+
+    items.forEach(tex => {
+      const div = document.createElement('div');
+      div.className = 'texture-item' + (state.currentTexture === tex.path ? ' active' : '');
+      div.onclick = () => selectTexture(tex);
+
+      const preview = document.createElement('canvas');
+      preview.className = 'texture-preview-sm';
+      preview.width = 16; preview.height = 16;
+      const previewCtx = preview.getContext('2d');
+      previewCtx.imageSmoothingEnabled = false;
+      if (state.textures[tex.path]) {
+        previewCtx.putImageData(state.textures[tex.path], 0, 0);
+      } else if (state.defaultTextures && state.defaultTextures[tex.path]) {
+        previewCtx.putImageData(state.defaultTextures[tex.path], 0, 0);
+      }
+
+      const label = document.createElement('span');
+      label.textContent = tex.name;
+
+      const edited = state.textures[tex.path] ? '✅' : '';
+      if (edited) {
+        const badge = document.createElement('span');
+        badge.style.marginLeft = 'auto';
+        badge.style.fontSize = '10px';
+        badge.textContent = edited;
+        div.appendChild(preview);
+        div.appendChild(label);
+        div.appendChild(badge);
+      } else {
+        div.appendChild(preview);
+        div.appendChild(label);
+      }
+
+      list.appendChild(div);
+    });
+  });
+
+  updateTextureCountBadge();
+}
+
+function updateTextureCountBadge() {
+  document.getElementById('texture-count-badge').textContent = Object.keys(state.textures).length + ' edited';
+}
+
+function selectTexture(tex) {
+  state.currentTexture = tex.path;
+  document.getElementById('editing-name').textContent = tex.name;
+  document.getElementById('editing-path').textContent = 'assets/minecraft/' + tex.path;
+
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  if (state.textures[tex.path]) {
+    // User has already painted this — show their version
+    ctx.clearRect(0, 0, 16, 16);
+    ctx.putImageData(state.textures[tex.path], 0, 0);
+  } else if (state.defaultTextures && state.defaultTextures[tex.path]) {
+    // Vanilla texture loaded from default pack — use as starting point
+    ctx.clearRect(0, 0, 16, 16);
+    ctx.putImageData(state.defaultTextures[tex.path], 0, 0);
+  } else {
+    // No texture available — generate a placeholder
+    ctx.clearRect(0, 0, 16, 16);
+    generatePlaceholderTexture(ctx, tex);
+  }
+
+  state.undoStack = [];
+  state.redoStack = [];
+  fitCanvas();
+  renderTextureList();
+}
+
+function generatePlaceholderTexture(ctx, tex) {
+  const colors = {
+    'grass_block_top': [['#5a8a00','#6ab000','#4f7800','#5a9000']],
+    'dirt': [['#8b5e3c','#9c6b44','#7a5232']],
+    'stone': [['#7a7a7a','#888888','#6e6e6e','#808080']],
+    'diamond_ore': [['#7a7a7a','#888888','#5af0f0']],
+    'netherrack': [['#7a2020','#8a2828','#6a1818']],
+    'sand': [['#e0c870','#d4bc60','#c8b058']],
+    'water_still': [['#2060c0','#2870d0','#1850b0']],
+    'lava_still': [['#e04000','#e86000','#d02000']],
+  };
+
+  // Simple noise texture
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      const v = Math.random() * 30 - 15;
+      if (tex.cat === 'block') {
+        ctx.fillStyle = `hsl(${100 + v},${40 + v}%,${40 + v}%)`;
+      } else if (tex.cat === 'item') {
+        ctx.fillStyle = x > 4 && x < 12 && y > 4 && y < 12 ? `hsl(200,60%,${50+v}%)` : 'transparent';
+      } else {
+        ctx.fillStyle = `hsl(${220 + v},${50+v}%,${30+v}%)`;
+      }
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+// ─── CANVAS / PAINTING ───────────────────────────────────────────────
+let painting = false;
+let lastPos = null;
+
+function fitCanvas() {
+  const wrapper = document.querySelector('.canvas-wrapper');
+  const canvas = document.getElementById('paint-canvas');
+  if (!wrapper || !canvas) return;
+  const size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
+  // Snap to nearest multiple of 16 for clean pixel grid
+  const displaySize = Math.floor(size / 16) * 16;
+  canvas.style.width = displaySize + 'px';
+  canvas.style.height = displaySize + 'px';
+}
+
+function initCanvas() {
+  const canvas = document.getElementById('paint-canvas');
+  // Internal resolution stays 16x16; CSS stretches it
+  canvas.width = 16;
+  canvas.height = 16;
+  fitCanvas();
+
+  // Re-fit on window resize
+  window.addEventListener('resize', fitCanvas);
+
+  canvas.addEventListener('mousedown', e => { painting = true; pushUndo(); draw(e); });
+  canvas.addEventListener('mousemove', e => { if (painting) draw(e); });
+  canvas.addEventListener('mouseup', () => { painting = false; lastPos = null; });
+  canvas.addEventListener('mouseleave', () => { painting = false; lastPos = null; });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  canvas.addEventListener('mousedown', e => {
+    if (e.button === 2) {
+      const tmp = state.color;
+      state.color = state.secondaryColor;
+      state.secondaryColor = tmp;
+      document.getElementById('current-color').value = state.color;
+      painting = true;
+      pushUndo();
+      draw(e);
+    }
+  });
+
+  document.getElementById('brush-size').addEventListener('input', function() {
+    state.brushSize = parseInt(this.value);
+    document.getElementById('brush-label').textContent = this.value + 'px';
+  });
+
+  // Init color palette
+  const palette = ['#000000','#1D2021','#3C3F3F','#7C7C7C','#D4D4D4','#FFFFFF',
+    '#FF5555','#FF7F50','#FFAA00','#FFFF55','#55FF55','#00AA00',
+    '#55FFFF','#00AAAA','#5555FF','#0000AA','#FF55FF','#AA00AA',
+    '#8B4513','#D2691E','#228B22','#006400','#87CEEB','#1E90FF',
+    '#FF1493','#DC143C','#FFD700','#ADFF2F','#7FFFD4','#4B0082'];
+  const pal = document.getElementById('color-palette');
+  palette.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'palette-color';
+    el.style.background = c;
+    if (c === state.color) el.classList.add('selected');
+    el.onclick = () => { setColor(c); document.querySelectorAll('.palette-color').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); };
+    pal.appendChild(el);
+  });
+}
+
+function getPixelCoord(e) {
+  const canvas = document.getElementById('paint-canvas');
+  const rect = canvas.getBoundingClientRect();
+  // canvas internal size is always 16x16; displayed size varies
+  const scaleX = 16 / rect.width;
+  const scaleY = 16 / rect.height;
+  return {
+    x: Math.max(0, Math.min(15, Math.floor((e.clientX - rect.left) * scaleX))),
+    y: Math.max(0, Math.min(15, Math.floor((e.clientY - rect.top) * scaleY)))
+  };
+}
+
+function draw(e) {
+  if (!state.currentTexture) return;
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  const pos = getPixelCoord(e);
+
+  if (state.tool === 'eyedropper') {
+    const px = ctx.getImageData(pos.x, pos.y, 1, 1).data;
+    const hex = '#' + [px[0],px[1],px[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+    setColor(hex);
+    document.getElementById('current-color').value = hex;
+    return;
+  }
+
+  if (state.tool === 'fill') {
+    floodFill(ctx, pos.x, pos.y, state.color);
+    return;
+  }
+
+  const color = state.tool === 'eraser' ? null : state.color;
+  const bs = state.brushSize;
+
+  ctx.save();
+  if (color) {
+    ctx.fillStyle = color;
+  } else {
+    ctx.clearRect(pos.x - bs/2, pos.y - bs/2, bs, bs);
+    ctx.restore();
+    return;
+  }
+  ctx.fillRect(pos.x, pos.y, bs, bs);
+  ctx.restore();
+}
+
+function floodFill(ctx, x, y, fillColor) {
+  const imageData = ctx.getImageData(0, 0, 16, 16);
+  const data = imageData.data;
+  const idx = (y * 16 + x) * 4;
+  const targetR = data[idx], targetG = data[idx+1], targetB = data[idx+2], targetA = data[idx+3];
+
+  const fillRgb = hexToRgb(fillColor);
+  if (!fillRgb) return;
+
+  if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b) return;
+
+  const stack = [[x, y]];
+  while (stack.length) {
+    const [cx, cy] = stack.pop();
+    if (cx < 0 || cx >= 16 || cy < 0 || cy >= 16) continue;
+    const i = (cy * 16 + cx) * 4;
+    if (data[i] !== targetR || data[i+1] !== targetG || data[i+2] !== targetB || data[i+3] !== targetA) continue;
+    data[i] = fillRgb.r; data[i+1] = fillRgb.g; data[i+2] = fillRgb.b; data[i+3] = 255;
+    stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? { r: parseInt(r[1],16), g: parseInt(r[2],16), b: parseInt(r[3],16) } : null;
+}
+
+function setColor(hex) {
+  state.color = hex;
+  document.getElementById('hex-label').textContent = hex;
+}
+
+function setTool(tool) {
+  state.tool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('tool-' + tool);
+  if (el) el.classList.add('active');
+}
+
+function pushUndo() {
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  state.undoStack.push(ctx.getImageData(0, 0, 16, 16));
+  if (state.undoStack.length > 30) state.undoStack.shift();
+  state.redoStack = [];
+}
+
+function undo() {
+  if (!state.undoStack.length) return;
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  state.redoStack.push(ctx.getImageData(0, 0, 16, 16));
+  ctx.putImageData(state.undoStack.pop(), 0, 0);
+}
+
+function redo() {
+  if (!state.redoStack.length) return;
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  state.undoStack.push(ctx.getImageData(0, 0, 16, 16));
+  ctx.putImageData(state.redoStack.pop(), 0, 0);
+}
+
+function clearCanvas() {
+  if (!state.currentTexture) return;
+  pushUndo();
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 16, 16);
+}
+
+function saveCurrentTexture() {
+  if (!state.currentTexture) { toast('⚠️ No texture selected'); return; }
+  const canvas = document.getElementById('paint-canvas');
+  const ctx = canvas.getContext('2d');
+  state.textures[state.currentTexture] = ctx.getImageData(0, 0, 16, 16);
+  renderTextureList();
+  toast('✅ Texture saved: ' + state.currentTexture.split('/').pop());
+}
+
+function importTexture(e) {
+  if (!state.currentTexture) { toast('⚠️ Select a texture first'); return; }
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.getElementById('paint-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,16,16);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, 16, 16);
+    URL.revokeObjectURL(url);
+    toast('✅ Image imported!');
+  };
+  img.src = url;
+  e.target.value = '';
+}
+
+// ─── DEFAULT PACK LOADER ─────────────────────────────────────────────
+async function loadDefaultPack(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+
+  const statusEl = document.getElementById('default-pack-status');
+  statusEl.style.display = 'block';
+  statusEl.style.background = '';
+  statusEl.style.borderColor = '';
+  statusEl.style.color = '';
+  statusEl.textContent = '⏳ Reading zip — scanning all PNG files...';
+
+  try {
+    const zip = await JSZip.loadAsync(file);
+
+    // ── Step 1: Index every PNG in the zip by its bare filename (no path, lowercase)
+    // Also keep a "subpath" index: last two path segments, e.g. "block/stone.png"
+    // This handles any zip structure: vanilla client jar, default resource pack zip, etc.
+    const byFilename = {};   // "stone.png" → zipEntry
+    const bySubpath  = {};   // "block/stone.png" → zipEntry
+    const byFullpath = {};   // full lowercased path → zipEntry
+    let totalPngs = 0;
+
+    zip.forEach((relativePath, zipEntry) => {
+      if (zipEntry.dir) return;
+      const lc = relativePath.toLowerCase();
+      if (!lc.endsWith('.png')) return;
+      totalPngs++;
+
+      byFullpath[lc] = zipEntry;
+
+      const segments = lc.replace(/\\/g, '/').split('/');
+      const filename = segments[segments.length - 1];          // "stone.png"
+      const subpath  = segments.slice(-2).join('/');            // "block/stone.png"
+
+      // Keep first match wins for filename (most zips won't have collisions for textures)
+      if (!byFilename[filename]) byFilename[filename] = zipEntry;
+      if (!bySubpath[subpath])   bySubpath[subpath]   = zipEntry;
+    });
+
+    // ── Step 2: For each texture in our list, find the best matching zip entry
+    // Priority: full vanilla path > subpath (cat+filename) > bare filename
+    state.defaultTextures = state.defaultTextures || {};
+    let loaded = 0, missing = 0;
+
+    for (const tex of TEXTURES) {
+      // tex.path = "textures/block/stone.png"
+      const segments   = tex.path.replace(/\\/g, '/').split('/');
+      const filename   = segments[segments.length - 1];          // "stone.png"
+      const subpath    = segments.slice(-2).join('/');            // "block/stone.png"
+
+      // Candidate paths to try (in priority order)
+      const candidates = [
+        'assets/minecraft/' + tex.path,
+        tex.path,
+        'minecraft/' + tex.path,
+      ].map(p => p.toLowerCase());
+
+      let entry = null;
+      for (const c of candidates) {
+        if (byFullpath[c]) { entry = byFullpath[c]; break; }
+      }
+      if (!entry) entry = bySubpath[subpath];
+      if (!entry) entry = byFilename[filename];
+
+      if (!entry) { missing++; continue; }
+
+      try {
+        const blob = await entry.async('blob');
+        const url  = URL.createObjectURL(blob);
+        await new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const tmp = document.createElement('canvas');
+            tmp.width  = 16; tmp.height = 16;
+            const ctx  = tmp.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, 16, 16);
+            state.defaultTextures[tex.path] = ctx.getImageData(0, 0, 16, 16);
+            URL.revokeObjectURL(url);
+            loaded++;
+            resolve();
+          };
+          img.onerror = () => { URL.revokeObjectURL(url); missing++; resolve(); };
+          img.src = url;
+        });
+      } catch { missing++; }
+    }
+
+    // ── Step 3: Refresh UI
+    renderTextureList();
+
+    if (state.currentTexture && state.defaultTextures[state.currentTexture]
+        && !state.textures[state.currentTexture]) {
+      const canvas = document.getElementById('paint-canvas');
+      canvas.getContext('2d').putImageData(state.defaultTextures[state.currentTexture], 0, 0);
+    }
+
+    if (loaded > 0) {
+      statusEl.style.background   = 'rgba(34,197,94,0.08)';
+      statusEl.style.borderColor  = 'rgba(34,197,94,0.3)';
+      statusEl.style.color        = 'var(--green2)';
+      statusEl.textContent = `✅ Loaded ${loaded} vanilla textures from ${totalPngs} PNGs in the zip. Click any texture on the left to start editing!`;
+      toast(`✅ ${loaded} textures loaded!`);
+    } else {
+      // Nothing matched — show a sample of actual paths to help debug
+      const samplePaths = Object.keys(byFullpath).filter(p => p.includes('texture')).slice(0, 5);
+      const hint = samplePaths.length
+        ? ' Sample paths found: ' + samplePaths.join(', ')
+        : ' Zip contains ' + totalPngs + ' PNGs but none matched texture paths.';
+      statusEl.style.background  = 'rgba(239,68,68,0.08)';
+      statusEl.style.borderColor = 'rgba(239,68,68,0.3)';
+      statusEl.style.color       = '#f87171';
+      statusEl.textContent = '⚠️ No textures matched.' + hint;
+    }
+  } catch (err) {
+    statusEl.style.background  = 'rgba(239,68,68,0.08)';
+    statusEl.style.borderColor = 'rgba(239,68,68,0.3)';
+    statusEl.style.color       = '#f87171';
+    statusEl.textContent = '❌ Error reading zip: ' + err.message;
+  }
+}
+
+// ─── MODELS ──────────────────────────────────────────────────────────
+const MODEL_PARENTS = {
+  'block/cube_all': ['all'],
+  'block/cube': ['up','down','north','south','east','west'],
+  'block/cube_column': ['top','side'],
+  'block/cross': ['cross'],
+  'block/leaves': ['all'],
+  'item/generated': ['layer0'],
+  'item/handheld': ['layer0'],
+};
+
+function updateModelSlots() {
+  const parent = document.getElementById('model-parent').value;
+  const slots = MODEL_PARENTS[parent] || ['all'];
+  const list = document.getElementById('texture-slot-list');
+  list.innerHTML = '';
+  slots.forEach(slot => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    row.innerHTML = `
+      <span style="font-family:monospace;font-size:12px;color:var(--teal2);width:60px">${slot}</span>
+      <input type="text" value="minecraft:block/${slot === 'all' ? 'stone' : slot}" style="flex:1" id="slot-${slot}">
+    `;
+    list.appendChild(row);
+  });
+  generateModelJson();
+}
+
+function generateModelJson() {
+  const parent = document.getElementById('model-parent').value;
+  const slots = MODEL_PARENTS[parent] || ['all'];
+  const textures = {};
+  slots.forEach(s => {
+    const el = document.getElementById('slot-' + s);
+    if (el) textures[s] = el.value;
+  });
+  const obj = { parent, textures };
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>');
+  document.getElementById('model-json').innerHTML = pretty;
+  state.modelJson = obj;
+}
+
+function updateDisplayJson() {
+  const scaleX = document.getElementById('gui-scale-x').value;
+  const rotY = document.getElementById('rot-y').value;
+  const transY = document.getElementById('trans-y').value;
+  const obj = {
+    display: {
+      gui: {
+        rotation: [30, parseInt(rotY), 0],
+        translation: [0, parseInt(transY), 0],
+        scale: [parseFloat(scaleX), parseFloat(scaleX), parseFloat(scaleX)]
+      }
+    }
+  };
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: (-?\d+\.?\d*)/g, ': <span class="json-num">$1</span>');
+  document.getElementById('display-json').innerHTML = pretty;
+}
+
+// ─── SOUNDS ──────────────────────────────────────────────────────────
+const DEFAULT_SOUND_EVENTS = [
+  { event: 'entity.player.hurt', replace: false, sounds: [] },
+  { event: 'entity.player.death', replace: false, sounds: [] },
+  { event: 'entity.creeper.primed', replace: false, sounds: [] },
+  { event: 'block.grass.step', replace: false, sounds: [] },
+];
+
+function renderSoundEvents() {
+  const list = document.getElementById('sound-event-list');
+  list.innerHTML = '';
+  state.sounds.forEach((ev, i) => {
+    const div = document.createElement('div');
+    div.className = 'sound-event-item';
+    div.innerHTML = `
+      <div class="sound-event-name">${ev.event}</div>
+      <label style="display:flex;gap:5px;align-items:center;text-transform:none;color:var(--text2);font-size:12px">
+        <input type="checkbox" ${ev.replace ? 'checked' : ''} onchange="state.sounds[${i}].replace=this.checked;updateSoundsJson()"> Replace
+      </label>
+      <button class="btn btn-secondary btn-sm" onclick="addSoundFile(${i})">+ File</button>
+      <button class="btn btn-danger btn-sm" onclick="state.sounds.splice(${i},1);renderSoundEvents();updateSoundsJson()">✕</button>
+    `;
+    list.appendChild(div);
+  });
+  updateSoundsJson();
+}
+
+function addSoundEvent() {
+  const name = prompt('Sound event name:', 'entity.player.hurt');
+  if (!name) return;
+  state.sounds.push({ event: name, replace: false, sounds: [] });
+  renderSoundEvents();
+}
+
+function addSoundFile(idx) {
+  const name = prompt('Sound path (e.g. custom/my_sound):', 'custom/sound');
+  if (!name) return;
+  state.sounds[idx].sounds.push(name);
+  renderSoundEvents();
+}
+
+function updateSoundsJson() {
+  const obj = {};
+  state.sounds.forEach(ev => {
+    obj[ev.event] = { replace: ev.replace, sounds: ev.sounds };
+  });
+  state.soundsJson = obj;
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: (true|false)/g, ': <span class="json-bool">$1</span>');
+  document.getElementById('sounds-json').innerHTML = pretty || '{}';
+}
+
+// ─── FONTS ───────────────────────────────────────────────────────────
+function generateFontJson() {
+  const ns = document.getElementById('font-ns').value || 'minecraft';
+  const name = document.getElementById('font-name-field').value || 'default';
+  const texture = document.getElementById('font-texture').value;
+  const height = parseInt(document.getElementById('font-height').value) || 8;
+  const ascent = parseInt(document.getElementById('font-ascent').value) || 7;
+  const charsRaw = document.getElementById('font-chars').value;
+  const chars = charsRaw.split('\n').filter(l => l.trim());
+
+  const obj = {
+    providers: [{
+      type: 'bitmap',
+      file: texture,
+      height,
+      ascent,
+      chars
+    }]
+  };
+
+  state.fontJson = { ns, name, data: obj };
+
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: (-?\d+)/g, ': <span class="json-num">$1</span>');
+  document.getElementById('font-json').innerHTML = pretty;
+}
+
+// ─── TEXT FORMAT ─────────────────────────────────────────────────────
+function showFormatTab(tab) {
+  ['mm','legacy','json'].forEach(t => {
+    document.getElementById('ftab-' + t + '-content').style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('ftab-' + t);
+    btn.className = t === tab ? 'btn btn-primary' : 'btn btn-secondary';
+    btn.style.fontSize = '12px';
+    btn.style.padding = '7px 16px';
+  });
+}
+
+// MiniMessage tags
+const MM_TAGS = [
+  { label: '<bold>', insert: '<bold></bold>' },
+  { label: '<italic>', insert: '<italic></italic>' },
+  { label: '<underlined>', insert: '<underlined></underlined>' },
+  { label: '<strikethrough>', insert: '<strikethrough></strikethrough>' },
+  { label: '<obfuscated>', insert: '<obfuscated></obfuscated>' },
+  { label: '<red>', insert: '<red></red>' },
+  { label: '<green>', insert: '<green></green>' },
+  { label: '<blue>', insert: '<blue></blue>' },
+  { label: '<yellow>', insert: '<yellow></yellow>' },
+  { label: '<gold>', insert: '<gold></gold>' },
+  { label: '<aqua>', insert: '<aqua></aqua>' },
+  { label: '<gray>', insert: '<gray></gray>' },
+  { label: '<white>', insert: '<white></white>' },
+  { label: '<dark_red>', insert: '<dark_red></dark_red>' },
+  { label: '<dark_green>', insert: '<dark_green></dark_green>' },
+  { label: '<dark_aqua>', insert: '<dark_aqua></dark_aqua>' },
+  { label: '<dark_blue>', insert: '<dark_blue></dark_blue>' },
+  { label: '<light_purple>', insert: '<light_purple></light_purple>' },
+  { label: '<dark_purple>', insert: '<dark_purple></dark_purple>' },
+  { label: '<gradient>', insert: '<gradient:green:aqua></gradient>' },
+  { label: '<rainbow>', insert: '<rainbow></rainbow>' },
+  { label: '<hover>', insert: '<hover:show_text:"text">content</hover>' },
+  { label: '<click>', insert: '<click:run_command:/say hi>click me</click>' },
+  { label: '<reset>', insert: '<reset>' },
+  { label: '<newline>', insert: '<newline>' },
+  { label: '<#hex>', insert: '<#ff5500></#ff5500>' },
+];
+
+function initMmTags() {
+  const container = document.getElementById('mm-tag-buttons');
+  MM_TAGS.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn';
+    btn.textContent = tag.label;
+    btn.onclick = () => {
+      const ta = document.getElementById('mm-input');
+      const pos = ta.selectionStart;
+      ta.value = ta.value.slice(0, pos) + tag.insert + ta.value.slice(pos);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = pos + tag.insert.length;
+      renderMiniMessage();
+    };
+    container.appendChild(btn);
+  });
+}
+
+const MM_COLORS = {
+  black: '#000000', dark_blue: '#0000AA', dark_green: '#00AA00', dark_aqua: '#00AAAA',
+  dark_red: '#AA0000', dark_purple: '#AA00AA', gold: '#FFAA00', gray: '#AAAAAA',
+  dark_gray: '#555555', blue: '#5555FF', green: '#55FF55', aqua: '#55FFFF',
+  red: '#FF5555', light_purple: '#FF55FF', yellow: '#FFFF55', white: '#FFFFFF',
+};
+
+function renderMiniMessage() {
+  let text = document.getElementById('mm-input').value;
+  document.getElementById('mm-raw').textContent = text;
+
+  // Very simplified renderer
+  let html = escapeHtml(text);
+
+  // Named colors
+  Object.entries(MM_COLORS).forEach(([name, hex]) => {
+    html = html.replace(new RegExp(`&lt;${name}&gt;(.*?)&lt;\\/${name}&gt;`, 'gs'), `<span style="color:${hex}">$1</span>`);
+    html = html.replace(new RegExp(`&lt;${name}&gt;`, 'g'), `<span style="color:${hex}">`);
+  });
+
+  // Hex colors
+  html = html.replace(/&lt;(#[0-9a-fA-F]{6})&gt;(.*?)&lt;\/#[0-9a-fA-F]{6}&gt;/gs, '<span style="color:$1">$2</span>');
+
+  // Formatting
+  html = html.replace(/&lt;bold&gt;(.*?)&lt;\/bold&gt;/gs, '<strong>$1</strong>');
+  html = html.replace(/&lt;italic&gt;(.*?)&lt;\/italic&gt;/gs, '<em>$1</em>');
+  html = html.replace(/&lt;underlined&gt;(.*?)&lt;\/underlined&gt;/gs, '<u>$1</u>');
+  html = html.replace(/&lt;strikethrough&gt;(.*?)&lt;\/strikethrough&gt;/gs, '<s>$1</s>');
+  html = html.replace(/&lt;obfuscated&gt;(.*?)&lt;\/obfuscated&gt;/gs, '<span style="filter:blur(3px)">$1</span>');
+
+  // Rainbow
+  html = html.replace(/&lt;rainbow&gt;(.*?)&lt;\/rainbow&gt;/gs, (_, content) => {
+    return content.split('').map((c, i) => `<span style="color:hsl(${i*30},100%,60%)">${c}</span>`).join('');
+  });
+
+  // Gradient (two colors)
+  html = html.replace(/&lt;gradient:([^:]+):([^&]+)&gt;(.*?)&lt;\/gradient&gt;/gs, (_, c1, c2, content) => {
+    const chars = content.split('');
+    return chars.map((ch, i) => {
+      const t = chars.length > 1 ? i / (chars.length - 1) : 0;
+      const color = lerpColor(resolveColor(c1), resolveColor(c2), t);
+      return `<span style="color:${color}">${ch}</span>`;
+    }).join('');
+  });
+
+  // Hover/click (just show content)
+  html = html.replace(/&lt;hover:show_text:"[^"]*"&gt;(.*?)&lt;\/hover&gt;/gs, '<span style="text-decoration:underline dotted">$1</span>');
+  html = html.replace(/&lt;click:[^&]*&gt;(.*?)&lt;\/click&gt;/gs, '<span style="text-decoration:underline;cursor:pointer">$1</span>');
+
+  // Close unclosed spans
+  html = html.replace(/&lt;\/?\w+&gt;/g, '');
+  html = html.replace(/&lt;reset&gt;/g, '');
+  html = html.replace(/&lt;newline&gt;/g, '<br>');
+
+  document.getElementById('mm-preview').innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function resolveColor(c) {
+  if (c.startsWith('#')) return c;
+  return MM_COLORS[c] || '#ffffff';
+}
+
+function lerpColor(a, b, t) {
+  const pa = hexToRgb(a) || {r:255,g:255,b:255};
+  const pb = hexToRgb(b) || {r:255,g:255,b:255};
+  const r = Math.round(pa.r + (pb.r - pa.r) * t);
+  const g = Math.round(pa.g + (pb.g - pa.g) * t);
+  const bl = Math.round(pa.b + (pb.b - pa.b) * t);
+  return `rgb(${r},${g},${bl})`;
+}
+
+// Legacy format
+const MC_COLORS = [
+  { code: '§0', name: 'Black', hex: '#000000' },
+  { code: '§1', name: 'Dark Blue', hex: '#0000AA' },
+  { code: '§2', name: 'Dark Green', hex: '#00AA00' },
+  { code: '§3', name: 'Dark Aqua', hex: '#00AAAA' },
+  { code: '§4', name: 'Dark Red', hex: '#AA0000' },
+  { code: '§5', name: 'Dark Purple', hex: '#AA00AA' },
+  { code: '§6', name: 'Gold', hex: '#FFAA00' },
+  { code: '§7', name: 'Gray', hex: '#AAAAAA' },
+  { code: '§8', name: 'Dark Gray', hex: '#555555' },
+  { code: '§9', name: 'Blue', hex: '#5555FF' },
+  { code: '§a', name: 'Green', hex: '#55FF55' },
+  { code: '§b', name: 'Aqua', hex: '#55FFFF' },
+  { code: '§c', name: 'Red', hex: '#FF5555' },
+  { code: '§d', name: 'Light Purple', hex: '#FF55FF' },
+  { code: '§e', name: 'Yellow', hex: '#FFFF55' },
+  { code: '§f', name: 'White', hex: '#FFFFFF' },
+];
+
+function initMcColors() {
+  const grid = document.getElementById('mc-color-grid');
+  MC_COLORS.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'mc-color-chip';
+    div.style.background = c.hex;
+    div.style.color = c.hex === '#000000' ? '#fff' : '#000';
+    div.title = `${c.name} ${c.code}`;
+    div.textContent = c.code[1];
+    div.onclick = () => insertLegacy(c.code);
+    grid.appendChild(div);
+  });
+}
+
+function insertLegacy(code) {
+  const ta = document.getElementById('legacy-input');
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, pos) + code + ta.value.slice(pos);
+  ta.focus();
+  renderLegacy();
+}
+
+function renderLegacy() {
+  let text = document.getElementById('legacy-input').value;
+  let html = '';
+  let currentStyle = {};
+  let i = 0;
+
+  const renderStack = [];
+
+  while (i < text.length) {
+    if (text[i] === '§' && i + 1 < text.length) {
+      const code = text[i+1].toLowerCase();
+      if (code === 'r') {
+        currentStyle = {};
+      } else if (code === 'l') { currentStyle.bold = true; }
+      else if (code === 'o') { currentStyle.italic = true; }
+      else if (code === 'n') { currentStyle.underline = true; }
+      else if (code === 'm') { currentStyle.strike = true; }
+      else if (code === 'k') { currentStyle.obf = true; }
+      else {
+        const col = MC_COLORS.find(c => c.code === '§' + code);
+        if (col) currentStyle.color = col.hex;
+      }
+      i += 2;
+    } else {
+      const ch = text[i] === '\n' ? '<br>' : escapeHtml(text[i]);
+      let s = '';
+      if (currentStyle.color) s += `color:${currentStyle.color};`;
+      if (currentStyle.bold) s += 'font-weight:bold;';
+      if (currentStyle.italic) s += 'font-style:italic;';
+      let dec = [];
+      if (currentStyle.underline) dec.push('underline');
+      if (currentStyle.strike) dec.push('line-through');
+      if (dec.length) s += `text-decoration:${dec.join(' ')};`;
+      if (currentStyle.obf) s += 'filter:blur(2px);';
+      html += s ? `<span style="${s}">${ch}</span>` : ch;
+      i++;
+    }
+  }
+
+  document.getElementById('legacy-preview').innerHTML = html;
+}
+
+// JSON text
+function buildJsonText() {
+  const text = document.getElementById('jt-text').value;
+  const color = document.getElementById('jt-color').value;
+  const bold = document.getElementById('jt-bold').checked;
+  const italic = document.getElementById('jt-italic').checked;
+  const underline = document.getElementById('jt-underline').checked;
+  const strike = document.getElementById('jt-strike').checked;
+  const obf = document.getElementById('jt-obf').checked;
+  const clickAction = document.getElementById('jt-click-action').value;
+  const clickVal = document.getElementById('jt-click-val').value;
+  const hover = document.getElementById('jt-hover').value;
+
+  const obj = { text };
+  if (color) obj.color = color;
+  if (bold) obj.bold = true;
+  if (italic) obj.italic = true;
+  if (underline) obj.underlined = true;
+  if (strike) obj.strikethrough = true;
+  if (obf) obj.obfuscated = true;
+  if (clickAction && clickVal) obj.clickEvent = { action: clickAction, value: clickVal };
+  if (hover) obj.hoverEvent = { action: 'show_text', contents: { text: hover } };
+
+  const pretty = JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: (true|false)/g, ': <span class="json-bool">$1</span>');
+  document.getElementById('jt-json').innerHTML = pretty;
+
+  // Preview
+  let colorHex = color ? MM_COLORS[color] || '#fff' : '#fff';
+  let style = `color:${colorHex};`;
+  if (bold) style += 'font-weight:bold;';
+  if (italic) style += 'font-style:italic;';
+  let dec = [];
+  if (underline) dec.push('underline');
+  if (strike) dec.push('line-through');
+  if (dec.length) style += `text-decoration:${dec.join(' ')};`;
+  if (obf) style += 'filter:blur(3px);';
+  document.getElementById('jt-preview').innerHTML = `<span style="${style}">${escapeHtml(text)}</span>`;
+}
+
+function copyJsonText() {
+  const el = document.getElementById('jt-json');
+  navigator.clipboard.writeText(el.textContent);
+  toast('📋 Copied to clipboard!');
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────
+function updateExportPreview() {
+  const name = document.getElementById('pack-name').value || 'My Resource Pack';
+  const texCount = Object.keys(state.textures).length;
+  const soundCount = state.sounds.length;
+
+  // Checklist
+  const checks = [
+    { ok: true, label: 'pack.mcmeta' },
+    { ok: !!state.packIcon, label: 'pack.png (icon)' },
+    { ok: texCount > 0, label: `${texCount} custom texture(s)` },
+    { ok: Object.keys(state.modelJson).length > 0, label: 'Block model JSON' },
+    { ok: soundCount > 0, label: `${soundCount} sound event(s)` },
+    { ok: !!state.fontJson.ns, label: 'Font provider JSON' },
+  ];
+
+  const cl = document.getElementById('export-checklist');
+  cl.innerHTML = '';
+  checks.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'check-item';
+    div.innerHTML = `<span class="check-icon">${c.ok ? '✅' : '⬜'}</span><span>${c.label}</span>`;
+    cl.appendChild(div);
+  });
+
+  // Structure
+  const lines = [
+    `📁 ${name.replace(/\s+/g,'_')}.zip`,
+    `├── pack.mcmeta`,
+    state.packIcon ? `├── pack.png` : '',
+    `└── 📁 assets/`,
+    `    └── 📁 minecraft/`,
+  ];
+
+  if (texCount > 0) {
+    lines.push(`        ├── 📁 textures/`);
+    Object.keys(state.textures).slice(0, 5).forEach((p, i, a) => {
+      const prefix = i === a.length - 1 ? '│       └──' : '│       ├──';
+      lines.push(`        ${prefix} ${p.split('/').pop()}`);
+    });
+    if (texCount > 5) lines.push(`        │       └── ... +${texCount - 5} more`);
+  }
+
+  if (Object.keys(state.modelJson).length > 0) {
+    lines.push(`        ├── 📁 models/block/`);
+    const modelName = (document.getElementById('model-name')?.value || 'custom_block').split('/').pop();
+    lines.push(`        │   └── ${modelName}.json`);
+  }
+
+  if (soundCount > 0) {
+    lines.push(`        ├── 📁 sounds/`);
+    lines.push(`        └── sounds.json`);
+  }
+
+  if (state.fontJson.ns) {
+    lines.push(`        └── 📁 font/`);
+    lines.push(`            └── ${state.fontJson.name || 'default'}.json`);
+  }
+
+  document.getElementById('structure-preview').textContent = lines.filter(Boolean).join('\n');
+}
+
+async function exportPack() {
+  const name = document.getElementById('pack-name').value || 'My Resource Pack';
+  const desc = document.getElementById('pack-desc').value || '';
+  const fmt = parseInt(document.getElementById('pack-format').value) || 18;
+  const author = document.getElementById('pack-author').value;
+  const version = document.getElementById('pack-version').value || '1.0.0';
+
+  const zip = new JSZip();
+  const bar = document.getElementById('export-bar');
+  const prog = document.getElementById('export-progress');
+  prog.style.display = 'block';
+  bar.style.width = '10%';
+
+  // pack.mcmeta
+  const mcmeta = { pack: { pack_format: fmt, description: desc } };
+  if (author) mcmeta.pack.author = author;
+  zip.file('pack.mcmeta', JSON.stringify(mcmeta, null, 2));
+  bar.style.width = '20%';
+
+  // pack.png
+  if (state.packIcon) {
+    const iconData = state.packIcon.split(',')[1];
+    zip.file('pack.png', iconData, { base64: true });
+  }
+  bar.style.width = '35%';
+
+  // Textures
+  const mc = zip.folder('assets/minecraft');
+  const texFolder = mc.folder('textures');
+  for (const [path, imageData] of Object.entries(state.textures)) {
+    // Convert ImageData to PNG
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = 16; tmpCanvas.height = 16;
+    tmpCanvas.getContext('2d').putImageData(imageData, 0, 0);
+    const dataURL = tmpCanvas.toDataURL('image/png');
+    const base64 = dataURL.split(',')[1];
+    // path like 'textures/block/stone.png'
+    const relPath = path.replace(/^textures\//, '');
+    texFolder.file(relPath, base64, { base64: true });
+  }
+  bar.style.width = '55%';
+
+  // Model JSON
+  if (Object.keys(state.modelJson).length > 0) {
+    const modelsFolder = mc.folder('models/block');
+    const modelName = (document.getElementById('model-name')?.value || 'custom_block').split('/').pop();
+    modelsFolder.file(`${modelName}.json`, JSON.stringify(state.modelJson, null, 2));
+  }
+  bar.style.width = '70%';
+
+  // Sounds JSON
+  if (state.sounds.length > 0) {
+    mc.file('sounds.json', JSON.stringify(state.soundsJson, null, 2));
+  }
+  bar.style.width = '80%';
+
+  // Font JSON
+  if (state.fontJson.ns) {
+    const fontFolder = mc.folder('font');
+    fontFolder.file(`${state.fontJson.name || 'default'}.json`, JSON.stringify(state.fontJson.data, null, 2));
+  }
+  bar.style.width = '90%';
+
+  // Generate and download
+  const blob = await zip.generateAsync({ type: 'blob' });
+  bar.style.width = '100%';
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name.replace(/\s+/g,'_')}_v${version}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  setTimeout(() => {
+    prog.style.display = 'none';
+    bar.style.width = '0%';
+  }, 1500);
+
+  toast('✅ Pack exported!');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.style.display = 'none', 2500);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initCanvas();
+  renderTextureList();
+  initMmTags();
+  initMcColors();
+  renderMiniMessage();
+  renderLegacy();
+  buildJsonText();
+
+  // Init sounds with defaults
+  state.sounds = JSON.parse(JSON.stringify(DEFAULT_SOUND_EVENTS));
+  renderSoundEvents();
+
+  // Init model slots
+  updateModelSlots();
+  generateModelJson();
+  updateDisplayJson();
+
+  // Font JSON initial
+  generateFontJson();
+
+  // Mcmeta
+  updateMcmeta();
+
+  // Show legacy tab by default in format section
+  showFormatTab('legacy');
+});
+</script>
+</body>
+</html>
