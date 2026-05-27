@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match — VOID ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050810;--card:#0d1428;--border:#1a2444;--accent:#ff6bff;--text:#e8eaf6;--muted:#4a5580;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,107,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,255,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.glow{position:fixed;top:-300px;left:50%;transform:translateX(-50%);width:700px;height:600px;background:radial-gradient(ellipse,rgba(255,107,255,0.08) 0%,transparent 70%);pointer-events:none;z-index:0;}
+nav{position:relative;z-index:1;width:100%;padding:20px 32px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);}
+.back-btn{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .2s;}
+.back-btn:hover{gap:12px;}
+.nav-title{font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.nav-sep{color:var(--muted);}
+main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:32px 20px 60px;gap:20px;width:100%;max-width:600px;}
+h1{font-size:48px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,#ff6bff,#7b4fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{font-size:12px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;}
+.hud{display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.hud-item{text-align:center;}
+.hud-label{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
+.hud-val{font-size:24px;font-weight:800;color:var(--accent);}
+.diff-row{display:flex;gap:8px;padding:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;}
+.diff-btn{padding:9px 20px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;background:transparent;color:var(--muted);}
+.diff-btn.easy.active{background:rgba(0,255,136,0.12);color:#00ff88;border-color:rgba(0,255,136,0.3);}
+.diff-btn.medium.active{background:rgba(255,200,0,0.12);color:#ffc800;border-color:rgba(255,200,0,0.3);}
+.diff-btn.hard.active{background:rgba(255,68,102,0.12);color:#ff4466;border-color:rgba(255,68,102,0.3);}
+.grid{display:grid;gap:10px;width:100%;}
+.mem-card{
+  aspect-ratio:1;border-radius:12px;cursor:pointer;
+  perspective:600px;position:relative;
+  transition:transform .1s;
+}
+.mem-card:hover:not(.flipped):not(.matched){transform:scale(1.04);}
+.mem-card-inner{
+  position:absolute;inset:0;border-radius:12px;
+  transform-style:preserve-3d;transition:transform .4s ease;
+}
+.mem-card.flipped .mem-card-inner,.mem-card.matched .mem-card-inner{transform:rotateY(180deg);}
+.mem-card-front,.mem-card-back{
+  position:absolute;inset:0;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.mem-card-front{background:var(--card);border:1px solid var(--border);font-size:28px;font-weight:800;color:var(--muted);}
+.mem-card-back{background:rgba(255,107,255,0.08);border:2px solid rgba(255,107,255,0.3);transform:rotateY(180deg);font-size:32px;}
+.mem-card.matched .mem-card-back{border-color:rgba(0,255,136,0.5);background:rgba(0,255,136,0.06);}
+.btn{padding:12px 32px;background:rgba(255,107,255,0.1);border:1px solid rgba(255,107,255,0.3);border-radius:8px;color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.btn:hover{background:rgba(255,107,255,0.2);}
+.win-msg{font-size:20px;font-weight:800;color:#ffd700;text-align:center;display:none;}
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:999;}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="glow"></div>
+<nav><a class="back-btn" href="index.html">← Back</a><span class="nav-sep">/</span><span class="nav-title">Memory Match</span></nav>
+<main>
+  <div style="text-align:center"><h1>MEMORY</h1><p class="sub">Match · Remember · Win</p></div>
+  <div class="diff-row">
+    <button class="diff-btn easy active" id="d-easy" onclick="setDiff('easy')">Easy (4×4)</button>
+    <button class="diff-btn medium" id="d-medium" onclick="setDiff('medium')">Medium (5×4)</button>
+    <button class="diff-btn hard" id="d-hard" onclick="setDiff('hard')">Hard (6×5)</button>
+  </div>
+  <div class="hud">
+    <div class="hud-item"><div class="hud-label">Moves</div><div class="hud-val" id="moves">0</div></div>
+    <div class="hud-item"><div class="hud-label">Pairs</div><div class="hud-val" id="pairs">0/0</div></div>
+    <div class="hud-item"><div class="hud-label">Time</div><div class="hud-val" id="timer">0s</div></div>
+    <div class="hud-item"><div class="hud-label">Best</div><div class="hud-val" id="best-moves">–</div></div>
+  </div>
+  <div class="win-msg" id="win-msg">🎉 All matched! Brilliant!</div>
+  <div class="grid" id="grid"></div>
+  <button class="btn" onclick="initGame()">New Game</button>
+</main>
+<script>
+const EMOJIS='🐉🦄🦋🌙⭐🔮🎭🎪🌈🪄🦊🐺🦁🐯🦅🦉🐙🦑🌺🌸🍄🎸🎺🎻🎨🏆🎯🎲🃏🎰';
+const CONFIGS={easy:{cols:4,rows:4},medium:{cols:5,rows:4},hard:{cols:6,rows:5}};
+let diff='easy',flipped=[],matched=0,moves=0,total=0,lockBoard=false,timerInterval=null,elapsed=0,started=false;
+
+function setDiff(d){
+  diff=d;
+  ['easy','medium','hard'].forEach(x=>document.getElementById('d-'+x).classList.toggle('active',x===d));
+  initGame();
+}
+
+function initGame(){
+  clearInterval(timerInterval);elapsed=0;started=false;moves=0;matched=0;flipped=[];lockBoard=false;
+  document.getElementById('timer').textContent='0s';
+  document.getElementById('moves').textContent='0';
+  document.getElementById('win-msg').style.display='none';
+  const {cols,rows}=CONFIGS[diff];
+  const pairs=(cols*rows)/2;total=pairs;
+  document.getElementById('pairs').textContent=`0/${pairs}`;
+  const emojis=EMOJIS.split('').slice(0,pairs);
+  const deck=[...emojis,...emojis].sort(()=>Math.random()-.5);
+  const grid=document.getElementById('grid');
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.innerHTML='';
+  deck.forEach((emoji,i)=>{
+    const card=document.createElement('div');
+    card.className='mem-card';card.dataset.emoji=emoji;card.dataset.idx=i;
+    card.innerHTML=`<div class="mem-card-inner"><div class="mem-card-front">?</div><div class="mem-card-back">${emoji}</div></div>`;
+    card.addEventListener('click',()=>flipCard(card));
+    grid.appendChild(card);
+  });
+  const bestKey='memBest_'+diff;
+  const b=localStorage.getItem(bestKey);
+  document.getElementById('best-moves').textContent=b?b+'m':'–';
+}
+
+function flipCard(card){
+  if(lockBoard||card.classList.contains('flipped')||card.classList.contains('matched'))return;
+  if(!started){started=true;timerInterval=setInterval(()=>{elapsed++;document.getElementById('timer').textContent=elapsed+'s';},1000);}
+  card.classList.add('flipped');
+  flipped.push(card);
+  if(flipped.length===2){
+    lockBoard=true;
+    moves++;document.getElementById('moves').textContent=moves;
+    if(flipped[0].dataset.emoji===flipped[1].dataset.emoji){
+      flipped.forEach(c=>c.classList.add('matched'));
+      matched++;document.getElementById('pairs').textContent=`${matched}/${total}`;
+      flipped=[];lockBoard=false;
+      if(matched===total){
+        clearInterval(timerInterval);
+        document.getElementById('win-msg').style.display='block';
+        const bestKey='memBest_'+diff;
+        const b=parseInt(localStorage.getItem(bestKey)||'9999');
+        if(moves<b)localStorage.setItem(bestKey,moves);
+        document.getElementById('best-moves').textContent=Math.min(moves,b)+'m';
+      }
+    }else{
+      setTimeout(()=>{flipped.forEach(c=>c.classList.remove('flipped'));flipped=[];lockBoard=false;},900);
+    }
+  }
+}
+initGame();
+</script>
+</body>
+</html>
