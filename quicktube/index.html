@@ -35,7 +35,7 @@
       background:var(--bg);
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      display:flex;
+      dis:flex;
       justify-content:center;
       padding:24px;
       min-height:100vh;
@@ -46,7 +46,7 @@
     .container{
       width:100%;
       max-width:920px;
-      display:flex;
+      dis:flex;
       flex-direction:column;
       align-items:center;
     }
@@ -80,7 +80,7 @@
       transition:.25s ease;
     }
 
-    .input-row{display:flex;gap:8px;margin-top:8px}
+    .input-row{dis:flex;gap:8px;margin-top:8px}
 
     input{
       flex:1;
@@ -95,7 +95,7 @@
     .btn{
       background:var(--accent);
       border:none;
-      color:var(--muted);
+      color:var(--text);
       padding:10px 14px;
       border-radius:8px;
       cursor:pointer;
@@ -112,7 +112,7 @@
     }
 
     .options{
-      display:flex;
+      dis:flex;
       gap:14px;
       flex-wrap:wrap;
       margin-top:12px;
@@ -120,10 +120,10 @@
       font-size:14px;
     }
 
-    .video-list{display:grid;gap:14px;margin-top:12px}
+    .video-list{dis:grid;gap:14px;margin-top:12px}
 
     .video-item{
-      display:flex;
+      dis:flex;
       gap:12px;
       padding:10px;
       border-radius:10px;
@@ -141,7 +141,7 @@
     .video-info h3{margin:0;font-size:16px}
     .video-info p{margin:4px 0 0;color:var(--muted);font-size:14px}
 
-    .play-mini{
+    .-mini{
       background:var(--accent);
       border:none;
       color:#fff;
@@ -150,14 +150,14 @@
       cursor:pointer;
     }
 
-    .player-wrapper{
+    .er-wrapper{
       width:100%;
       border-radius:10px;
       overflow:hidden;
       background:#000;
     }
 
-    .player-container{
+    .er-container{
       position:relative;
       padding-bottom:56.25%;
       height:0;
@@ -171,7 +171,7 @@
       border:0;
     }
 
-    .hidden{display:none}
+    .hidden{dis:none}
 
     .back-to-top{
       position:fixed;
@@ -196,11 +196,11 @@
   <h1 id="logoBtn" style="cursor:pointer;">Quick<em>Tube</em></h1>
   <p class="lead">Paste a YouTube link, search videos, or browse trending.</p>
 
-  <div style="width:90%;display:flex;justify-content:flex-end">
+  <div style="width:90%;dis:flex;justify-content:flex-end">
     <button id="themeToggle" class="btn-secondary">☀️ Light Mode</button>
   </div>
 
-  <!-- PLAYER -->
+  <!-- ER -->
   <div class="card">
     <div class="input-row">
       <input id="urlInput" placeholder="YouTube URL or ID">
