@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capture the Flag — VOID ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050810;--card:#0d1428;--border:#1a2444;--accent:#ff4466;--text:#e8eaf6;--muted:#4a5580;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,68,102,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,68,102,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.glow{position:fixed;top:-300px;left:50%;transform:translateX(-50%);width:700px;height:600px;background:radial-gradient(ellipse,rgba(255,68,102,0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
+nav{position:relative;z-index:1;width:100%;padding:20px 32px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);}
+.back-btn{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .2s;}
+.back-btn:hover{gap:12px;}
+.nav-title{font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.nav-sep{color:var(--muted);}
+main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:28px 16px 60px;gap:16px;width:100%;max-width:700px;}
+h1{font-size:44px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,#ff4466,#ff8866);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{font-size:12px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;}
+.mode-row{display:flex;gap:8px;padding:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;}
+.mode-btn{padding:9px 22px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;background:transparent;color:var(--muted);}
+.mode-btn.active{background:rgba(255,68,102,0.15);color:var(--accent);border-color:rgba(255,68,102,0.3);}
+.status{font-size:14px;font-weight:700;letter-spacing:1px;text-align:center;min-height:22px;}
+#game-canvas{border:1px solid rgba(255,68,102,0.2);border-radius:12px;box-shadow:0 0 40px rgba(255,68,102,0.06);cursor:pointer;display:block;}
+.btn{padding:12px 28px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);border-radius:8px;color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.btn:hover{background:rgba(255,68,102,0.2);}
+.legend{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted);}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.legend-dot{width:14px;height:14px;border-radius:3px;}
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:999;}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="glow"></div>
+<nav><a class="back-btn" href="index.html">← Back</a><span class="nav-sep">/</span><span class="nav-title">Capture the Flag</span></nav>
+<main>
+  <div style="text-align:center"><h1>CAPTURE THE FLAG</h1><p class="sub">Sneak · Capture · Win</p></div>
+  <div class="mode-row">
+    <button class="mode-btn active" id="m-2p" onclick="setMode('2p')">2 Players (WASD / Arrows)</button>
+    <button class="mode-btn" id="m-bot" onclick="setMode('bot')">vs Bot</button>
+  </div>
+  <div class="status" id="ctf-status">Press Start to play</div>
+  <canvas id="game-canvas" width="660" height="440"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#00cfff"></div>Blue Player (WASD)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff4466"></div>Red Player (Arrows)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a2444"></div>Wall</div>
+    <div class="legend-item"><span>🚩</span>Flag (bring to your base!)</div>
+  </div>
+  <button class="btn" onclick="initGame()">New Game</button>
+</main>
+<script>
+const canvas=document.getElementById('game-canvas');
+const ctx=canvas.getContext('2d');
+const TILE=44,COLS=15,ROWS=10;
+const W=COLS*TILE,H=ROWS*TILE;
+canvas.width=W;canvas.height=H;
+
+let mode='2p';
+function setMode(m){mode=m;document.getElementById('m-2p').classList.toggle('active',m==='2p');document.getElementById('m-bot').classList.toggle('active',m==='bot');initGame();}
+
+// Grid: 0=empty,1=wall
+const WALLS_TEMPLATE=[
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,1,0,0,0,0,0,1,1,0,0,0],
+  [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+  [0,1,0,1,0,0,0,0,0,0,0,1,0,1,0],
+  [0,0,0,1,0,1,1,0,1,1,0,1,0,0,0],
+  [0,0,0,1,0,1,1,0,1,1,0,1,0,0,0],
+  [0,1,0,1,0,0,0,0,0,0,0,1,0,1,0],
+  [0,1,0,0,0,0,1,0,1,0,0,0,0,1,0],
+  [0,0,0,1,1,0,0,0,0,0,1,1,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+let grid,blue,red,blueFlag,redFlag,keys={},raf,gameOver,score;
+
+function initGame(){
+  gameOver=false;
+  grid=WALLS_TEMPLATE.map(r=>[...r]);
+  blue={x:1*TILE+TILE/2,y:5*TILE+TILE/2,vx:0,vy:0,hasFlag:false,speed:3,col:'#00cfff',baseX:0,baseY:4};
+  red={x:13*TILE+TILE/2,y:5*TILE+TILE/2,vx:0,vy:0,hasFlag:false,speed:3,col:'#ff4466',baseX:14,baseY:4};
+  blueFlag={col:1,row:4,held:false};
+  redFlag={col:13,row:4,held:false};
+  score={blue:0,red:0};
+  document.getElementById('ctf-status').textContent='Blue: WASD · Red: Arrow keys — Capture the enemy flag!';
+  cancelAnimationFrame(raf);loop();
+}
+
+function loop(){
+  if(gameOver)return;
+  update();draw();
+  raf=requestAnimationFrame(loop);
+}
+
+function isWall(px,py,r=12){
+  const checks=[[px-r,py-r],[px+r,py-r],[px-r,py+r],[px+r,py+r]];
+  return checks.some(([x,y])=>{
+    const col=Math.floor(x/TILE),row=Math.floor(y/TILE);
+    return col<0||col>=COLS||row<0||row>=ROWS||grid[row][col]===1;
+  });
+}
+
+function update(){
+  // Blue input
+  let bvx=0,bvy=0;
+  if(keys['w']||keys['W'])bvy=-blue.speed;
+  if(keys['s']||keys['S'])bvy=blue.speed;
+  if(keys['a']||keys['A'])bvx=-blue.speed;
+  if(keys['d']||keys['D'])bvx=blue.speed;
+  movePlayer(blue,bvx,bvy);
+
+  // Red input / bot
+  if(mode==='2p'){
+    let rvx=0,rvy=0;
+    if(keys['ArrowUp'])rvy=-red.speed;
+    if(keys['ArrowDown'])rvy=red.speed;
+    if(keys['ArrowLeft'])rvx=-red.speed;
+    if(keys['ArrowRight'])rvx=red.speed;
+    movePlayer(red,rvx,rvy);
+  }else{
+    // Bot AI: chase flag if not held, else return to base
+    const target=!red.hasFlag?{x:blueFlag.col*TILE+TILE/2,y:blueFlag.row*TILE+TILE/2}:{x:red.baseX*TILE+TILE/2,y:red.baseY*TILE+TILE/2};
+    const dx=target.x-red.x,dy=target.y-red.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>2){
+      const bvx2=(dx/dist)*red.speed;const bvy2=(dy/dist)*red.speed;
+      movePlayer(red,bvx2,bvy2);
+    }
+  }
+
+  // Flag pickup
+  checkFlagPickup(blue,redFlag,'blue');
+  checkFlagPickup(red,blueFlag,'red');
+  // Flag carry
+  if(blue.hasFlag){redFlag.col=Math.floor(blue.x/TILE);redFlag.row=Math.floor(blue.y/TILE);}
+  if(red.hasFlag){blueFlag.col=Math.floor(red.x/TILE);blueFlag.row=Math.floor(red.y/TILE);}
+  // Score
+  checkScore(blue,'blue');checkScore(red,'red');
+  // Tag: if players overlap, flag carrier loses flag
+  const dist=Math.sqrt((blue.x-red.x)**2+(blue.y-red.y)**2);
+  if(dist<20){
+    if(blue.hasFlag){blue.hasFlag=false;redFlag={col:13,row:4,held:false};}
+    if(red.hasFlag){red.hasFlag=false;blueFlag={col:1,row:4,held:false};}
+  }
+}
+
+function movePlayer(p,vx,vy){
+  const nx=p.x+vx,ny=p.y+vy;
+  if(!isWall(nx,p.y))p.x=Math.max(14,Math.min(W-14,nx));
+  if(!isWall(p.x,ny))p.y=Math.max(14,Math.min(H-14,ny));
+}
+
+function checkFlagPickup(player,flag,who){
+  if(player.hasFlag)return;
+  const fc=flag.col*TILE+TILE/2,fr=flag.row*TILE+TILE/2;
+  if(Math.sqrt((player.x-fc)**2+(player.y-fr)**2)<22){player.hasFlag=true;}
+}
+
+function checkScore(player,who){
+  if(!player.hasFlag)return;
+  const base=who==='blue'?{col:blue.baseX,row:blue.baseY}:{col:red.baseX,row:red.baseY};
+  const bx=base.col*TILE+TILE/2,by=base.row*TILE+TILE/2;
+  if(Math.sqrt((player.x-bx)**2+(player.y-by)**2)<22){
+    player.hasFlag=false;
+    score[who]++;
+    if(who==='blue'){redFlag={col:13,row:4,held:false};}
+    else{blueFlag={col:1,row:4,held:false};}
+    document.getElementById('ctf-status').textContent=`🏆 ${who==='blue'?'Blue':'Red'} scores! Blue:${score.blue} Red:${score.red}`;
+    if(score[who]>=3){gameOver=true;document.getElementById('ctf-status').textContent=`🎉 ${who==='blue'?'Blue':'Red'} wins! Blue:${score.blue} Red:${score.red}`;}
+  }
+}
+
+function draw(){
+  ctx.fillStyle='#070c1a';ctx.fillRect(0,0,W,H);
+  // Zones
+  ctx.fillStyle='rgba(0,207,255,0.07)';ctx.fillRect(0,0,3*TILE,H);
+  ctx.fillStyle='rgba(255,68,102,0.07)';ctx.fillRect(12*TILE,0,3*TILE,H);
+  // Grid
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(grid[r][c]===1){ctx.fillStyle='#1a2444';ctx.beginPath();roundRect(ctx,c*TILE+2,r*TILE+2,TILE-4,TILE-4,4);ctx.fill();}
+  }
+  // Flags
+  drawFlag(blueFlag.col,blueFlag.row,'🔵');
+  drawFlag(redFlag.col,redFlag.row,'🔴');
+  // Base markers
+  ctx.font='16px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.globalAlpha=0.4;
+  ctx.fillText('🏠',blue.baseX*TILE+TILE/2,blue.baseY*TILE+TILE/2);
+  ctx.fillText('🏠',red.baseX*TILE+TILE/2,red.baseY*TILE+TILE/2);
+  ctx.globalAlpha=1;
+  // Players
+  drawPlayer(blue,'B');
+  drawPlayer(red,mode==='bot'&&true?'🤖':'R');
+  // Score
+  ctx.fillStyle='rgba(0,207,255,0.8)';ctx.font='bold 14px Syne,sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText(`Blue: ${score.blue}`,8,6);
+  ctx.fillStyle='rgba(255,68,102,0.8)';ctx.textAlign='right';
+  ctx.fillText(`Red: ${score.red}`,W-8,6);
+}
+
+function drawFlag(col,row,icon){
+  ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🚩',col*TILE+TILE/2,row*TILE+TILE/2);
+}
+
+function drawPlayer(p,label){
+  ctx.save();
+  ctx.shadowColor=p.col;ctx.shadowBlur=12;
+  ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  ctx.fillStyle='#050810';ctx.font='bold 10px Syne,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,p.x,p.y);
+  if(p.hasFlag){ctx.font='14px sans-serif';ctx.fillText('🚩',p.x+10,p.y-10);}
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+document.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+initGame();
+</script>
+</body>
+</html>
