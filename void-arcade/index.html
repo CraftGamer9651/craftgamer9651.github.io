@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VOID ARCADE</title>
-<link rel="icon" type="image/x-icon" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -30,63 +29,47 @@
     overflow-x: hidden;
   }
 
-  /* Animated background grid */
   body::before {
     content: '';
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background-image:
       linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
     background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
 
-  /* Radial glows */
   .glow-topleft {
-    position: fixed;
-    top: -200px; left: -200px;
+    position: fixed; top: -200px; left: -200px;
     width: 600px; height: 600px;
     background: radial-gradient(circle, rgba(123,79,255,0.15) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
   .glow-bottomright {
-    position: fixed;
-    bottom: -200px; right: -200px;
+    position: fixed; bottom: -200px; right: -200px;
     width: 700px; height: 700px;
     background: radial-gradient(circle, rgba(0,207,255,0.1) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
 
   .container {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
+    position: relative; z-index: 1;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 32px;
   }
 
   /* Header */
-  header {
-    padding: 60px 0 40px;
-    text-align: center;
-  }
+  header { padding: 60px 0 40px; text-align: center; }
 
   .logo-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; margin-bottom: 12px;
   }
 
   .logo-icon {
     width: 48px; height: 48px;
-    border: 2px solid var(--accent1);
-    border-radius: 12px;
+    border: 2px solid var(--accent1); border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     font-size: 22px;
     box-shadow: 0 0 20px rgba(0,255,136,0.3);
@@ -95,27 +78,19 @@
 
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 20px rgba(0,255,136,0.3); }
-    50% { box-shadow: 0 0 40px rgba(0,255,136,0.6); }
+    50%       { box-shadow: 0 0 40px rgba(0,255,136,0.6); }
   }
 
   h1 {
     font-size: clamp(48px, 8vw, 88px);
-    font-weight: 800;
-    letter-spacing: -2px;
-    line-height: 1;
+    font-weight: 800; letter-spacing: -2px; line-height: 1;
     background: linear-gradient(135deg, var(--accent1) 0%, var(--accent3) 40%, var(--accent2) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
 
   .subtitle {
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-top: 10px;
+    font-size: 14px; font-weight: 500; letter-spacing: 6px;
+    text-transform: uppercase; color: var(--muted); margin-top: 10px;
   }
 
   .divider {
@@ -124,229 +99,275 @@
     margin: 32px auto;
   }
 
-  /* Game grid */
+  /* Section label */
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 16px; padding-left: 4px;
+  }
+
+  /* Grid */
   .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-    padding-bottom: 80px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding-bottom: 32px;
   }
 
-  @media (max-width: 680px) {
-    .grid { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
 
+  /* Card base */
   .card {
     position: relative;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    display: block;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden;
+    text-decoration: none; color: inherit; display: block;
     transition: transform 0.3s ease, border-color 0.3s ease;
     cursor: pointer;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
   }
-
-  .card:hover {
-    transform: translateY(-6px);
-  }
-
+  .card:hover { transform: translateY(-6px); }
   .card:hover .card-glow { opacity: 1; }
   .card:hover .card-arrow { transform: translateX(4px); }
 
   .card-glow {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 20px;
-    pointer-events: none;
+    position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.3s ease; border-radius: 20px; pointer-events: none;
   }
-
-  .card--snake { border-color: rgba(0,255,136,0.3); }
-  .card--snake .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08) 0%, transparent 70%); }
-  .card--snake:hover { border-color: var(--accent1); }
-  .card--snake .card-num { color: var(--accent1); }
-  .card--snake .card-tag { background: rgba(0,255,136,0.1); color: var(--accent1); border-color: rgba(0,255,136,0.2); }
-  .card--snake .play-btn { background: rgba(0,255,136,0.1); color: var(--accent1); border-color: rgba(0,255,136,0.2); }
-  .card--snake .play-btn:hover { background: rgba(0,255,136,0.2); }
-
-  .card--ttt { border-color: rgba(123,79,255,0.3); }
-  .card--ttt .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(123,79,255,0.08) 0%, transparent 70%); }
-  .card--ttt:hover { border-color: var(--accent2); }
-  .card--ttt .card-num { color: var(--accent2); }
-  .card--ttt .card-tag { background: rgba(123,79,255,0.1); color: var(--accent2); border-color: rgba(123,79,255,0.2); }
-  .card--ttt .play-btn { background: rgba(123,79,255,0.1); color: var(--accent2); border-color: rgba(123,79,255,0.2); }
-  .card--ttt .play-btn:hover { background: rgba(123,79,255,0.2); }
-
-  .card--chess { border-color: rgba(0,207,255,0.3); }
-  .card--chess .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,255,0.08) 0%, transparent 70%); }
-  .card--chess:hover { border-color: var(--accent3); }
-  .card--chess .card-num { color: var(--accent3); }
-  .card--chess .card-tag { background: rgba(0,207,255,0.1); color: var(--accent3); border-color: rgba(0,207,255,0.2); }
-  .card--chess .play-btn { background: rgba(0,207,255,0.1); color: var(--accent3); border-color: rgba(0,207,255,0.2); }
-  .card--chess .play-btn:hover { background: rgba(0,207,255,0.2); }
-
-  .card--checkers { border-color: rgba(255,107,255,0.3); }
-  .card--checkers .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,107,255,0.08) 0%, transparent 70%); }
-  .card--checkers:hover { border-color: var(--accent4); }
-  .card--checkers .card-num { color: var(--accent4); }
-  .card--checkers .card-tag { background: rgba(255,107,255,0.1); color: var(--accent4); border-color: rgba(255,107,255,0.2); }
-  .card--checkers .play-btn { background: rgba(255,107,255,0.1); color: var(--accent4); border-color: rgba(255,107,255,0.2); }
-  .card--checkers .play-btn:hover { background: rgba(255,107,255,0.2); }
-
-  .card--dino { border-color: rgba(0,207,130,0.3); }
-  .card--dino .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,130,0.08) 0%, transparent 70%); }
-  .card--dino:hover { border-color: #00cf82; }
-  .card--dino .card-num { color: #00cf82; }
-  .card--dino .card-tag { background: rgba(0,207,130,0.1); color: #00cf82; border-color: rgba(0,207,130,0.2); }
-  .card--dino .play-btn { background: rgba(0,207,130,0.1); color: #00cf82; border-color: rgba(0,207,130,0.2); }
-  .card--dino .play-btn:hover { background: rgba(0,207,130,0.2); }
-
-  .card--signin { border-color: rgba(255,200,0,0.3); }
-  .card--signin .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,200,0,0.08) 0%, transparent 70%); }
-  .card--signin:hover { border-color: #ffc800; }
-  .card--signin .card-num { color: #ffc800; }
-  .card--signin .card-tag { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
-  .card--signin .play-btn { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
-  .card--signin .play-btn:hover { background: rgba(255,200,0,0.2); }
 
   .card-visual {
-    height: 160px;
+    height: 120px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 72px;
-    position: relative;
-    overflow: hidden;
+    font-size: 60px; position: relative; overflow: hidden;
   }
-
   .card-visual::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0; height: 60px;
+    content: ''; position: absolute;
+    bottom: 0; left: 0; right: 0; height: 50px;
     background: linear-gradient(transparent, var(--card));
   }
 
-  .card-body {
-    padding: 20px 24px 24px;
-  }
+  .card-body { padding: 16px 22px 22px; }
 
   .card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 10px;
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 8px;
   }
 
   .card-num {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
   }
 
   .card-tag {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 4px;
-    border: 1px solid;
+    font-size: 10px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px; border: 1px solid;
   }
 
-  .card h2 {
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin-bottom: 8px;
-  }
-
-  .card p {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
+  .card h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .card p  { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 
   .play-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: 1px solid;
-    border-radius: 8px;
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border: 1px solid; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s ease; text-decoration: none;
   }
 
-  .card-arrow {
-    transition: transform 0.2s ease;
-  }
+  .card-arrow { transition: transform 0.2s ease; }
 
-  /* Footer */
-  footer {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 24px;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
+  /* Per-game colours */
+  /* Snake */
+  .card--snake { border-color: rgba(0,255,136,0.3); }
+  .card--snake .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08) 0%, transparent 70%); }
+  .card--snake:hover { border-color: var(--accent1); }
+  .card--snake .card-num,.card--snake .play-btn { color: var(--accent1); }
+  .card--snake .card-tag { background: rgba(0,255,136,0.1); color: var(--accent1); border-color: rgba(0,255,136,0.2); }
+  .card--snake .play-btn { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.2); }
+  .card--snake .play-btn:hover { background: rgba(0,255,136,0.2); }
 
-  /* Entrance animation */
-  .card {
-    opacity: 0;
-    animation: fadeUp 0.5s ease forwards;
-  }
-  .card:nth-child(1) { animation-delay: 0.1s; }
-  .card:nth-child(2) { animation-delay: 0.2s; }
-  .card:nth-child(3) { animation-delay: 0.3s; }
-  .card:nth-child(4) { animation-delay: 0.4s; }
+  /* Tic-Tac-Toe */
+  .card--ttt { border-color: rgba(123,79,255,0.3); }
+  .card--ttt .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(123,79,255,0.08) 0%, transparent 70%); }
+  .card--ttt:hover { border-color: var(--accent2); }
+  .card--ttt .card-num,.card--ttt .play-btn { color: var(--accent2); }
+  .card--ttt .card-tag { background: rgba(123,79,255,0.1); color: var(--accent2); border-color: rgba(123,79,255,0.2); }
+  .card--ttt .play-btn { background: rgba(123,79,255,0.1); border-color: rgba(123,79,255,0.2); }
+  .card--ttt .play-btn:hover { background: rgba(123,79,255,0.2); }
 
-  .card:nth-child(5) { animation-delay: 0.5s; }
-  .card:nth-child(6) { animation-delay: 0.6s; }
+  /* Chess */
+  .card--chess { border-color: rgba(0,207,255,0.3); }
+  .card--chess .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,255,0.08) 0%, transparent 70%); }
+  .card--chess:hover { border-color: var(--accent3); }
+  .card--chess .card-num,.card--chess .play-btn { color: var(--accent3); }
+  .card--chess .card-tag { background: rgba(0,207,255,0.1); color: var(--accent3); border-color: rgba(0,207,255,0.2); }
+  .card--chess .play-btn { background: rgba(0,207,255,0.1); border-color: rgba(0,207,255,0.2); }
+  .card--chess .play-btn:hover { background: rgba(0,207,255,0.2); }
+
+  /* Checkers */
+  .card--checkers { border-color: rgba(255,107,255,0.3); }
+  .card--checkers .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,107,255,0.08) 0%, transparent 70%); }
+  .card--checkers:hover { border-color: var(--accent4); }
+  .card--checkers .card-num,.card--checkers .play-btn { color: var(--accent4); }
+  .card--checkers .card-tag { background: rgba(255,107,255,0.1); color: var(--accent4); border-color: rgba(255,107,255,0.2); }
+  .card--checkers .play-btn { background: rgba(255,107,255,0.1); border-color: rgba(255,107,255,0.2); }
+  .card--checkers .play-btn:hover { background: rgba(255,107,255,0.2); }
+
+  /* Dino */
+  .card--dino { border-color: rgba(0,207,130,0.3); }
+  .card--dino .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,130,0.08) 0%, transparent 70%); }
+  .card--dino:hover { border-color: #00cf82; }
+  .card--dino .card-num,.card--dino .play-btn { color: #00cf82; }
+  .card--dino .card-tag { background: rgba(0,207,130,0.1); color: #00cf82; border-color: rgba(0,207,130,0.2); }
+  .card--dino .play-btn { background: rgba(0,207,130,0.1); border-color: rgba(0,207,130,0.2); }
+  .card--dino .play-btn:hover { background: rgba(0,207,130,0.2); }
+
+  /* Sign In */
+  .card--signin { border-color: rgba(255,200,0,0.3); }
+  .card--signin .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,200,0,0.08) 0%, transparent 70%); }
+  .card--signin:hover { border-color: #ffc800; }
+  .card--signin .card-num,.card--signin .play-btn { color: #ffc800; }
+  .card--signin .card-tag { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
+  .card--signin .play-btn { background: rgba(255,200,0,0.1); border-color: rgba(255,200,0,0.2); }
+  .card--signin .play-btn:hover { background: rgba(255,200,0,0.2); }
+
+  /* Flapsy */
+  .card--flapsy { border-color: rgba(0,255,136,0.3); }
+  .card--flapsy .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08) 0%, transparent 70%); }
+  .card--flapsy:hover { border-color: var(--accent1); }
+  .card--flapsy .card-num,.card--flapsy .play-btn { color: var(--accent1); }
+  .card--flapsy .card-tag { background: rgba(0,255,136,0.1); color: var(--accent1); border-color: rgba(0,255,136,0.2); }
+  .card--flapsy .play-btn { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.2); }
+  .card--flapsy .play-btn:hover { background: rgba(0,255,136,0.2); }
+
+  /* Memory */
+  .card--memory { border-color: rgba(255,107,255,0.3); }
+  .card--memory .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,107,255,0.08) 0%, transparent 70%); }
+  .card--memory:hover { border-color: var(--accent4); }
+  .card--memory .card-num,.card--memory .play-btn { color: var(--accent4); }
+  .card--memory .card-tag { background: rgba(255,107,255,0.1); color: var(--accent4); border-color: rgba(255,107,255,0.2); }
+  .card--memory .play-btn { background: rgba(255,107,255,0.1); border-color: rgba(255,107,255,0.2); }
+  .card--memory .play-btn:hover { background: rgba(255,107,255,0.2); }
+
+  /* Minesweeper */
+  .card--mines { border-color: rgba(0,207,255,0.3); }
+  .card--mines .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,255,0.08) 0%, transparent 70%); }
+  .card--mines:hover { border-color: var(--accent3); }
+  .card--mines .card-num,.card--mines .play-btn { color: var(--accent3); }
+  .card--mines .card-tag { background: rgba(0,207,255,0.1); color: var(--accent3); border-color: rgba(0,207,255,0.2); }
+  .card--mines .play-btn { background: rgba(0,207,255,0.1); border-color: rgba(0,207,255,0.2); }
+  .card--mines .play-btn:hover { background: rgba(0,207,255,0.2); }
+
+  /* Conquest */
+  .card--conquest { border-color: rgba(255,200,0,0.3); }
+  .card--conquest .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,200,0,0.08) 0%, transparent 70%); }
+  .card--conquest:hover { border-color: #ffc800; }
+  .card--conquest .card-num,.card--conquest .play-btn { color: #ffc800; }
+  .card--conquest .card-tag { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
+  .card--conquest .play-btn { background: rgba(255,200,0,0.1); border-color: rgba(255,200,0,0.2); }
+  .card--conquest .play-btn:hover { background: rgba(255,200,0,0.2); }
+
+  /* CTF */
+  .card--ctf { border-color: rgba(255,68,102,0.3); }
+  .card--ctf .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,68,102,0.08) 0%, transparent 70%); }
+  .card--ctf:hover { border-color: #ff4466; }
+  .card--ctf .card-num,.card--ctf .play-btn { color: #ff4466; }
+  .card--ctf .card-tag { background: rgba(255,68,102,0.1); color: #ff4466; border-color: rgba(255,68,102,0.2); }
+  .card--ctf .play-btn { background: rgba(255,68,102,0.1); border-color: rgba(255,68,102,0.2); }
+  .card--ctf .play-btn:hover { background: rgba(255,68,102,0.2); }
+
+  /* Uno */
+  .card--uno { border-color: rgba(255,136,0,0.3); }
+  .card--uno .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,136,0,0.08) 0%, transparent 70%); }
+  .card--uno:hover { border-color: #ff8800; }
+  .card--uno .card-num,.card--uno .play-btn { color: #ff8800; }
+  .card--uno .card-tag { background: rgba(255,136,0,0.1); color: #ff8800; border-color: rgba(255,136,0,0.2); }
+  .card--uno .play-btn { background: rgba(255,136,0,0.1); border-color: rgba(255,136,0,0.2); }
+  .card--uno .play-btn:hover { background: rgba(255,136,0,0.2); }
+
+  /* Code Puzzles */
+  .card--code { border-color: rgba(123,79,255,0.3); }
+  .card--code .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(123,79,255,0.08) 0%, transparent 70%); }
+  .card--code:hover { border-color: var(--accent2); }
+  .card--code .card-num,.card--code .play-btn { color: var(--accent2); }
+  .card--code .card-tag { background: rgba(123,79,255,0.1); color: var(--accent2); border-color: rgba(123,79,255,0.2); }
+  .card--code .play-btn { background: rgba(123,79,255,0.1); border-color: rgba(123,79,255,0.2); }
+  .card--code .play-btn:hover { background: rgba(123,79,255,0.2); }
+
+  /* Logic Gates */
+  .card--logic { border-color: rgba(0,255,136,0.3); }
+  .card--logic .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.08) 0%, transparent 70%); }
+  .card--logic:hover { border-color: var(--accent1); }
+  .card--logic .card-num,.card--logic .play-btn { color: var(--accent1); }
+  .card--logic .card-tag { background: rgba(0,255,136,0.1); color: var(--accent1); border-color: rgba(0,255,136,0.2); }
+  .card--logic .play-btn { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.2); }
+  .card--logic .play-btn:hover { background: rgba(0,255,136,0.2); }
+
+  /* Traffic Lights */
+  .card--traffic { border-color: rgba(0,207,255,0.3); }
+  .card--traffic .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(0,207,255,0.08) 0%, transparent 70%); }
+  .card--traffic:hover { border-color: var(--accent3); }
+  .card--traffic .card-num,.card--traffic .play-btn { color: var(--accent3); }
+  .card--traffic .card-tag { background: rgba(0,207,255,0.1); color: var(--accent3); border-color: rgba(0,207,255,0.2); }
+  .card--traffic .play-btn { background: rgba(0,207,255,0.1); border-color: rgba(0,207,255,0.2); }
+  .card--traffic .play-btn:hover { background: rgba(0,207,255,0.2); }
+
+  /* Railway */
+  .card--railway { border-color: rgba(255,200,0,0.3); }
+  .card--railway .card-glow { background: radial-gradient(ellipse at 50% 0%, rgba(255,200,0,0.08) 0%, transparent 70%); }
+  .card--railway:hover { border-color: #ffc800; }
+  .card--railway .card-num,.card--railway .play-btn { color: #ffc800; }
+  .card--railway .card-tag { background: rgba(255,200,0,0.1); color: #ffc800; border-color: rgba(255,200,0,0.2); }
+  .card--railway .play-btn { background: rgba(255,200,0,0.1); border-color: rgba(255,200,0,0.2); }
+  .card--railway .play-btn:hover { background: rgba(255,200,0,0.2); }
+
+  /* Staggered entrance animations */
+  .card:nth-child(1)  { animation-delay: 0.05s; }
+  .card:nth-child(2)  { animation-delay: 0.10s; }
+  .card:nth-child(3)  { animation-delay: 0.15s; }
+  .card:nth-child(4)  { animation-delay: 0.20s; }
+  .card:nth-child(5)  { animation-delay: 0.25s; }
+  .card:nth-child(6)  { animation-delay: 0.30s; }
+  .card:nth-child(7)  { animation-delay: 0.35s; }
+  .card:nth-child(8)  { animation-delay: 0.40s; }
+  .card:nth-child(9)  { animation-delay: 0.45s; }
+  .card:nth-child(10) { animation-delay: 0.50s; }
+  .card:nth-child(11) { animation-delay: 0.55s; }
+  .card:nth-child(12) { animation-delay: 0.60s; }
+  .card:nth-child(13) { animation-delay: 0.65s; }
+  .card:nth-child(14) { animation-delay: 0.70s; }
+  .card:nth-child(15) { animation-delay: 0.75s; }
+  .card:nth-child(16) { animation-delay: 0.80s; }
 
   header .logo-bar, header h1, header .subtitle, .divider {
     opacity: 0;
     animation: fadeUp 0.6s ease forwards;
   }
-  header .logo-bar { animation-delay: 0.05s; }
-  header h1 { animation-delay: 0.1s; }
-  header .subtitle { animation-delay: 0.15s; }
-  .divider { animation-delay: 0.2s; }
+  header .logo-bar  { animation-delay: 0.05s; }
+  header h1         { animation-delay: 0.10s; }
+  header .subtitle  { animation-delay: 0.15s; }
+  .divider          { animation-delay: 0.20s; }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Snake pixel art */
-  .snake-art { font-size: 60px; }
+  /* Footer */
+  footer {
+    position: relative; z-index: 1; text-align: center;
+    padding: 24px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
 
-  /* Scanline overlay */
+  /* Scanlines */
   .scanlines {
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.04) 2px,
-      rgba(0,0,0,0.04) 4px
-    );
-    pointer-events: none;
-    z-index: 999;
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none; z-index: 999;
   }
 </style>
 </head>
@@ -366,94 +387,194 @@
 
   <div class="divider"></div>
 
+  <!-- ── Classic Games ── -->
+  <p class="section-label">// Classic Games</p>
   <div class="grid">
 
-    <!-- Snake -->
     <a class="card card--snake" href="snake.html">
       <div class="card-glow"></div>
       <div class="card-visual">🐍</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 01</span>
-          <span class="card-tag">1 Player</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 01</span><span class="card-tag">1 Player</span></div>
         <h2>Snake</h2>
-        <p>Navigate the void. Eat. Grow. Don't bite yourself. Classic 20×20 grid with smooth controls and escalating speed.</p>
+        <p>Navigate the void. Eat. Grow. Don't bite yourself. Classic 20×20 grid with smooth controls.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
 
-    <!-- Tic-Tac-Toe -->
     <a class="card card--ttt" href="tictactoe.html">
       <div class="card-glow"></div>
       <div class="card-visual">⭕</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 02</span>
-          <span class="card-tag">1 or 2 Players</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 02</span><span class="card-tag">1–2 Players</span></div>
         <h2>Tic-Tac-Toe</h2>
-        <p>The eternal battle. Challenge a friend in 2-player mode or test your wits against an unbeatable AI opponent.</p>
+        <p>The eternal battle. Challenge a friend or test your wits against an unbeatable AI with 3 difficulty levels.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
 
-    <!-- Chess -->
     <a class="card card--chess" href="chess.html">
       <div class="card-glow"></div>
       <div class="card-visual">♟</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 03</span>
-          <span class="card-tag">2 Players</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 03</span><span class="card-tag">1–2 Players</span></div>
         <h2>Chess</h2>
-        <p>The grand game of strategy. Full legal move validation, check/checkmate detection, and castling support.</p>
+        <p>Full legal move validation, check/checkmate detection, castling, en passant, and a minimax AI opponent.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
 
-    <!-- Checkers -->
     <a class="card card--checkers" href="checkers.html">
       <div class="card-glow"></div>
       <div class="card-visual">🔴</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 04</span>
-          <span class="card-tag">2 Players</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 04</span><span class="card-tag">1–2 Players</span></div>
         <h2>Checkers</h2>
-        <p>Classic draughts on an 8×8 board. Jump your opponent's pieces, king your pawns, and dominate the board.</p>
+        <p>Classic draughts with forced captures, multi-jump chains, king promotion, and a bot at three difficulty levels.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
 
-    <!-- Dino Run -->
+    <a class="card card--flapsy" href="flapsy.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🐦</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 05</span><span class="card-tag">1 Player</span></div>
+        <h2>Flapsy</h2>
+        <p>Flap through pipes in the void. Every tap counts. How far can you go before the pipes win?</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
     <a class="card card--dino" href="dino.html">
       <div class="card-glow"></div>
       <div class="card-visual">🦕</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 05</span>
-          <span class="card-tag">1 Player</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 06</span><span class="card-tag">1 Player</span></div>
         <h2>Dino Run</h2>
-        <p>Jump cacti, dodge pterodactyls, and survive the void. Day/night cycles, custom colors, and full settings.</p>
+        <p>Jump cacti, dodge pterodactyls, survive the void. Day/night cycles, custom colors, and full settings.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
 
-    <!-- Sign In -->
+  </div>
+
+  <!-- ── Puzzle & Card Games ── -->
+  <p class="section-label" style="margin-top:16px;">// Puzzle &amp; Card Games</p>
+  <div class="grid">
+
+    <a class="card card--memory" href="memory.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🃏</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 07</span><span class="card-tag">1 Player</span></div>
+        <h2>Memory Match</h2>
+        <p>Flip cards, find pairs. Three grid sizes from 4×4 to 6×5. Track your moves, time, and personal best.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--mines" href="minesweeper.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">💣</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 08</span><span class="card-tag">1 Player</span></div>
+        <h2>Minesweeper</h2>
+        <p>Reveal the grid, flag the mines, don't explode. Easy 9×9 up to Expert 30×16 — classic rules, dark style.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--uno" href="uno.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🎴</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 09</span><span class="card-tag">1 Player</span></div>
+        <h2>Uno</h2>
+        <p>Play cards, stack skips, wild your way to victory against three AI opponents. First to empty their hand wins.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--logic" href="logicgates.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">⚡</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 10</span><span class="card-tag">1 Player</span></div>
+        <h2>Logic Gates</h2>
+        <p>Toggle inputs, trace signals through AND, OR, NOT, XOR gates and more. 10 puzzles from easy to hard.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--code" href="codepuzzle.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">💻</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 11</span><span class="card-tag">1 Player</span></div>
+        <h2>Code Puzzles</h2>
+        <p>Solve 16 coding challenges in Python, JavaScript, C, and C++. Write real code, run tests, earn your stripes.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
     <a class="card card--signin" href="signin.html">
       <div class="card-glow"></div>
       <div class="card-visual">🔐</div>
       <div class="card-body">
-        <div class="card-top">
-          <span class="card-num">// 06</span>
-          <span class="card-tag">1 Player</span>
-        </div>
+        <div class="card-top"><span class="card-num">// 12</span><span class="card-tag">1 Player</span></div>
         <h2>Sign In</h2>
-        <p>Attempt to log into a website. Complete 10 absurd sign-in methods, survive 8 impossible CAPTCHAs, and still fail.</p>
+        <p>Attempt to log into a website. 10 absurd auth steps. 8 impossible CAPTCHAs. You will not succeed.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ── Strategy & Simulation ── -->
+  <p class="section-label" style="margin-top:16px;">// Strategy &amp; Simulation</p>
+  <div class="grid">
+
+    <a class="card card--conquest" href="conquest.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🗺️</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 13</span><span class="card-tag">1 Player</span></div>
+        <h2>Conquest</h2>
+        <p>Expand across a hex map, place troops, attack enemies, and dominate the board against two CPU opponents.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--ctf" href="ctf.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🚩</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 14</span><span class="card-tag">1–2 Players</span></div>
+        <h2>Capture the Flag</h2>
+        <p>Race through a maze, grab the enemy flag, return to base. 2-player local or vs bot — first to 3 wins.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--traffic" href="trafficlights.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🚦</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 15</span><span class="card-tag">Simulator</span></div>
+        <h2>Traffic Lights</h2>
+        <p>Simulate signal phases, pedestrian crossings, 4-way junctions, and custom timing sequences with live traffic.</p>
+        <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card card--railway" href="railway.html">
+      <div class="card-glow"></div>
+      <div class="card-visual">🚂</div>
+      <div class="card-body">
+        <div class="card-top"><span class="card-num">// 16</span><span class="card-tag">Simulator</span></div>
+        <h2>Railway Control</h2>
+        <p>Manage signals and switches to route trains safely across a live network. Prevent crashes. Deliver cargo.</p>
         <span class="play-btn">Play Now <span class="card-arrow">→</span></span>
       </div>
     </a>
@@ -461,7 +582,7 @@
   </div>
 </div>
 
-<footer>VOID ARCADE &nbsp;·&nbsp; 6 Games &nbsp;·&nbsp; All Rights Reserved</footer>
+<footer>VOID ARCADE &nbsp;·&nbsp; 16 Games &nbsp;·&nbsp; All Rights Reserved</footer>
 
 </body>
 </html>
