@@ -14,6 +14,7 @@
       --accent: #80ef80;
       --muted: #94a3b8;
       --text: #e6eef8;
+      --border: 1px solid rgba(255, 255, 255, .15);
       --radius: 10px;
       --input-border: 1px solid rgba(255,255,255,.08);
     }
@@ -24,6 +25,7 @@
       --accent: #50C878;
       --muted: #64748b;
       --text: #0f1724;
+      --border: 1px solid rgba(255, 255, 255, .85);
       --input-border: 1px solid rgba(0,0,0,.08);
     }
 
@@ -113,7 +115,7 @@
 
     .btn-secondary{
       background:transparent;
-      border:1px solid rgba(255,255,255,.15);
+      border:var(--border);
       color:var(--text);
       padding:8px 10px;
       border-radius:8px;
