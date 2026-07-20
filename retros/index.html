@@ -449,7 +449,6 @@
       <div class="icon" data-app="paint"><div class="icon-img">🎨</div><div class="icon-label">Paint</div></div>
       <div class="icon" data-app="minesweeper"><div class="icon-img">💣</div><div class="icon-label">Minesweeper</div></div>
       <div class="icon" data-app="ie"><div class="icon-img">🌐</div><div class="icon-label">The Internet</div></div>
-      <div class="icon" data-app="readme"><div class="icon-img">📄</div><div class="icon-label">Read Me.txt</div></div>
     </div>
 
     <div id="windows-container"></div>
@@ -475,14 +474,14 @@
 <div id="mac-root" class="hidden">
   <div id="mac-boot-screen" class="boot-screen-generic hidden">
     <div class="boot-content">
-      <div style="font-size:54px;">🙂</div>
+      <div style="font-size:54px;">🍎</div>
       <div class="boot-text" style="font-family:Geneva, Arial, sans-serif; font-size:22px;">Welcome to Macintosh</div>
       <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
     </div>
   </div>
 
   <div id="mac-shutdown-screen" class="shutdown-screen-generic hidden">
-    <div style="font-size:40px;">🙂</div>
+    <div style="font-size:40px;">🍎</div>
     <div>It is now safe to switch off your Macintosh.</div>
     <small>(click anywhere to choose another OS)</small>
   </div>
@@ -762,7 +761,6 @@ const appConfigs = {
   mycomputer: { title:'My Computer', icon:'🖥️', width:400, height:300, minW:260, minH:200, build: buildMyComputer },
   recyclebin: { title:'Recycle Bin', icon:'🗑️', width:340, height:260, minW:220, minH:180, build: buildRecycleBin },
   notepad:    { title:'Untitled - Notepad', icon:'📝', width:440, height:340, minW:220, minH:160, build: buildNotepad },
-  readme:     { title:'Read Me - Notepad', icon:'📄', width:440, height:340, minW:220, minH:160, build: buildReadme },
   paint:      { title:'untitled - Paint', icon:'🎨', width:500, height:400, minW:340, minH:280, build: buildPaint },
   minesweeper:{ title:'Minesweeper', icon:'💣', width:210, height:280, minW:210, minH:280, noResize:true, noMaximize:true, build: buildMinesweeper },
   ie:         { title:'The Internet - Internet Explorer', icon:'🌐', width:560, height:440, minW:320, minH:260, build: buildIE }
@@ -1032,9 +1030,6 @@ function populateStartMenu(){
     buildSubItem('💣','Minesweeper', ()=>openApp('minesweeper')),
     buildSubItem('🌐','Internet Explorer', ()=>openApp('ie'))
   ]}));
-  container.appendChild(buildStartItem('📄', 'Documents', {children:[
-    buildSubItem('📄','Read Me.txt', ()=>openApp('readme'))
-  ]}));
   container.appendChild(buildStartItem('⚙️', 'Settings', {disabled:true}));
   container.appendChild(buildStartItem('🔍', 'Find', {disabled:true}));
   container.appendChild(buildStartItem('❓', 'Help', {action:()=>{
@@ -1082,30 +1077,6 @@ function buildNotepad(winEl, appId){
     ]},
     { label:'Search', items:[ {label:'Find...', disabled:true} ]},
     { label:'Help', items:[ {label:'About Notepad', action:()=>showMessageBox({title:'About Notepad', icon:'📝', message:'Notepad — a simple text editor, recreated for this demo desktop.'})} ]}
-  ]);
-  const fillWrap = el('div', {class:'app-body-fill', children:[textarea]});
-  wrap.appendChild(menubar); wrap.appendChild(fillWrap);
-  return wrap;
-}
-
-function buildReadme(winEl, appId){
-  const wrap = el('div', {class:'app-flex'});
-  const textarea = el('textarea', {class:'notepad-area', attrs:{spellcheck:'false', readonly:'readonly'}});
-  textarea.value =
-"Welcome to this desktop!\r\n\r\n" +
-"This whole thing -- windows, icons, the Start menu, Minesweeper,\r\n" +
-"the fake browser, all of it -- is just HTML, CSS and JavaScript.\r\n" +
-"No frameworks, no build step, no backend. One file.\r\n\r\n" +
-"Things to try:\r\n" +
-" - Drag windows by their title bars, resize from the corner\r\n" +
-" - Double-click a title bar to maximize\r\n" +
-" - Right-click in Minesweeper to flag a mine\r\n" +
-" - Type 'notepad', 'paint' or 'winmine' into Run...\r\n" +
-" - Click Start > Shut Down to go back and pick a different OS\r\n\r\n" +
-"Have fun poking around.";
-  const menubar = buildMenuBar([
-    { label:'File', items:[ { label:'Exit', action:()=>closeWindow(appId) } ]},
-    { label:'Edit', items:[ { label:'Select All', action:()=>{ textarea.focus(); textarea.select(); } } ]}
   ]);
   const fillWrap = el('div', {class:'app-body-fill', children:[textarea]});
   wrap.appendChild(menubar); wrap.appendChild(fillWrap);
@@ -1998,7 +1969,6 @@ let matrixInterval = null, matrixCanvas = null;
 
 const fsRoot = { type:'dir', children:{
   home:{ type:'dir', children:{ guest:{ type:'dir', children:{
-    'readme.txt':{ type:'file', content:"You found the terminal.\n\nThis whole 'computer' is one static HTML file with a tiny fake\nfilesystem living in a JS object -- no server behind it.\n\nType 'help' for a list of commands, or 'neofetch' for the\nobligatory flex." },
     projects:{ type:'dir', children:{ 'notes.txt':{ type:'file', content:"idea: retro OS picker\nidea: matrix rain easter egg\nidea: stop scope-creeping this (failed)" } } },
     '.secret':{ type:'file', content:"there's nothing here. nice try though." }
   }}}},
