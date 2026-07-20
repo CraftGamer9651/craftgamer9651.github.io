@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RetrOS</title>
+<style>
+  :root{
+    --face:#c0c0c0;
+    --face-dark:#808080;
+    --face-darker:#000000;
+    --face-light:#ffffff;
+    --face-light2:#dfdfdf;
+    --title-a1:#000080;
+    --title-a2:#1084d0;
+    --title-i1:#808080;
+    --title-i2:#b5b5b5;
+    --desktop-bg:#008080;
+    --font: Tahoma, "MS Sans Serif", Geneva, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    overflow:hidden;
+    font-family:var(--font);
+    font-size:12px;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  input,textarea{ user-select:text; }
+  button{ font-family:var(--font); font-size:11px; }
+  ::selection{ background:#000080; color:#fff; }
+  .hidden{ display:none !important; }
+
+  /* ---------- CRT overlay (shared across everything) ---------- */
+  #crt-overlay{
+    position:fixed; inset:0; pointer-events:none; z-index:99999;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0px, rgba(0,0,0,0.07) 1px, transparent 1px, transparent 3px);
+  }
+
+  /* ---------- OS Picker ---------- */
+  #os-picker{
+    position:fixed; inset:0; background:#000; color:#e0e0e0; z-index:50000;
+    display:flex; align-items:center; justify-content:center; font-family:'Courier New', monospace;
+  }
+  .picker-box{ width:min(90vw, 480px); border:1px solid #666; padding:22px; }
+  .picker-title{ font-size:18px; letter-spacing:3px; margin-bottom:4px; }
+  .picker-sub{ font-size:11px; color:#888; margin-bottom:18px; }
+  .picker-list{ display:flex; flex-direction:column; gap:3px; }
+  .picker-item{ display:flex; gap:14px; align-items:center; padding:10px 12px; border:1px solid transparent; cursor:pointer; }
+  .picker-item:hover, .picker-item.active{ background:#e0e0e0; color:#000; border-color:#fff; }
+  .picker-swatch{ width:38px; height:28px; flex-shrink:0; border:1px solid #444; position:relative; }
+  .picker-item:hover .picker-swatch, .picker-item.active .picker-swatch{ border-color:#000; }
+  .win95-swatch{ background: linear-gradient(135deg, #008080 50%, #c0c0c0 50%); }
+  .mac-swatch{ background: repeating-linear-gradient(45deg, #fff 0 4px, #ccc 4px 8px); }
+  .term-swatch{ background:#000; }
+  .term-swatch::after{ content:'>_'; color:#33ff33; font-size:12px; display:flex; align-items:center; justify-content:center; height:100%; }
+  .picker-name{ font-size:13px; font-weight:bold; }
+  .picker-desc{ font-size:10px; color:#999; }
+  .picker-item:hover .picker-desc, .picker-item.active .picker-desc{ color:#333; }
+  .picker-footer{ margin-top:18px; font-size:14px; animation:blinker 1s step-start infinite; }
+  @keyframes blinker{ 50%{ opacity:0; } }
+
+  /* ---------- Shared boot / shutdown screens ---------- */
+  .boot-screen-generic{
+    position:fixed; inset:0; background:#000; color:#fff;
+    display:flex; align-items:center; justify-content:center; z-index:100000; flex-direction:column;
+  }
+  .boot-content{ display:flex; flex-direction:column; align-items:center; gap:26px; }
+  .boot-bar-track{ width:220px; height:12px; border:1px solid #fff; padding:2px; }
+  .boot-bar-fill{ height:100%; width:0%; background:repeating-linear-gradient(90deg,#fff 0 6px, transparent 6px 9px); animation: bootfill 2.2s ease-in-out forwards; }
+  @keyframes bootfill{ from{width:0%;} to{width:100%;} }
+  .boot-caption{ font-size:12px; color:#ccc; font-family:Arial, sans-serif; }
+  .shutdown-screen-generic{
+    position:fixed; inset:0; background:#000; color:#fff; z-index:100000;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:Arial, sans-serif; font-size:16px; cursor:pointer; flex-direction:column; gap:10px;
+  }
+  .shutdown-screen-generic small{ color:#999; font-size:12px; }
+
+  .flag{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; width:46px; height:46px; }
+  .flag span{ display:block; }
+  .flag span:nth-child(1){ background:#ff3b3b; }
+  .flag span:nth-child(2){ background:#3bcf3b; }
+  .flag span:nth-child(3){ background:#3b7dff; }
+  .flag span:nth-child(4){ background:#ffd83b; }
+  .flag.small{ width:16px; height:16px; gap:2px; }
+  .boot-logo{ display:flex; align-items:center; gap:16px; }
+  .boot-text{ font-size:34px; font-weight:400; letter-spacing:0; font-family: Arial, sans-serif; }
+  .boot-text .boot-95{ font-weight:700; }
+
+  /* ================= WINDOWS 95 ================= */
+  .bevel-out{
+    border:2px solid;
+    border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+  }
+  .bevel-in{
+    border:2px solid;
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker);
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2);
+  }
+  .bevel-out.thin, .bevel-in.thin{ border-width:1px; box-shadow:none; }
+
+  #win95-desktop{ position:fixed; inset:0; background:var(--desktop-bg); overflow:hidden; }
+  #icons{
+    position:absolute; top:8px; left:8px; bottom:44px;
+    display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+    gap:2px;
+  }
+  .icon{
+    width:78px; height:74px; display:flex; flex-direction:column; align-items:center;
+    padding:4px; border:1px dotted transparent; cursor:default; gap:2px;
+  }
+  .icon-img{ font-size:30px; line-height:1; filter:drop-shadow(1px 1px 1px rgba(0,0,0,.5)); }
+  .icon-label{
+    color:#fff; font-size:11px; text-align:center; line-height:1.2;
+    text-shadow:1px 1px 1px #000, -1px -1px 1px #000;
+    padding:1px 3px; max-width:100%;
+  }
+  .icon.selected{ border:1px dotted #fff; }
+  .icon.selected .icon-label{ background:#000080; text-shadow:none; }
+  .icon.selected .icon-img{ filter: drop-shadow(1px 1px 1px rgba(0,0,0,.5)) brightness(0.7) sepia(1) hue-rotate(190deg) saturate(3); }
+
+  #windows-container{ position:absolute; inset:0; bottom:32px; pointer-events:none; }
+  #windows-container > *{ pointer-events:auto; }
+
+  .win95-window{
+    position:absolute; background:var(--face); display:flex; flex-direction:column;
+    min-width:180px; min-height:120px;
+  }
+  .win95-window.maximized{ left:0 !important; top:0 !important; }
+  .title-bar{
+    height:20px; min-height:20px; display:flex; align-items:center; justify-content:space-between;
+    padding:2px 3px; background:linear-gradient(90deg,var(--title-i1),var(--title-i2));
+    color:#d4d0c8; font-weight:bold; font-size:11px; user-select:none;
+  }
+  .win95-window.active .title-bar{ background:linear-gradient(90deg,var(--title-a1),var(--title-a2)); color:#fff; }
+  .title-bar-text{ display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .title-icon{ font-size:12px; }
+  .title-bar-controls{ display:flex; gap:2px; flex-shrink:0; }
+  .tb-btn{
+    width:16px; height:14px; background:var(--face); padding:0; cursor:default;
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; color:#000;
+    border:1px solid; border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+    line-height:1;
+  }
+  .tb-btn:active, .tb-btn.pressed{
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker);
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2);
+  }
+  .tb-btn.disabled{ color:#999; pointer-events:none; }
+  .window-body{ flex:1; overflow:auto; background:var(--face); position:relative; min-height:0; }
+  .resize-handle{
+    position:absolute; right:0; bottom:0; width:14px; height:14px; cursor:nwse-resize;
+    background:
+      linear-gradient(135deg, transparent 0 40%, var(--face-dark) 40% 45%, transparent 45% 55%, var(--face-dark) 55% 60%, transparent 60% 70%, var(--face-dark) 70% 75%, transparent 75%);
+  }
+
+  .menubar{ display:flex; background:var(--face); border-bottom:1px solid var(--face-dark); padding:1px; position:relative; z-index:5; flex-shrink:0; }
+  .menubar-item{ padding:3px 8px; font-size:11px; cursor:default; position:relative; }
+  .menubar-item:hover, .menubar-item.open{ background:var(--title-a1); color:#fff; }
+  .menubar-dropdown{
+    position:absolute; top:100%; left:0; min-width:160px; background:var(--face); z-index:50;
+    border:2px solid; border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+    padding:2px;
+  }
+  .dropdown-item{ padding:4px 10px 4px 22px; font-size:11px; cursor:default; white-space:nowrap; }
+  .dropdown-item:hover:not(.disabled){ background:var(--title-a1); color:#fff; }
+  .dropdown-item.disabled{ color:#888; }
+  .dropdown-sep{ height:1px; background:var(--face-dark); border-bottom:1px solid var(--face-light); margin:3px 2px; }
+
+  #taskbar{
+    position:fixed; left:0; right:0; bottom:0; height:32px; background:var(--face);
+    display:flex; align-items:center; gap:4px; padding:2px 3px; z-index:8000;
+    box-shadow: 0 -1px 0 var(--face-light) inset;
+  }
+  #start-button{
+    display:flex; align-items:center; gap:5px; height:26px; padding:2px 8px 2px 3px;
+    background:var(--face); font-weight:bold; font-size:11px; cursor:default;
+  }
+  #start-button.pressed{
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker) !important;
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2) !important;
+  }
+  #taskbar-divider{ width:2px; align-self:stretch; margin:2px 1px;
+    border-left:1px solid var(--face-dark); border-right:1px solid var(--face-light); }
+  #taskbar-windows{ flex:1; display:flex; gap:3px; overflow:hidden; height:26px; align-items:center; }
+  .taskbar-btn{
+    height:26px; min-width:0; max-width:160px; padding:0 8px; background:var(--face);
+    display:flex; align-items:center; gap:5px; font-size:11px; cursor:default; flex-shrink:1;
+  }
+  .taskbar-btn span.tb-label{ overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .taskbar-btn.active{
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker);
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2);
+    font-weight:bold;
+  }
+  #tray{ height:24px; display:flex; align-items:center; padding:0 8px; font-size:11px; margin-left:auto; }
+
+  #start-menu{ position:fixed; left:2px; bottom:34px; width:200px; background:var(--face); display:flex; z-index:9000; }
+  .start-side{
+    width:24px; background:linear-gradient(180deg,#000080,#1084d0); color:#e8e8e8;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:10px;
+    writing-mode:vertical-rl; transform:rotate(180deg); font-size:16px; font-weight:bold; letter-spacing:1px;
+    font-family:Arial, sans-serif; font-style:italic;
+  }
+  .start-items{ flex:1; padding:2px; }
+  .start-item{ display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:11px; cursor:default; position:relative; }
+  .start-item .si-icon{ font-size:16px; width:20px; text-align:center; }
+  .start-item .si-arrow{ margin-left:auto; font-size:9px; }
+  .start-item:hover:not(.disabled){ background:var(--title-a1); color:#fff; }
+  .start-item.disabled{ color:#888; }
+  .start-sep{ height:1px; background:var(--face-dark); border-bottom:1px solid var(--face-light); margin:4px 2px; }
+  .submenu{
+    position:absolute; left:100%; top:-2px; width:180px; background:var(--face); z-index:9100;
+    border:2px solid; border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+    padding:2px;
+  }
+
+  .dialog{
+    position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); z-index:20000; background:var(--face); min-width:280px;
+    border:3px solid; border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+  }
+  .dialog-body{ display:flex; gap:12px; padding:16px; align-items:flex-start; }
+  .dialog-icon{ font-size:32px; flex-shrink:0; }
+  .dialog-text{ font-size:11px; line-height:1.5; padding-top:3px; white-space:pre-line; }
+  .dialog-input-row{ padding:0 16px 12px 16px; display:flex; align-items:center; gap:8px; }
+  .dialog-input-row .di-icon{ font-size:26px; }
+  .win95-input{
+    flex:1; font-size:12px; padding:3px 4px; border:2px solid;
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker);
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2);
+    background:#fff;
+  }
+  .dialog-radios{ padding:0 16px 8px 40px; display:flex; flex-direction:column; gap:6px; font-size:11px; }
+  .dialog-radios label{ display:flex; align-items:center; gap:6px; }
+  .dialog-buttons{ display:flex; gap:8px; justify-content:center; padding:0 16px 16px 16px; }
+  .win95-btn{
+    background:var(--face); padding:4px 14px; font-size:11px; cursor:default; min-width:75px;
+    border:2px solid; border-color: var(--face-light) var(--face-darker) var(--face-darker) var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--face-light2), inset -1px -1px 0 var(--face-dark);
+  }
+  .win95-btn:active{
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker);
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2);
+  }
+
+  .notepad-area{ width:100%; height:100%; border:none; resize:none; outline:none; padding:4px; font-family:'Courier New', monospace; font-size:13px; background:#fff; }
+  .app-flex{ display:flex; flex-direction:column; height:100%; }
+  .app-body-fill{ flex:1; min-height:0; }
+
+  .paint-toolbar{ display:flex; align-items:center; gap:10px; padding:4px; border-bottom:1px solid var(--face-dark); flex-shrink:0; flex-wrap:wrap; }
+  .paint-colors{ display:grid; grid-template-columns:repeat(9,14px); grid-template-rows:repeat(2,14px); gap:2px; }
+  .color-swatch{ width:14px; height:14px; border:1px solid #555; cursor:default; }
+  .color-swatch.selected{ outline:2px solid #000; outline-offset:1px; }
+  .paint-sizes{ display:flex; gap:3px; }
+  .size-btn{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; background:var(--face); cursor:default; }
+  .size-btn .dot{ background:#000; border-radius:50%; }
+  .size-btn.active{
+    border-color: var(--face-darker) var(--face-light) var(--face-light) var(--face-darker) !important;
+    box-shadow: inset 1px 1px 0 var(--face-dark), inset -1px -1px 0 var(--face-light2) !important;
+  }
+  .paint-canvas-wrap{ flex:1; background:#808080; display:flex; align-items:center; justify-content:center; padding:8px; min-height:0; overflow:auto; }
+  .paint-canvas-wrap canvas{ background:#fff; cursor:crosshair; }
+
+  .ms-wrap{ padding:6px; display:flex; flex-direction:column; align-items:center; height:100%; }
+  .ms-header{ display:flex; align-items:center; justify-content:space-between; width:100%; padding:4px 6px; margin-bottom:6px; }
+  .ms-digits{ background:#000; color:#ff2020; font-family:'Courier New',monospace; font-weight:bold; font-size:16px; letter-spacing:2px; padding:1px 4px; min-width:44px; text-align:right; }
+  .ms-face{ width:24px; height:24px; font-size:15px; display:flex; align-items:center; justify-content:center; background:var(--face); cursor:default; }
+  .ms-grid{ display:grid; }
+  .ms-cell{ width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial, sans-serif; cursor:default; background:var(--face); }
+  .ms-cell.revealed{ border:1px solid var(--face-dark); background:var(--face); }
+  .ms-cell.mine-hit{ background:#ff3b3b; }
+
+  .explorer-toolbar{ display:flex; gap:4px; padding:3px; border-bottom:1px solid var(--face-dark); flex-shrink:0; }
+  .explorer-toolbar .win95-btn{ min-width:0; padding:3px 6px; font-size:10px; color:#888; }
+  .drive-grid{ display:flex; flex-wrap:wrap; gap:4px; padding:10px; align-content:flex-start; height: calc(100% - 24px); }
+  .drive-item{ width:76px; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px; text-align:center; }
+  .drive-item .icon-img{ font-size:28px; filter:none; }
+  .drive-item .icon-label{ color:#000; text-shadow:none; font-size:10px; }
+  .drive-item:hover{ background:var(--title-a1); }
+  .drive-item:hover .icon-label{ color:#fff; }
+  .status-bar{ height:18px; border-top:1px solid var(--face-light); box-shadow:0 -1px 0 var(--face-dark) inset; font-size:10px; display:flex; align-items:center; padding:0 8px; flex-shrink:0; }
+  .empty-bin{ height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:#444; font-size:12px; }
+  .empty-bin .icon-img{ font-size:44px; }
+
+  .ie-toolbar{ display:flex; gap:2px; padding:4px; border-bottom:1px solid var(--face-dark); flex-shrink:0; }
+  .ie-tbtn{ display:flex; flex-direction:column; align-items:center; gap:1px; padding:3px 8px; font-size:9px; background:var(--face); cursor:default; }
+  .ie-tbtn.disabled{ color:#999; }
+  .ie-address-row{ display:flex; align-items:center; gap:6px; padding:4px 6px; border-bottom:1px solid var(--face-dark); flex-shrink:0; }
+  .ie-content{ flex:1; overflow:auto; background:#fff; padding:14px; font-family:Arial, sans-serif; font-size:13px; min-height:0; }
+  .ie-content h1{ font-size:20px; margin:0 0 6px 0; }
+  .blink{ animation:blinker 1s step-start infinite; color:#c00; font-weight:bold; }
+  .homepage-link{ color:#0000EE; text-decoration:underline; cursor:pointer; display:block; margin:4px 0; }
+  .hit-counter{ background:#000; color:#0f0; font-family:'Courier New',monospace; padding:2px 6px; display:inline-block; margin-top:10px; }
+  .error-page h1{ color:#000; border-bottom:2px solid #000; padding-bottom:6px; }
+
+  @media (max-width:640px){ .icon{ width:64px; } #start-menu{ width:180px; } }
+
+  /* ================= MAC OS ================= */
+  #mac-desktop{ position:fixed; inset:0; }
+  #mac-menubar{ height:20px; background:#fff; border-bottom:1px solid #000; display:flex; align-items:center; padding:0 8px; font-family:Geneva, Arial, sans-serif; font-size:12px; position:relative; z-index:500; }
+  .mac-menu-item{ padding:2px 8px; cursor:default; position:relative; height:100%; display:flex; align-items:center; }
+  .mac-menu-item.mac-apple{ font-size:14px; }
+  .mac-menu-item:hover, .mac-menu-item.open{ background:#000; color:#fff; }
+  .mac-clock{ margin-left:auto; font-size:11px; padding:2px 6px; }
+  .mac-dropdown{ position:absolute; top:100%; left:0; min-width:170px; background:#fff; border:1px solid #000; z-index:600; box-shadow:2px 2px 0 rgba(0,0,0,0.3); }
+  .mac-dropdown-item{ padding:4px 16px; font-size:12px; white-space:nowrap; }
+  .mac-dropdown-item:hover:not(.disabled){ background:#000; color:#fff; }
+  .mac-dropdown-item.disabled{ color:#999; }
+  .mac-dropdown-sep{ height:1px; background:#000; margin:3px 0; opacity:.3; }
+
+  #mac-workspace{
+    position:absolute; top:20px; left:0; right:0; bottom:0; overflow:hidden;
+    background-color:#d6d6d6;
+    background-image: repeating-conic-gradient(#cfcfcf 0% 25%, #dedede 0% 50%);
+    background-size:4px 4px;
+  }
+  #mac-icons{ position:absolute; top:10px; right:10px; display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .mac-icon{ width:80px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px; }
+  .mac-icon-img{ font-size:32px; }
+  .mac-icon-label{ font-size:11px; text-align:center; color:#000; padding:1px 4px; font-family:Geneva, Arial, sans-serif; }
+  .mac-icon.selected .mac-icon-img{ filter:invert(1); }
+  .mac-icon.selected .mac-icon-label{ background:#000; color:#fff; }
+  #mac-windows-container{ position:absolute; inset:0; }
+
+  .mac-window{ position:absolute; background:#fff; border:1px solid #000; display:flex; flex-direction:column; box-shadow:2px 2px 6px rgba(0,0,0,.35); min-width:180px; min-height:100px; }
+  .mac-titlebar{ height:19px; min-height:19px; position:relative; display:flex; align-items:center; justify-content:center; border-bottom:1px solid #000; background:#fff; }
+  .mac-titlebar.active{ background-image: repeating-linear-gradient(0deg, #000 0, #000 1px, #fff 1px, #fff 2px); }
+  .mac-title-label{ background:#fff; padding:0 6px; font-weight:bold; font-size:12px; font-family:Geneva, Arial, sans-serif; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mac-titlebar:not(.active) .mac-title-label{ color:#999; }
+  .mac-closebox{ position:absolute; left:6px; top:4px; width:11px; height:11px; border:1px solid #000; background:#fff; }
+  .mac-titlebar:not(.active) .mac-closebox, .mac-titlebar:not(.active) .mac-zoombox{ border-color:#bbb; }
+  .mac-zoombox{ position:absolute; right:6px; top:4px; width:11px; height:11px; border:1px solid #000; background:#fff; }
+  .mac-zoombox::after{ content:''; position:absolute; inset:2px; border:1px solid #000; }
+  .mac-body{ flex:1; overflow:auto; background:#fff; min-height:0; }
+  .mac-window.shaded .mac-body, .mac-window.shaded .mac-growbox{ display:none; }
+  .mac-growbox{ position:absolute; right:0; bottom:0; width:13px; height:13px; cursor:nwse-resize; background: repeating-linear-gradient(135deg, transparent 0 2px, #000 2px 3px); border-top:1px solid #000; border-left:1px solid #000; background-color:#fff; }
+
+  .mac-dialog{ position:fixed; top:38%; left:50%; transform:translate(-50%,-50%); background:#fff; border:2px solid #000; box-shadow:3px 3px 0 rgba(0,0,0,.4); z-index:20000; min-width:300px; }
+  .mac-dialog-body{ display:flex; gap:14px; padding:18px; align-items:flex-start; font-family:Geneva, Arial, sans-serif; }
+  .mac-dialog-icon{ font-size:32px; }
+  .mac-dialog-text{ font-size:12px; line-height:1.5; padding-top:4px; white-space:pre-line; }
+  .mac-dialog-buttons{ display:flex; gap:10px; justify-content:flex-end; padding:0 18px 16px 18px; }
+  .mac-btn{ background:#fff; border:2px solid #000; border-radius:14px; padding:4px 18px; font-size:12px; cursor:default; font-family:Geneva, Arial, sans-serif; }
+  .mac-btn.default{ border-width:3px; font-weight:bold; }
+
+  .mac-drive-grid{ display:flex; flex-wrap:wrap; gap:6px; padding:12px; align-content:flex-start; height:calc(100% - 18px); }
+  .mac-drive-item{ width:78px; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px; text-align:center; }
+  .mac-drive-item .mac-icon-img{ font-size:28px; }
+  .mac-drive-item:hover .mac-icon-img{ filter:invert(1); }
+  .mac-drive-item:hover .mac-icon-label{ background:#000; color:#fff; }
+  .mac-status-bar{ height:18px; border-top:1px solid #000; font-size:10px; display:flex; align-items:center; padding:0 8px; font-family:Geneva, Arial, sans-serif; }
+
+  .simpletext-area{ width:100%; height:100%; border:none; resize:none; outline:none; padding:6px; font-family:Geneva, Arial, sans-serif; font-size:13px; }
+
+  .mac-paint-toolbar{ display:flex; align-items:center; gap:12px; padding:5px; border-bottom:1px solid #000; flex-wrap:wrap; }
+  .mac-pattern-grid{ display:grid; grid-template-columns:repeat(6,18px); gap:3px; }
+  .mac-pattern-swatch{ width:18px; height:18px; border:1px solid #000; background-size:8px 8px; cursor:default; }
+  .mac-pattern-swatch.selected{ outline:2px solid #000; outline-offset:2px; }
+  .mac-size-row{ display:flex; gap:4px; }
+  .mac-size-btn{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid #000; cursor:default; }
+  .mac-size-btn .dot{ background:#000; border-radius:50%; }
+  .mac-size-btn.active{ background:#000; }
+  .mac-size-btn.active .dot{ background:#fff; }
+  .mac-paint-canvas-wrap{ flex:1; background:#ddd; display:flex; align-items:center; justify-content:center; padding:8px; overflow:auto; }
+  .mac-paint-canvas-wrap canvas{ background:#fff; cursor:crosshair; border:1px solid #000; }
+
+  .mac-puzzle-wrap{ display:flex; flex-direction:column; align-items:center; height:100%; padding:10px; gap:8px; }
+  .mac-puzzle-grid{ display:grid; grid-template-columns:repeat(4,44px); grid-template-rows:repeat(4,44px); gap:2px; background:#000; padding:2px; }
+  .mac-puzzle-tile{ background:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-family:Geneva, Arial, sans-serif; cursor:default; }
+  .mac-puzzle-tile.blank{ background:transparent; }
+  .mac-puzzle-info{ font-size:11px; display:flex; gap:14px; align-items:center; }
+
+  /* ================= TERMINAL OS ================= */
+  #term-screen{
+    position:fixed; inset:0; background:#000; color:#33ff33; font-family:'Courier New', monospace; font-size:15px;
+    padding:14px; overflow-y:auto; line-height:1.45; text-shadow:0 0 3px rgba(51,255,51,.5);
+  }
+  #term-output > div{ white-space:pre-wrap; word-break:break-word; }
+  #term-inputline{ display:flex; gap:8px; }
+  #term-inputline #term-prompt{ flex-shrink:0; white-space:pre; }
+  #term-input{ flex:1; background:transparent; border:none; outline:none; color:#33ff33; font:inherit; caret-color:#33ff33; text-shadow:inherit; min-width:0; }
+</style>
+</head>
+<body>
+
+<div id="crt-overlay"></div>
+
+<div id="os-picker">
+  <div class="picker-box">
+    <div class="picker-title">SELECT OPERATING SYSTEM</div>
+    <div class="picker-sub">retro-boot v1.0 &mdash; use &uarr; &darr; + Enter, or click</div>
+    <div class="picker-list" id="picker-list">
+      <div class="picker-item active" data-os="win95">
+        <div class="picker-swatch win95-swatch"></div>
+        <div class="picker-info">
+          <div class="picker-name">Windows 95</div>
+          <div class="picker-desc">Start menu, taskbar, Minesweeper &amp; Paint</div>
+        </div>
+      </div>
+      <div class="picker-item" data-os="mac">
+        <div class="picker-swatch mac-swatch"></div>
+        <div class="picker-info">
+          <div class="picker-name">Mac OS</div>
+          <div class="picker-desc">Classic Finder, SimpleText &amp; MacPaint</div>
+        </div>
+      </div>
+      <div class="picker-item" data-os="terminal">
+        <div class="picker-swatch term-swatch"></div>
+        <div class="picker-info">
+          <div class="picker-name">Terminal</div>
+          <div class="picker-desc">Green-phosphor shell with a tiny filesystem</div>
+        </div>
+      </div>
+    </div>
+    <div class="picker-footer">&#9612;</div>
+  </div>
+</div>
+
+<!-- ================= WINDOWS 95 ================= -->
+<div id="win95-root" class="hidden">
+  <div id="win95-boot-screen" class="boot-screen-generic hidden">
+    <div class="boot-content">
+      <div class="boot-logo">
+        <div class="flag"><span></span><span></span><span></span><span></span></div>
+        <div class="boot-text">Windows<span class="boot-95">95</span></div>
+      </div>
+      <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
+      <div class="boot-caption">Starting Windows 95...</div>
+    </div>
+  </div>
+
+  <div id="win95-shutdown-screen" class="shutdown-screen-generic hidden">
+    <div>It's now safe to turn off your computer.</div>
+    <small>(click anywhere to choose another OS)</small>
+  </div>
+
+  <div id="win95-desktop" class="hidden">
+    <div id="icons">
+      <div class="icon" data-app="mycomputer"><div class="icon-img">🖥️</div><div class="icon-label">My Computer</div></div>
+      <div class="icon" data-app="recyclebin"><div class="icon-img">🗑️</div><div class="icon-label">Recycle Bin</div></div>
+      <div class="icon" data-app="notepad"><div class="icon-img">📝</div><div class="icon-label">Notepad</div></div>
+      <div class="icon" data-app="paint"><div class="icon-img">🎨</div><div class="icon-label">Paint</div></div>
+      <div class="icon" data-app="minesweeper"><div class="icon-img">💣</div><div class="icon-label">Minesweeper</div></div>
+      <div class="icon" data-app="ie"><div class="icon-img">🌐</div><div class="icon-label">The Internet</div></div>
+      <div class="icon" data-app="readme"><div class="icon-img">📄</div><div class="icon-label">Read Me.txt</div></div>
+    </div>
+
+    <div id="windows-container"></div>
+
+    <div id="taskbar">
+      <button id="start-button" class="bevel-out">
+        <div class="flag small"><span></span><span></span><span></span><span></span></div>
+        <span>Start</span>
+      </button>
+      <div id="taskbar-divider"></div>
+      <div id="taskbar-windows"></div>
+      <div id="tray" class="bevel-in"><span id="clock">12:00 PM</span></div>
+    </div>
+
+    <div id="start-menu" class="hidden bevel-out">
+      <div class="start-side">Windows95</div>
+      <div class="start-items" id="start-items"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MAC OS ================= -->
+<div id="mac-root" class="hidden">
+  <div id="mac-boot-screen" class="boot-screen-generic hidden">
+    <div class="boot-content">
+      <div style="font-size:54px;">🙂</div>
+      <div class="boot-text" style="font-family:Geneva, Arial, sans-serif; font-size:22px;">Welcome to Macintosh</div>
+      <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="mac-shutdown-screen" class="shutdown-screen-generic hidden">
+    <div style="font-size:40px;">🙂</div>
+    <div>It is now safe to switch off your Macintosh.</div>
+    <small>(click anywhere to choose another OS)</small>
+  </div>
+
+  <div id="mac-desktop" class="hidden">
+    <div id="mac-menubar">
+      <span class="mac-clock" id="mac-clock">12:00 PM</span>
+    </div>
+    <div id="mac-workspace">
+      <div id="mac-icons">
+        <div class="mac-icon" data-app="hd"><div class="mac-icon-img">💾</div><div class="mac-icon-label">Macintosh HD</div></div>
+        <div class="mac-icon" data-app="trash"><div class="mac-icon-img">🗑️</div><div class="mac-icon-label">Trash</div></div>
+      </div>
+      <div id="mac-windows-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TERMINAL ================= -->
+<div id="terminal-root" class="hidden">
+  <div id="term-screen">
+    <div id="term-output"></div>
+    <div id="term-inputline">
+      <span id="term-prompt">guest@retro-os:~$</span>
+      <input id="term-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ Shared utility (used by all OS modules) ============ */
+window.__el = function(tag, opts){
+  const e = document.createElement(tag);
+  if(!opts) return e;
+  if(opts.class) e.className = opts.class;
+  if(opts.text) e.textContent = opts.text;
+  if(opts.html) e.innerHTML = opts.html;
+  if(opts.attrs) for(const k in opts.attrs) e.setAttribute(k, opts.attrs[k]);
+  if(opts.style) Object.assign(e.style, opts.style);
+  if(opts.on) for(const k in opts.on) e.addEventListener(k, opts.on[k]);
+  if(opts.children) opts.children.forEach(c => c && e.appendChild(c));
+  return e;
+};
+
+window.returnToPicker = function(){
+  document.getElementById('win95-root').classList.add('hidden');
+  document.getElementById('mac-root').classList.add('hidden');
+  document.getElementById('terminal-root').classList.add('hidden');
+  document.getElementById('os-picker').classList.remove('hidden');
+};
+})();
+</script>
+
+<script>
+/* ================================================================
+   WINDOWS 95 MODULE
+   ================================================================ */
+(function(){
+"use strict";
+const el = window.__el;
+
+const desktop = document.getElementById('win95-desktop');
+const windowsContainer = document.getElementById('windows-container');
+const taskbarWindows = document.getElementById('taskbar-windows');
+const startMenu = document.getElementById('start-menu');
+const startButton = document.getElementById('start-button');
+
+let zTop = 100;
+let openWindows = {};
+let activeApp = null;
+let overlayStack = [];
+
+function bootSequence(){
+  document.getElementById('win95-shutdown-screen').classList.add('hidden');
+  desktop.classList.add('hidden');
+  const boot = document.getElementById('win95-boot-screen');
+  boot.classList.remove('hidden');
+  const fill = boot.querySelector('.boot-bar-fill');
+  fill.style.animation = 'none';
+  void fill.offsetWidth;
+  fill.style.animation = '';
+  setTimeout(() => {
+    boot.classList.add('hidden');
+    desktop.classList.remove('hidden');
+  }, 2200);
+}
+
+function doShutdown(mode){
+  Object.keys(openWindows).forEach(closeWindow);
+  closeStartMenu();
+  if(mode === 'restart'){
+    bootSequence();
+  } else {
+    desktop.classList.add('hidden');
+    const sd = document.getElementById('win95-shutdown-screen');
+    sd.classList.remove('hidden');
+    const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
+    sd.addEventListener('click', goBack);
+  }
+}
+
+function tickClock(){
+  const d = new Date();
+  let h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if(h === 0) h = 12;
+  document.getElementById('clock').textContent = h + ':' + m + ' ' + ampm;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+function pushOverlay(closeFn){ overlayStack.push(closeFn); }
+function popOverlayIfMatches(closeFn){
+  const i = overlayStack.indexOf(closeFn);
+  if(i !== -1) overlayStack.splice(i,1);
+}
+document.addEventListener('keydown', (e) => {
+  if(desktop.classList.contains('hidden')) return;
+  if(e.key === 'Escape' && overlayStack.length){
+    const fn = overlayStack[overlayStack.length-1];
+    fn();
+  }
+});
+
+function showMessageBox({title, icon, message, buttons}){
+  const overlay = el('div', {class:'dialog bevel-out', style:{zIndex:20000+overlayStack.length}});
+  const tb = el('div', {class:'title-bar', style:{background:'linear-gradient(90deg,#000080,#1084d0)', color:'#fff'}, children:[
+    el('div', {class:'title-bar-text', text: title || 'Windows'}),
+    el('div', {class:'title-bar-controls', children:[ el('button',{class:'tb-btn', text:'✕', on:{click:()=>close()}}) ]})
+  ]});
+  const body = el('div', {class:'dialog-body', children:[
+    el('div', {class:'dialog-icon', text: icon || '❗'}),
+    el('div', {class:'dialog-text', text: message || ''})
+  ]});
+  const btnRow = el('div', {class:'dialog-buttons'});
+  (buttons || [{label:'OK'}]).forEach(b => {
+    const btn = el('button', {class:'win95-btn', text:b.label, on:{click:()=>{ close(); if(b.onClick) b.onClick(); }}});
+    btnRow.appendChild(btn);
+  });
+  overlay.appendChild(tb); overlay.appendChild(body); overlay.appendChild(btnRow);
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); popOverlayIfMatches(close); }
+  pushOverlay(close);
+  return close;
+}
+
+function showRunDialog(){
+  const overlay = el('div', {class:'dialog bevel-out', style:{zIndex:20000+overlayStack.length}});
+  const tb = el('div', {class:'title-bar active', style:{background:'linear-gradient(90deg,#000080,#1084d0)', color:'#fff'}, children:[
+    el('div', {class:'title-bar-text', text:'Run'}),
+    el('div', {class:'title-bar-controls', children:[ el('button',{class:'tb-btn', text:'✕', on:{click:()=>close()}}) ]})
+  ]});
+  const input = el('input', {class:'win95-input', attrs:{type:'text', spellcheck:'false'}});
+  const row = el('div', {class:'dialog-input-row', children:[
+    el('div', {class:'di-icon', text:'💻'}),
+    el('div', {style:{flex:'1'}, children:[
+      el('div', {text:'Type the name of a program, and Windows will open it for you.', style:{fontSize:'11px', marginBottom:'8px'}}),
+      el('div', {style:{display:'flex', alignItems:'center', gap:'6px'}, children:[
+        el('span', {text:'Open:', style:{fontSize:'11px'}}),
+        input
+      ]})
+    ]})
+  ]});
+  const btnRow = el('div', {class:'dialog-buttons', children:[
+    el('button', {class:'win95-btn', text:'OK', on:{click: runIt}}),
+    el('button', {class:'win95-btn', text:'Cancel', on:{click:()=>close()}}),
+    el('button', {class:'win95-btn', text:'Browse...', on:{click:()=>{
+      showMessageBox({title:'Run', icon:'❗', message:'Browse is not available in this demo.'});
+    }}})
+  ]});
+  overlay.appendChild(tb); overlay.appendChild(row); overlay.appendChild(btnRow);
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); popOverlayIfMatches(close); }
+  pushOverlay(close);
+  setTimeout(()=>input.focus(), 50);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') runIt(); });
+
+  function runIt(){
+    const val = input.value.trim().toLowerCase();
+    const map = {
+      'notepad':'notepad', 'notepad.exe':'notepad',
+      'mspaint':'paint', 'paint':'paint', 'mspaint.exe':'paint',
+      'winmine':'minesweeper', 'minesweeper':'minesweeper', 'winmine.exe':'minesweeper',
+      'iexplore':'ie', 'iexplore.exe':'ie', 'internet':'ie',
+      'explorer':'mycomputer', 'explorer.exe':'mycomputer'
+    };
+    if(!val) return;
+    if(map[val]){
+      openApp(map[val]);
+      close();
+    } else if(val === 'cmd' || val === 'command'){
+      showMessageBox({title:'Run', icon:'❌', message:'MS-DOS Prompt is not available in this demo.'});
+    } else {
+      showMessageBox({title:'Run', icon:'❌', message:"Cannot find '" + input.value + "'. Make sure you typed the name correctly, and then try again."});
+    }
+  }
+}
+
+function showShutdownDialog(){
+  const overlay = el('div', {class:'dialog bevel-out', style:{zIndex:20000+overlayStack.length}});
+  const tb = el('div', {class:'title-bar active', style:{background:'linear-gradient(90deg,#000080,#1084d0)', color:'#fff'}, children:[
+    el('div', {class:'title-bar-text', text:'Shut Down Windows'}),
+    el('div', {class:'title-bar-controls', children:[ el('button',{class:'tb-btn', text:'✕', on:{click:()=>close()}}) ]})
+  ]});
+  const body = el('div', {class:'dialog-body', children:[
+    el('div', {class:'dialog-icon', text:'🖥️'}),
+    el('div', {class:'dialog-text', text:'Are you sure you want to:'})
+  ]});
+  let choice = 'shutdown';
+  const radios = el('div', {class:'dialog-radios'});
+  [
+    {v:'shutdown', l:'Shut down the computer?'},
+    {v:'restart', l:'Restart the computer?'},
+    {v:'dos', l:'Restart the computer in MS-DOS mode? (disabled)'}
+  ].forEach((opt,i) => {
+    const label = el('label');
+    const radio = el('input', {attrs:{type:'radio', name:'sd-choice'}});
+    radio.checked = i===0;
+    if(opt.v === 'dos') radio.disabled = true;
+    radio.addEventListener('change', ()=>{ choice = opt.v; });
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(opt.l));
+    if(opt.v === 'dos') label.style.color = '#888';
+    radios.appendChild(label);
+  });
+  const btnRow = el('div', {class:'dialog-buttons', children:[
+    el('button', {class:'win95-btn', text:'OK', on:{click:()=>{ close(); doShutdown(choice); }}}),
+    el('button', {class:'win95-btn', text:'Cancel', on:{click:()=>close()}}),
+    el('button', {class:'win95-btn', text:'Help', on:{click:()=>{
+      showMessageBox({title:'Help', icon:'❗', message:'No help is available for this demo.'});
+    }}})
+  ]});
+  overlay.appendChild(tb); overlay.appendChild(body); overlay.appendChild(radios); overlay.appendChild(btnRow);
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); popOverlayIfMatches(close); }
+  pushOverlay(close);
+}
+
+function buildMenuBar(menus){
+  const bar = el('div', {class:'menubar'});
+  let openDropdown = null;
+  function closeAll(){
+    bar.querySelectorAll('.menubar-item').forEach(i => i.classList.remove('open'));
+    if(openDropdown){ openDropdown.remove(); openDropdown = null; }
+  }
+  menus.forEach(menu => {
+    const item = el('div', {class:'menubar-item', text:menu.label});
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = item.classList.contains('open');
+      closeAll();
+      if(wasOpen) return;
+      item.classList.add('open');
+      const dd = el('div', {class:'menubar-dropdown'});
+      menu.items.forEach(mi => {
+        if(mi.sep){ dd.appendChild(el('div',{class:'dropdown-sep'})); return; }
+        const di = el('div', {class:'dropdown-item' + (mi.disabled ? ' disabled' : ''), text: mi.label});
+        if(!mi.disabled){
+          di.addEventListener('click', (ev) => { ev.stopPropagation(); closeAll(); if(mi.action) mi.action(); });
+        }
+        dd.appendChild(di);
+      });
+      item.appendChild(dd);
+      openDropdown = dd;
+    });
+    bar.appendChild(item);
+  });
+  document.addEventListener('click', closeAll);
+  return bar;
+}
+
+const appConfigs = {
+  mycomputer: { title:'My Computer', icon:'🖥️', width:400, height:300, minW:260, minH:200, build: buildMyComputer },
+  recyclebin: { title:'Recycle Bin', icon:'🗑️', width:340, height:260, minW:220, minH:180, build: buildRecycleBin },
+  notepad:    { title:'Untitled - Notepad', icon:'📝', width:440, height:340, minW:220, minH:160, build: buildNotepad },
+  readme:     { title:'Read Me - Notepad', icon:'📄', width:440, height:340, minW:220, minH:160, build: buildReadme },
+  paint:      { title:'untitled - Paint', icon:'🎨', width:500, height:400, minW:340, minH:280, build: buildPaint },
+  minesweeper:{ title:'Minesweeper', icon:'💣', width:210, height:280, minW:210, minH:280, noResize:true, noMaximize:true, build: buildMinesweeper },
+  ie:         { title:'The Internet - Internet Explorer', icon:'🌐', width:560, height:440, minW:320, minH:260, build: buildIE }
+};
+
+function openApp(appId){
+  if(openWindows[appId]){
+    restoreWindow(appId);
+    focusWindow(appId);
+    return;
+  }
+  const cfg = appConfigs[appId];
+  if(!cfg) return;
+  const count = Object.keys(openWindows).length;
+  const offset = (count % 6) * 26;
+  const x = 60 + offset, y = 40 + offset;
+
+  const winEl = el('div', {class:'win95-window bevel-out', style:{
+    left:x+'px', top:y+'px', width:cfg.width+'px', height:cfg.height+'px'
+  }});
+  winEl.style.minWidth = cfg.minW + 'px';
+  winEl.style.minHeight = cfg.minH + 'px';
+
+  const titleText = el('div', {class:'title-bar-text', children:[
+    el('span', {class:'title-icon', text:cfg.icon}),
+    el('span', {text:cfg.title})
+  ]});
+
+  const minBtn = el('button', {class:'tb-btn', text:'_', attrs:{'aria-label':'Minimize'}, on:{click:(e)=>{ e.stopPropagation(); minimizeWindow(appId); }}});
+  const maxBtn = el('button', {class:'tb-btn' + (cfg.noMaximize?' disabled':''), text:'☐', attrs:{'aria-label':'Maximize'}, on:{click:(e)=>{ e.stopPropagation(); if(!cfg.noMaximize) toggleMaximize(appId); }}});
+  const closeBtn = el('button', {class:'tb-btn', text:'✕', attrs:{'aria-label':'Close'}, on:{click:(e)=>{ e.stopPropagation(); closeWindow(appId); }}});
+
+  const titleBar = el('div', {class:'title-bar', children:[
+    titleText,
+    el('div', {class:'title-bar-controls', children:[minBtn, maxBtn, closeBtn]})
+  ]});
+
+  const body = el('div', {class:'window-body'});
+  const content = cfg.build(winEl, appId);
+  if(content) body.appendChild(content);
+
+  winEl.appendChild(titleBar);
+  winEl.appendChild(body);
+  if(!cfg.noResize){
+    const handle = el('div', {class:'resize-handle'});
+    winEl.appendChild(handle);
+    wireResize(winEl, handle, cfg);
+  }
+
+  windowsContainer.appendChild(winEl);
+
+  wireDrag(winEl, titleBar, appId, cfg);
+  winEl.addEventListener('mousedown', () => focusWindow(appId));
+  winEl.addEventListener('touchstart', () => focusWindow(appId), {passive:true});
+  titleBar.addEventListener('dblclick', () => { if(!cfg.noMaximize) toggleMaximize(appId); });
+
+  const taskBtn = el('div', {class:'taskbar-btn bevel-out', children:[
+    el('span', {text:cfg.icon}),
+    el('span', {class:'tb-label', text:cfg.title})
+  ]});
+  taskBtn.addEventListener('click', () => {
+    const st = openWindows[appId];
+    if(activeApp === appId && !st.minimized){
+      minimizeWindow(appId);
+    } else {
+      restoreWindow(appId);
+      focusWindow(appId);
+    }
+  });
+  taskbarWindows.appendChild(taskBtn);
+
+  openWindows[appId] = { el: winEl, taskbarBtn: taskBtn, minimized:false, maximized:false, prevRect:null, cfg, cleanup:null };
+  focusWindow(appId);
+
+  if(appId === 'minesweeper' && buildMinesweeper._pendingCleanup){
+    openWindows.minesweeper.cleanup = buildMinesweeper._pendingCleanup;
+    buildMinesweeper._pendingCleanup = null;
+  }
+}
+
+function focusWindow(appId){
+  const st = openWindows[appId];
+  if(!st) return;
+  zTop += 1;
+  st.el.style.zIndex = zTop;
+  Object.keys(openWindows).forEach(id => {
+    openWindows[id].el.classList.toggle('active', id === appId);
+    openWindows[id].taskbarBtn.classList.toggle('active', id === appId && !openWindows[id].minimized);
+  });
+  activeApp = appId;
+}
+
+function minimizeWindow(appId){
+  const st = openWindows[appId];
+  if(!st) return;
+  st.el.style.display = 'none';
+  st.minimized = true;
+  st.taskbarBtn.classList.remove('active');
+  if(activeApp === appId) activeApp = null;
+}
+
+function restoreWindow(appId){
+  const st = openWindows[appId];
+  if(!st) return;
+  st.el.style.display = 'flex';
+  st.minimized = false;
+}
+
+function closeWindow(appId){
+  const st = openWindows[appId];
+  if(!st) return;
+  if(st.cleanup) st.cleanup();
+  st.el.remove();
+  st.taskbarBtn.remove();
+  delete openWindows[appId];
+  if(activeApp === appId) activeApp = null;
+}
+
+function toggleMaximize(appId){
+  const st = openWindows[appId];
+  if(!st) return;
+  const winEl = st.el;
+  if(!st.maximized){
+    st.prevRect = { left:winEl.style.left, top:winEl.style.top, width:winEl.style.width, height:winEl.style.height };
+    winEl.classList.add('maximized');
+    const taskbarH = 32;
+    winEl.style.width = window.innerWidth + 'px';
+    winEl.style.height = (window.innerHeight - taskbarH) + 'px';
+    st.maximized = true;
+  } else {
+    winEl.classList.remove('maximized');
+    if(st.prevRect){
+      winEl.style.left = st.prevRect.left;
+      winEl.style.top = st.prevRect.top;
+      winEl.style.width = st.prevRect.width;
+      winEl.style.height = st.prevRect.height;
+    }
+    st.maximized = false;
+  }
+}
+
+function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+function wireDrag(winEl, titleBar, appId, cfg){
+  let dragging = false, sx=0, sy=0, ox=0, oy=0;
+  function down(e){
+    if(e.target.closest('.tb-btn')) return;
+    const st = openWindows[appId];
+    if(st && st.maximized) return;
+    dragging = true;
+    const pt = e.touches ? e.touches[0] : e;
+    sx = pt.clientX; sy = pt.clientY;
+    ox = winEl.offsetLeft; oy = winEl.offsetTop;
+    focusWindow(appId);
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('touchend', up);
+  }
+  function move(e){
+    if(!dragging) return;
+    const pt = e.touches ? e.touches[0] : e;
+    if(e.touches) e.preventDefault();
+    const dx = pt.clientX - sx, dy = pt.clientY - sy;
+    const taskbarH = 32;
+    const nx = clamp(ox + dx, -(winEl.offsetWidth - 60), window.innerWidth - 60);
+    const ny = clamp(oy + dy, 0, window.innerHeight - taskbarH - 24);
+    winEl.style.left = nx + 'px';
+    winEl.style.top = ny + 'px';
+  }
+  function up(){
+    dragging = false;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+  }
+  titleBar.addEventListener('mousedown', down);
+  titleBar.addEventListener('touchstart', down, {passive:true});
+}
+
+function wireResize(winEl, handle, cfg){
+  let resizing=false, sx=0, sy=0, sw=0, sh=0;
+  function down(e){
+    resizing = true;
+    const pt = e.touches ? e.touches[0] : e;
+    sx = pt.clientX; sy = pt.clientY;
+    sw = winEl.offsetWidth; sh = winEl.offsetHeight;
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('touchend', up);
+    e.stopPropagation();
+  }
+  function move(e){
+    if(!resizing) return;
+    const pt = e.touches ? e.touches[0] : e;
+    if(e.touches) e.preventDefault();
+    const dw = pt.clientX - sx, dh = pt.clientY - sy;
+    winEl.style.width = Math.max(cfg.minW, sw + dw) + 'px';
+    winEl.style.height = Math.max(cfg.minH, sh + dh) + 'px';
+  }
+  function up(){
+    resizing = false;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+  }
+  handle.addEventListener('mousedown', down);
+  handle.addEventListener('touchstart', down, {passive:true});
+}
+
+document.querySelectorAll('#win95-desktop .icon').forEach(icon => {
+  let lastTap = 0;
+  icon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('#win95-desktop .icon.selected').forEach(i => i.classList.remove('selected'));
+    icon.classList.add('selected');
+    const now = Date.now();
+    if(now - lastTap < 400){ openApp(icon.dataset.app); }
+    lastTap = now;
+  });
+  icon.addEventListener('dblclick', (e) => { e.stopPropagation(); openApp(icon.dataset.app); });
+});
+desktop.addEventListener('click', (e) => {
+  if(e.target === desktop || e.target.id === 'icons'){
+    document.querySelectorAll('#win95-desktop .icon.selected').forEach(i => i.classList.remove('selected'));
+  }
+});
+
+function buildStartItem(iconStr, label, opts){
+  opts = opts || {};
+  const item = el('div', {class:'start-item' + (opts.disabled ? ' disabled':''), children:[
+    el('span', {class:'si-icon', text:iconStr}),
+    el('span', {text:label}),
+    opts.children ? el('span', {class:'si-arrow', text:'▶'}) : null
+  ]});
+  if(opts.children){
+    const sub = el('div', {class:'submenu hidden'});
+    opts.children.forEach(c => sub.appendChild(c));
+    item.appendChild(sub);
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = !sub.classList.contains('hidden');
+      startMenu.querySelectorAll('.submenu').forEach(s => s.classList.add('hidden'));
+      if(!isOpen) sub.classList.remove('hidden');
+    });
+  } else if(!opts.disabled && opts.action){
+    item.addEventListener('click', (e) => { e.stopPropagation(); opts.action(); closeStartMenu(); });
+  }
+  return item;
+}
+
+function buildSubItem(iconStr, label, action){
+  return el('div', {class:'start-item', children:[
+    el('span', {class:'si-icon', text:iconStr}), el('span', {text:label})
+  ], on:{click:(e)=>{ e.stopPropagation(); action(); closeStartMenu(); }}});
+}
+
+function populateStartMenu(){
+  const container = document.getElementById('start-items');
+  container.innerHTML = '';
+  container.appendChild(buildStartItem('📁', 'Programs', {children:[
+    buildSubItem('📝','Notepad', ()=>openApp('notepad')),
+    buildSubItem('🎨','Paint', ()=>openApp('paint')),
+    buildSubItem('💣','Minesweeper', ()=>openApp('minesweeper')),
+    buildSubItem('🌐','Internet Explorer', ()=>openApp('ie'))
+  ]}));
+  container.appendChild(buildStartItem('📄', 'Documents', {children:[
+    buildSubItem('📄','Read Me.txt', ()=>openApp('readme'))
+  ]}));
+  container.appendChild(buildStartItem('⚙️', 'Settings', {disabled:true}));
+  container.appendChild(buildStartItem('🔍', 'Find', {disabled:true}));
+  container.appendChild(buildStartItem('❓', 'Help', {action:()=>{
+    showMessageBox({title:'Help', icon:'❓', message:'Welcome to Windows 95. No help topics are available in this demo.'});
+  }}));
+  container.appendChild(buildStartItem('▶️', 'Run...', {action:()=>showRunDialog()}));
+  container.appendChild(el('div', {class:'start-sep'}));
+  container.appendChild(buildStartItem('🔌', 'Shut Down...', {action:()=>showShutdownDialog()}));
+}
+populateStartMenu();
+
+function openStartMenu(){ startMenu.classList.remove('hidden'); startButton.classList.add('pressed'); }
+function closeStartMenu(){
+  startMenu.classList.add('hidden');
+  startButton.classList.remove('pressed');
+  startMenu.querySelectorAll('.submenu').forEach(s => s.classList.add('hidden'));
+}
+startButton.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if(startMenu.classList.contains('hidden')) openStartMenu(); else closeStartMenu();
+});
+document.addEventListener('click', (e) => {
+  if(!startMenu.classList.contains('hidden') && !startMenu.contains(e.target) && e.target !== startButton){
+    closeStartMenu();
+  }
+});
+
+function buildNotepad(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const textarea = el('textarea', {class:'notepad-area', attrs:{spellcheck:'false'}});
+  try{ textarea.value = localStorage.getItem('win95-notepad-content') || ''; }catch(e){}
+  textarea.addEventListener('input', () => {
+    try{ localStorage.setItem('win95-notepad-content', textarea.value); }catch(e){}
+  });
+  const menubar = buildMenuBar([
+    { label:'File', items:[
+      { label:'New', action:()=>{ textarea.value=''; try{localStorage.setItem('win95-notepad-content','');}catch(e){} } },
+      { label:'Save', action:()=>{ showMessageBox({title:'Notepad', icon:'💾', message:'Text saved.'}); } },
+      { sep:true },
+      { label:'Exit', action:()=>closeWindow(appId) }
+    ]},
+    { label:'Edit', items:[
+      { label:'Select All', action:()=>{ textarea.focus(); textarea.select(); } },
+      { label:'Cut', disabled:true }, { label:'Copy', disabled:true }, { label:'Paste', disabled:true }
+    ]},
+    { label:'Search', items:[ {label:'Find...', disabled:true} ]},
+    { label:'Help', items:[ {label:'About Notepad', action:()=>showMessageBox({title:'About Notepad', icon:'📝', message:'Notepad — a simple text editor, recreated for this demo desktop.'})} ]}
+  ]);
+  const fillWrap = el('div', {class:'app-body-fill', children:[textarea]});
+  wrap.appendChild(menubar); wrap.appendChild(fillWrap);
+  return wrap;
+}
+
+function buildReadme(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const textarea = el('textarea', {class:'notepad-area', attrs:{spellcheck:'false', readonly:'readonly'}});
+  textarea.value =
+"Welcome to this desktop!\r\n\r\n" +
+"This whole thing -- windows, icons, the Start menu, Minesweeper,\r\n" +
+"the fake browser, all of it -- is just HTML, CSS and JavaScript.\r\n" +
+"No frameworks, no build step, no backend. One file.\r\n\r\n" +
+"Things to try:\r\n" +
+" - Drag windows by their title bars, resize from the corner\r\n" +
+" - Double-click a title bar to maximize\r\n" +
+" - Right-click in Minesweeper to flag a mine\r\n" +
+" - Type 'notepad', 'paint' or 'winmine' into Run...\r\n" +
+" - Click Start > Shut Down to go back and pick a different OS\r\n\r\n" +
+"Have fun poking around.";
+  const menubar = buildMenuBar([
+    { label:'File', items:[ { label:'Exit', action:()=>closeWindow(appId) } ]},
+    { label:'Edit', items:[ { label:'Select All', action:()=>{ textarea.focus(); textarea.select(); } } ]}
+  ]);
+  const fillWrap = el('div', {class:'app-body-fill', children:[textarea]});
+  wrap.appendChild(menubar); wrap.appendChild(fillWrap);
+  return wrap;
+}
+
+function buildMyComputer(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const menubar = buildMenuBar([
+    { label:'File', items:[ {label:'Close', action:()=>closeWindow(appId)} ]},
+    { label:'Edit', items:[ {label:'Copy', disabled:true} ]},
+    { label:'View', items:[ {label:'Large Icons', disabled:true}, {label:'Details', disabled:true} ]},
+    { label:'Help', items:[ {label:'About', action:()=>showMessageBox({title:'About', icon:'🖥️', message:'My Computer — browse your (fake) drives.'})} ]}
+  ]);
+  const toolbar = el('div', {class:'explorer-toolbar', children:[
+    el('button',{class:'win95-btn', text:'◀ Back'}), el('button',{class:'win95-btn', text:'Up'})
+  ]});
+  const drives = [
+    {icon:'💾', label:'3½ Floppy (A:)'},
+    {icon:'💽', label:'Windows95 (C:)'},
+    {icon:'💿', label:'Compact Disc (D:)'},
+    {icon:'⚙️', label:'Control Panel'}
+  ];
+  const grid = el('div', {class:'drive-grid'});
+  drives.forEach(d => {
+    const item = el('div', {class:'drive-item', children:[
+      el('div', {class:'icon-img', text:d.icon}), el('div', {class:'icon-label', text:d.label})
+    ]});
+    item.addEventListener('dblclick', () => {
+      showMessageBox({title:d.label, icon:'⛔', message: (d.label.includes('Control') ? 'Control Panel is not available in this demo.' : 'Access denied. (This is a demo drive.)')});
+    });
+    grid.appendChild(item);
+  });
+  const status = el('div', {class:'status-bar bevel-in thin', text:'4 object(s)'});
+  const body = el('div', {class:'app-body-fill', children:[grid]});
+  wrap.appendChild(menubar); wrap.appendChild(toolbar); wrap.appendChild(body); wrap.appendChild(status);
+  return wrap;
+}
+
+function buildRecycleBin(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const menubar = buildMenuBar([
+    { label:'File', items:[ {label:'Close', action:()=>closeWindow(appId)} ]},
+    { label:'Edit', items:[ {label:'Undo', disabled:true} ]},
+    { label:'Help', items:[ {label:'About', action:()=>showMessageBox({title:'About', icon:'🗑️', message:'Recycle Bin — deleted items go here. This one is squeaky clean.'})} ]}
+  ]);
+  const body = el('div', {class:'app-body-fill', children:[
+    el('div', {class:'empty-bin', children:[
+      el('div', {class:'icon-img', text:'🗑️'}),
+      el('div', {text:'The Recycle Bin is empty.'})
+    ]})
+  ]});
+  const status = el('div', {class:'status-bar bevel-in thin', text:'0 object(s)'});
+  wrap.appendChild(menubar); wrap.appendChild(body); wrap.appendChild(status);
+  return wrap;
+}
+
+function buildPaint(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const canvas = el('canvas', {attrs:{width:'420', height:'260'}});
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width, canvas.height);
+
+  const colors = ['#000000','#808080','#800000','#808000','#008000','#008080','#000080','#800080',
+                   '#ffffff','#c0c0c0','#ff0000','#ffff00','#00ff00','#00ffff','#0000ff','#ff00ff','#ffa500'];
+  let currentColor = '#000000';
+  const colorGrid = el('div', {class:'paint-colors'});
+  colors.forEach((c,i) => {
+    const sw = el('div', {class:'color-swatch' + (i===0?' selected':''), style:{background:c}});
+    sw.addEventListener('click', () => {
+      currentColor = c;
+      colorGrid.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+    });
+    colorGrid.appendChild(sw);
+  });
+
+  let brushSize = 3;
+  const sizes = [ {v:2, d:4}, {v:4, d:8}, {v:8, d:14} ];
+  const sizeRow = el('div', {class:'paint-sizes'});
+  sizes.forEach((s,i) => {
+    const btn = el('div', {class:'size-btn bevel-out' + (i===1?' active':''), children:[
+      el('div', {class:'dot', style:{width:s.d+'px', height:s.d+'px'}})
+    ]});
+    btn.addEventListener('click', () => {
+      brushSize = s.v;
+      sizeRow.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    sizeRow.appendChild(btn);
+  });
+  brushSize = sizes[1].v;
+
+  const clearBtn = el('button', {class:'win95-btn', text:'Clear', on:{click:()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }}});
+
+  const menubar = buildMenuBar([
+    { label:'File', items:[
+      { label:'New', action:()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); } },
+      { sep:true },
+      { label:'Exit', action:()=>closeWindow(appId) }
+    ]},
+    { label:'Edit', items:[ {label:'Undo', disabled:true} ]},
+    { label:'View', items:[ {label:'Zoom', disabled:true} ]},
+    { label:'Image', items:[ {label:'Flip/Rotate', disabled:true} ]},
+    { label:'Options', items:[ {label:'Edit Colors...', disabled:true} ]},
+    { label:'Help', items:[ {label:'About Paint', action:()=>showMessageBox({title:'About Paint', icon:'🎨', message:'A tiny paint program. Left-click to draw, right-click to erase.'})} ]}
+  ]);
+
+  const toolbar = el('div', {class:'paint-toolbar', children:[colorGrid, sizeRow, clearBtn]});
+  const canvasWrap = el('div', {class:'paint-canvas-wrap', children:[canvas]});
+
+  let drawing = false, lastX=0, lastY=0;
+  function pos(e){
+    const r = canvas.getBoundingClientRect();
+    const pt = e.touches ? e.touches[0] : e;
+    return { x: (pt.clientX - r.left) * (canvas.width / r.width), y: (pt.clientY - r.top) * (canvas.height / r.height) };
+  }
+  function startDraw(e){
+    e.preventDefault();
+    drawing = true;
+    const p = pos(e); lastX = p.x; lastY = p.y;
+    const color = (e.button === 2) ? '#ffffff' : currentColor;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, brushSize/2, 0, Math.PI*2); ctx.fill();
+  }
+  function moveDraw(e){
+    if(!drawing) return;
+    e.preventDefault();
+    const p = pos(e);
+    const color = (e.buttons === 2) ? '#ffffff' : currentColor;
+    ctx.strokeStyle = color; ctx.lineWidth = brushSize; ctx.lineCap = 'round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    lastX = p.x; lastY = p.y;
+  }
+  function endDraw(){ drawing = false; }
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+
+  wrap.appendChild(menubar); wrap.appendChild(toolbar); wrap.appendChild(canvasWrap);
+  return wrap;
+}
+
+function buildMinesweeper(winEl, appId){
+  const COLS=9, ROWS=9, MINES=10;
+  const wrap = el('div', {class:'ms-wrap'});
+  const mineDisplay = el('div', {class:'ms-digits', text:'010'});
+  const face = el('div', {class:'ms-face bevel-out', text:'🙂'});
+  const timeDisplay = el('div', {class:'ms-digits', text:'000'});
+  const header = el('div', {class:'ms-header bevel-in', children:[mineDisplay, face, timeDisplay]});
+  const grid = el('div', {class:'ms-grid bevel-in', style:{gridTemplateColumns:'repeat('+COLS+',20px)', gridTemplateRows:'repeat('+ROWS+',20px)'}});
+
+  let cells = [], firstClick = true, gameOver = false, timer = null, seconds = 0, revealedCount = 0, flagCount = 0;
+
+  function idx(r,c){ return r*COLS+c; }
+  function neighbors(r,c){
+    const res = [];
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS) res.push([nr,nc]);
+    }
+    return res;
+  }
+
+  function buildBoard(excludeR, excludeC){
+    cells = Array.from({length:ROWS*COLS}, () => ({mine:false, revealed:false, flagged:false, adj:0}));
+    const excluded = new Set();
+    neighbors(excludeR, excludeC).forEach(([r,c]) => excluded.add(idx(r,c)));
+    excluded.add(idx(excludeR, excludeC));
+    let placed = 0;
+    while(placed < MINES){
+      const i = Math.floor(Math.random() * ROWS * COLS);
+      if(cells[i].mine || excluded.has(i)) continue;
+      cells[i].mine = true; placed++;
+    }
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      if(cells[idx(r,c)].mine) continue;
+      let n=0;
+      neighbors(r,c).forEach(([nr,nc]) => { if(cells[idx(nr,nc)].mine) n++; });
+      cells[idx(r,c)].adj = n;
+    }
+  }
+
+  const numColors = {1:'#0000ff',2:'#008000',3:'#ff0000',4:'#000080',5:'#800000',6:'#008080',7:'#000000',8:'#808080'};
+
+  function render(){
+    grid.innerHTML = '';
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cell = cells[idx(r,c)];
+      const d = el('div', {class:'ms-cell' + (cell.revealed ? ' revealed' : ' bevel-out')});
+      if(cell.revealed){
+        if(cell.mine){ d.textContent = '💣'; if(cell._hit) d.classList.add('mine-hit'); }
+        else if(cell.adj > 0){ d.textContent = cell.adj; d.style.color = numColors[cell.adj]; }
+      } else if(cell.flagged){
+        d.textContent = '🚩';
+      }
+      d.dataset.r = r; d.dataset.c = c;
+      grid.appendChild(d);
+    }
+  }
+
+  function startTimer(){
+    if(timer) return;
+    timer = setInterval(() => { seconds = Math.min(999, seconds+1); timeDisplay.textContent = String(seconds).padStart(3,'0'); }, 1000);
+  }
+  function stopTimer(){ clearInterval(timer); timer = null; }
+
+  function reveal(r,c){
+    const cell = cells[idx(r,c)];
+    if(cell.revealed || cell.flagged || gameOver) return;
+    cell.revealed = true; revealedCount++;
+    if(cell.mine){
+      cell._hit = true;
+      endGame(false);
+      return;
+    }
+    if(cell.adj === 0){
+      neighbors(r,c).forEach(([nr,nc]) => reveal(nr,nc));
+    }
+    if(revealedCount === ROWS*COLS - MINES){
+      endGame(true);
+    }
+  }
+
+  function endGame(won){
+    gameOver = true; stopTimer();
+    face.textContent = won ? '😎' : '😵';
+    if(!won){
+      cells.forEach(c => { if(c.mine) c.revealed = true; });
+    } else {
+      cells.forEach(c => { if(c.mine) c.flagged = true; });
+      flagCount = MINES;
+      mineDisplay.textContent = '000';
+    }
+    render();
+  }
+
+  function updateMineDisplay(){
+    mineDisplay.textContent = String(Math.max(0, MINES - flagCount)).padStart(3,'0');
+  }
+
+  function newGame(){
+    gameOver = false; firstClick = true; seconds = 0; revealedCount = 0; flagCount = 0;
+    stopTimer();
+    timeDisplay.textContent = '000';
+    mineDisplay.textContent = String(MINES).padStart(3,'0');
+    face.textContent = '🙂';
+    cells = Array.from({length:ROWS*COLS}, () => ({mine:false, revealed:false, flagged:false, adj:0}));
+    render();
+  }
+
+  grid.addEventListener('click', (e) => {
+    const t = e.target.closest('.ms-cell');
+    if(!t || gameOver) return;
+    const r = +t.dataset.r, c = +t.dataset.c;
+    if(firstClick){ buildBoard(r,c); firstClick = false; startTimer(); }
+    reveal(r,c);
+    render();
+  });
+  grid.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const t = e.target.closest('.ms-cell');
+    if(!t || gameOver) return;
+    const r = +t.dataset.r, c = +t.dataset.c;
+    const cell = cells[idx(r,c)];
+    if(cell.revealed) return;
+    cell.flagged = !cell.flagged;
+    flagCount += cell.flagged ? 1 : -1;
+    updateMineDisplay();
+    render();
+  });
+  face.addEventListener('click', newGame);
+
+  newGame();
+  buildMinesweeper._pendingCleanup = stopTimer;
+
+  wrap.appendChild(header); wrap.appendChild(grid);
+  return wrap;
+}
+
+function buildIE(winEl, appId){
+  const wrap = el('div', {class:'app-flex'});
+  const address = el('input', {class:'win95-input', style:{fontSize:'11px'}});
+  address.value = 'http://www.geocities.com/~my-homepage/';
+  address.readOnly = true;
+  const content = el('div', {class:'ie-content'});
+
+  let hits = 42;
+  try{
+    hits = parseInt(localStorage.getItem('win95-ie-hits') || '42', 10) + 1;
+    localStorage.setItem('win95-ie-hits', String(hits));
+  } catch(e){}
+
+  function showHome(){
+    address.value = 'http://www.geocities.com/~my-homepage/';
+    content.innerHTML = '';
+    content.appendChild(el('h1', {text:'Welcome to My Homepage!'}));
+    content.appendChild(el('div', {class:'blink', text:'★ UNDER CONSTRUCTION ★'}));
+    content.appendChild(el('p', {text:'Thanks for stopping by. Feel free to sign my guestbook and check out my hobbies below.'}));
+    ['My Hobbies', 'Photo Album', 'Guestbook', 'Webring: Cool 90s Sites', 'Link Me!'].forEach(l => {
+      const a = el('div', {class:'homepage-link', text:'→ ' + l});
+      a.addEventListener('click', () => showError(l));
+      content.appendChild(a);
+    });
+    content.appendChild(el('div', {class:'hit-counter', text:'Visitors: ' + String(hits).padStart(6,'0')}));
+  }
+
+  function showError(pageName){
+    address.value = 'http://www.geocities.com/~my-homepage/' + pageName.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '.html';
+    content.innerHTML = '';
+    const errWrap = el('div', {class:'error-page'});
+    errWrap.appendChild(el('h1', {text:'The page cannot be displayed'}));
+    errWrap.appendChild(el('p', {text:'The page you are looking for is currently unavailable. The Web site might be experiencing technical difficulties, or you may need to adjust your browser settings.'}));
+    errWrap.appendChild(el('p', {text:'Please try the following:'}));
+    const ul = document.createElement('ul');
+    ['Click the Home button to try another link.','Try again later.'].forEach(t => {
+      const li = document.createElement('li'); li.textContent = t; ul.appendChild(li);
+    });
+    errWrap.appendChild(ul);
+    content.appendChild(errWrap);
+  }
+
+  const menubar = buildMenuBar([
+    { label:'File', items:[ {label:'Close', action:()=>closeWindow(appId)} ]},
+    { label:'Edit', items:[ {label:'Find', disabled:true} ]},
+    { label:'View', items:[ {label:'Source', disabled:true} ]},
+    { label:'Go', items:[ {label:'Home Page', action:showHome} ]},
+    { label:'Favorites', items:[ {label:'(empty)', disabled:true} ]},
+    { label:'Help', items:[ {label:'About', action:()=>showMessageBox({title:'About', icon:'🌐', message:'A tiny fake browser for nostalgia purposes.'})} ]}
+  ]);
+
+  const toolbar = el('div', {class:'ie-toolbar', children:[
+    el('div', {class:'ie-tbtn disabled', children:[el('span',{text:'◀'}), el('span',{text:'Back'})]}),
+    el('div', {class:'ie-tbtn disabled', children:[el('span',{text:'▶'}), el('span',{text:'Forward'})]}),
+    el('div', {class:'ie-tbtn disabled', children:[el('span',{text:'⏹'}), el('span',{text:'Stop'})]}),
+    el('div', {class:'ie-tbtn', children:[el('span',{text:'🔄'}), el('span',{text:'Refresh'})], on:{click:showHome}}),
+    el('div', {class:'ie-tbtn', children:[el('span',{text:'🏠'}), el('span',{text:'Home'})], on:{click:showHome}})
+  ]});
+  const addressRow = el('div', {class:'ie-address-row', children:[ el('span', {text:'Address:'}), address ]});
+
+  wrap.appendChild(menubar); wrap.appendChild(toolbar); wrap.appendChild(addressRow); wrap.appendChild(content);
+  showHome();
+  return wrap;
+}
+
+window.Win95OS = { boot: bootSequence };
+})();
+</script>
+
+<script>
+/* ================================================================
+   MAC OS MODULE
+   ================================================================ */
+(function(){
+"use strict";
+const el = window.__el;
+
+const macDesktopEl = document.getElementById('mac-desktop');
+const macWorkspace = document.getElementById('mac-workspace');
+const macWindowsContainer = document.getElementById('mac-windows-container');
+const macMenubar = document.getElementById('mac-menubar');
+
+let macZTop = 100;
+let macOpenWindows = {};
+let macActiveApp = null;
+let macOverlayStack = [];
+
+function macBootSequence(){
+  document.getElementById('mac-shutdown-screen').classList.add('hidden');
+  macDesktopEl.classList.add('hidden');
+  const boot = document.getElementById('mac-boot-screen');
+  boot.classList.remove('hidden');
+  const fill = boot.querySelector('.boot-bar-fill');
+  fill.style.animation = 'none'; void fill.offsetWidth; fill.style.animation = '';
+  setTimeout(() => { boot.classList.add('hidden'); macDesktopEl.classList.remove('hidden'); }, 2000);
+}
+
+function macDoShutdown(mode){
+  Object.keys(macOpenWindows).forEach(macCloseWindow);
+  if(mode === 'restart'){
+    macBootSequence();
+  } else {
+    macDesktopEl.classList.add('hidden');
+    const sd = document.getElementById('mac-shutdown-screen');
+    sd.classList.remove('hidden');
+    const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
+    sd.addEventListener('click', goBack);
+  }
+}
+
+function macTick(){
+  const d = new Date(); let h = d.getHours(); const m = d.getMinutes().toString().padStart(2,'0');
+  const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12; if(h === 0) h = 12;
+  const clockEl = document.getElementById('mac-clock');
+  if(clockEl) clockEl.textContent = h + ':' + m + ' ' + ap;
+}
+setInterval(macTick, 1000); macTick();
+
+function macPushOverlay(fn){ macOverlayStack.push(fn); }
+function macPopOverlay(fn){ const i = macOverlayStack.indexOf(fn); if(i !== -1) macOverlayStack.splice(i,1); }
+document.addEventListener('keydown', e => {
+  if(macDesktopEl.classList.contains('hidden')) return;
+  if(e.key === 'Escape' && macOverlayStack.length){ macOverlayStack[macOverlayStack.length-1](); }
+});
+
+function macAlert({title, icon, message, buttons}){
+  const overlay = el('div', {class:'mac-dialog', style:{zIndex:20000+macOverlayStack.length}});
+  const body = el('div', {class:'mac-dialog-body', children:[
+    el('div', {class:'mac-dialog-icon', text: icon || '🖥️'}),
+    el('div', {class:'mac-dialog-text', text: message || ''})
+  ]});
+  const btnRow = el('div', {class:'mac-dialog-buttons'});
+  (buttons || [{label:'OK', default:true}]).forEach(b => {
+    const btn = el('button', {class:'mac-btn' + (b.default ? ' default' : ''), text:b.label, on:{click:()=>{ close(); if(b.onClick) b.onClick(); }}});
+    btnRow.appendChild(btn);
+  });
+  overlay.appendChild(body); overlay.appendChild(btnRow);
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); macPopOverlay(close); }
+  macPushOverlay(close);
+  return close;
+}
+
+const macAppConfigs = {
+  hd:        { title:'Macintosh HD', width:380, height:280, minW:260, minH:180, build: buildMacHD },
+  trash:     { title:'Trash', width:320, height:220, minW:220, minH:160, build: buildMacTrash },
+  simpletext:{ title:'Untitled — SimpleText', width:420, height:320, minW:220, minH:160, build: buildSimpleText },
+  macpaint:  { title:'untitled — MacPaint', width:480, height:380, minW:340, minH:260, build: buildMacPaint },
+  puzzle:    { title:'Puzzle', width:230, height:300, minW:230, minH:300, noResize:true, build: buildPuzzle }
+};
+
+function finderFileItems(){
+  return [ {label:'Close Window', action:()=>{ if(macActiveApp) macCloseWindow(macActiveApp); }, disabled: !macActiveApp} ];
+}
+function finderEditItems(){
+  return [ {label:'Undo', disabled:true}, {label:'Cut', disabled:true}, {label:'Copy', disabled:true}, {label:'Paste', disabled:true} ];
+}
+let currentFileItems = finderFileItems();
+let currentEditItems = finderEditItems();
+
+function rebuildMacMenus(appId){
+  const st = appId ? macOpenWindows[appId] : null;
+  currentFileItems = (st && st.menus && st.menus.file) ? st.menus.file : finderFileItems();
+  currentEditItems = (st && st.menus && st.menus.edit) ? st.menus.edit : finderEditItems();
+}
+
+function showAboutMac(){
+  let msg = 'Mac OS\nSystem Software 7.5.3\n\nBuilt-in Memory: 8,192K\nVirtual Memory: Off\n\n';
+  msg += 'System Software'.padEnd(24,'.') + ' 2,048K\n';
+  Object.keys(macOpenWindows).forEach(id => {
+    const name = macAppConfigs[id].title.split(' — ')[0].split(' - ')[0];
+    msg += name.padEnd(24,'.') + ' 1,024K\n';
+  });
+  macAlert({title:'About This Macintosh', icon:'🖥️', message:msg});
+}
+
+function emptyTrash(){
+  macAlert({
+    title:'Empty Trash', icon:'🗑️',
+    message:'Are you sure you want to remove the items in the Trash permanently?',
+    buttons:[
+      {label:'OK', default:true, onClick:()=>macAlert({title:'Trash', icon:'🗑️', message:'The Trash is already empty.'})},
+      {label:'Cancel'}
+    ]
+  });
+}
+
+function buildMacMenuBar(){
+  const defs = [
+    {key:'apple', label:'🍎', isApple:true, getItems:()=>[{label:'About This Macintosh...', action:showAboutMac}]},
+    {key:'file', label:'File', getItems:()=>currentFileItems},
+    {key:'edit', label:'Edit', getItems:()=>currentEditItems},
+    {key:'view', label:'View', getItems:()=>[{label:'by Icon', disabled:true},{label:'by Name', disabled:true},{label:'by Date', disabled:true}]},
+    {key:'special', label:'Special', getItems:()=>[
+        {label:'Empty Trash...', action:emptyTrash},
+        {sep:true},
+        {label:'Restart', action:()=>macDoShutdown('restart')},
+        {label:'Shut Down...', action:()=>macDoShutdown('shutdown')}
+      ]},
+    {key:'help', label:'Help', getItems:()=>[{label:'Mac OS Help', action:()=>macAlert({title:'Help', icon:'❓', message:'No help topics are available in this demo.'})}]}
+  ];
+  const clockEl = document.getElementById('mac-clock');
+  let openKey = null;
+  function closeAll(){
+    macMenubar.querySelectorAll('.mac-dropdown').forEach(d => d.remove());
+    macMenubar.querySelectorAll('.mac-menu-item').forEach(i => i.classList.remove('open'));
+    openKey = null;
+  }
+  defs.forEach(def => {
+    const btn = el('div', {class:'mac-menu-item' + (def.isApple ? ' mac-apple' : ''), text:def.label});
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const was = openKey === def.key;
+      closeAll();
+      if(was) return;
+      btn.classList.add('open'); openKey = def.key;
+      const dd = el('div', {class:'mac-dropdown'});
+      def.getItems().forEach(mi => {
+        if(mi.sep){ dd.appendChild(el('div', {class:'mac-dropdown-sep'})); return; }
+        const di = el('div', {class:'mac-dropdown-item' + (mi.disabled ? ' disabled' : ''), text:mi.label});
+        if(!mi.disabled) di.addEventListener('click', ev => { ev.stopPropagation(); closeAll(); mi.action && mi.action(); });
+        dd.appendChild(di);
+      });
+      btn.appendChild(dd);
+    });
+    macMenubar.insertBefore(btn, clockEl);
+  });
+  document.addEventListener('click', closeAll);
+}
+
+function clampMac(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+function wireMacDrag(winEl, titlebar, appId){
+  let dragging = false, sx=0, sy=0, ox=0, oy=0;
+  function down(e){
+    if(e.target.closest('.mac-closebox') || e.target.closest('.mac-zoombox')) return;
+    const st = macOpenWindows[appId];
+    if(st && st.maximized) return;
+    dragging = true;
+    const pt = e.touches ? e.touches[0] : e;
+    sx = pt.clientX; sy = pt.clientY; ox = winEl.offsetLeft; oy = winEl.offsetTop;
+    macFocusWindow(appId);
+    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive:false}); document.addEventListener('touchend', up);
+  }
+  function move(e){
+    if(!dragging) return;
+    const pt = e.touches ? e.touches[0] : e;
+    if(e.touches) e.preventDefault();
+    const dx = pt.clientX - sx, dy = pt.clientY - sy;
+    const nx = clampMac(ox + dx, -(winEl.offsetWidth - 60), macWorkspace.clientWidth - 60);
+    const ny = clampMac(oy + dy, 0, macWorkspace.clientHeight - 24);
+    winEl.style.left = nx + 'px'; winEl.style.top = ny + 'px';
+  }
+  function up(){
+    dragging = false;
+    document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up);
+  }
+  titlebar.addEventListener('mousedown', down);
+  titlebar.addEventListener('touchstart', down, {passive:true});
+}
+
+function wireMacResize(winEl, handle, cfg){
+  let resizing = false, sx=0, sy=0, sw=0, sh=0;
+  function down(e){
+    resizing = true;
+    const pt = e.touches ? e.touches[0] : e;
+    sx = pt.clientX; sy = pt.clientY; sw = winEl.offsetWidth; sh = winEl.offsetHeight;
+    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive:false}); document.addEventListener('touchend', up);
+    e.stopPropagation();
+  }
+  function move(e){
+    if(!resizing) return;
+    const pt = e.touches ? e.touches[0] : e;
+    if(e.touches) e.preventDefault();
+    const dw = pt.clientX - sx, dh = pt.clientY - sy;
+    winEl.style.width = Math.max(cfg.minW, sw + dw) + 'px';
+    winEl.style.height = Math.max(cfg.minH, sh + dh) + 'px';
+  }
+  function up(){
+    resizing = false;
+    document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up);
+  }
+  handle.addEventListener('mousedown', down);
+  handle.addEventListener('touchstart', down, {passive:true});
+}
+
+function macToggleZoom(appId){
+  const st = macOpenWindows[appId]; if(!st) return;
+  const winEl = st.el;
+  if(st.shaded) macToggleShade(appId);
+  if(!st.maximized){
+    st.prevRect = {left:winEl.style.left, top:winEl.style.top, width:winEl.style.width, height:winEl.style.height};
+    winEl.style.left = '0px'; winEl.style.top = '0px';
+    winEl.style.width = macWorkspace.clientWidth + 'px';
+    winEl.style.height = macWorkspace.clientHeight + 'px';
+    st.maximized = true;
+  } else {
+    if(st.prevRect){
+      winEl.style.left = st.prevRect.left; winEl.style.top = st.prevRect.top;
+      winEl.style.width = st.prevRect.width; winEl.style.height = st.prevRect.height;
+    }
+    st.maximized = false;
+  }
+}
+
+function macToggleShade(appId){
+  const st = macOpenWindows[appId]; if(!st || st.maximized) return;
+  const winEl = st.el;
+  if(!st.shaded){
+    st.prevHeight = winEl.style.height;
+    winEl.classList.add('shaded');
+    winEl.style.height = '19px';
+    st.shaded = true;
+  } else {
+    winEl.classList.remove('shaded');
+    winEl.style.height = st.prevHeight;
+    st.shaded = false;
+  }
+}
+
+function macOpenApp(appId){
+  if(macOpenWindows[appId]){
+    const st = macOpenWindows[appId];
+    if(st.shaded) macToggleShade(appId);
+    macFocusWindow(appId);
+    return;
+  }
+  const cfg = macAppConfigs[appId]; if(!cfg) return;
+  const count = Object.keys(macOpenWindows).length;
+  const offset = (count % 6) * 24;
+  const x = 60 + offset, y = 30 + offset;
+
+  const winEl = el('div', {class:'mac-window', style:{left:x+'px', top:y+'px', width:cfg.width+'px', height:cfg.height+'px'}});
+  winEl.style.minWidth = cfg.minW + 'px'; winEl.style.minHeight = cfg.minH + 'px';
+
+  const closeBox = el('div', {class:'mac-closebox', on:{click:(e)=>{ e.stopPropagation(); macCloseWindow(appId); }}});
+  const zoomBox = el('div', {class:'mac-zoombox', on:{click:(e)=>{ e.stopPropagation(); macToggleZoom(appId); }}});
+  const titleLabel = el('div', {class:'mac-title-label', text:cfg.title});
+  const titlebar = el('div', {class:'mac-titlebar', children:[closeBox, titleLabel, zoomBox]});
+
+  const body = el('div', {class:'mac-body'});
+  const result = cfg.build(winEl, appId) || {};
+  if(result.content) body.appendChild(result.content);
+
+  winEl.appendChild(titlebar); winEl.appendChild(body);
+  if(!cfg.noResize){
+    const growHandle = el('div', {class:'mac-growbox'});
+    winEl.appendChild(growHandle);
+    wireMacResize(winEl, growHandle, cfg);
+  }
+
+  macWindowsContainer.appendChild(winEl);
+  wireMacDrag(winEl, titlebar, appId);
+  winEl.addEventListener('mousedown', () => macFocusWindow(appId));
+  titlebar.addEventListener('dblclick', (e) => { if(e.target === closeBox || e.target === zoomBox) return; macToggleShade(appId); });
+
+  macOpenWindows[appId] = { el:winEl, cfg, shaded:false, maximized:false, prevRect:null, prevHeight:null, menus: result.menus || null, cleanup: result.cleanup || null };
+  macFocusWindow(appId);
+}
+
+function macFocusWindow(appId){
+  const st = macOpenWindows[appId]; if(!st) return;
+  macZTop += 1; st.el.style.zIndex = macZTop;
+  Object.keys(macOpenWindows).forEach(id => {
+    macOpenWindows[id].el.querySelector('.mac-titlebar').classList.toggle('active', id === appId);
+  });
+  macActiveApp = appId;
+  rebuildMacMenus(appId);
+}
+
+function macCloseWindow(appId){
+  const st = macOpenWindows[appId]; if(!st) return;
+  if(st.cleanup) st.cleanup();
+  st.el.remove();
+  delete macOpenWindows[appId];
+  if(macActiveApp === appId){ macActiveApp = null; rebuildMacMenus(null); }
+}
+
+macWorkspace.addEventListener('mousedown', (e) => {
+  if(e.target === macWorkspace || e.target.id === 'mac-icons'){
+    Object.values(macOpenWindows).forEach(st => st.el.querySelector('.mac-titlebar').classList.remove('active'));
+    macActiveApp = null;
+    rebuildMacMenus(null);
+    document.querySelectorAll('.mac-icon.selected').forEach(i => i.classList.remove('selected'));
+  }
+});
+
+document.querySelectorAll('.mac-icon').forEach(icon => {
+  let lastTap = 0;
+  icon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.mac-icon.selected').forEach(i => i.classList.remove('selected'));
+    icon.classList.add('selected');
+    const now = Date.now();
+    if(now - lastTap < 400){ macOpenApp(icon.dataset.app); }
+    lastTap = now;
+  });
+  icon.addEventListener('dblclick', (e) => { e.stopPropagation(); macOpenApp(icon.dataset.app); });
+});
+
+/* ---- Mac apps ---- */
+function buildMacHD(){
+  const items = [
+    {icon:'🗂️', label:'System Folder', action:()=>macAlert({title:'System Folder', icon:'⛔', message:'The System Folder cannot be opened in this demo.'})},
+    {icon:'📝', label:'SimpleText', action:()=>macOpenApp('simpletext')},
+    {icon:'🖌️', label:'MacPaint', action:()=>macOpenApp('macpaint')},
+    {icon:'🧩', label:'Puzzle', action:()=>macOpenApp('puzzle')},
+    {icon:'📄', label:'Read Me', action:()=>macAlert({title:'Read Me', icon:'📄', message:'This whole desktop is one HTML file — no server, no build step.\n\nDouble-click SimpleText, MacPaint or Puzzle to try them, or check the Apple menu for About This Macintosh.'})}
+  ];
+  const grid = el('div', {class:'mac-drive-grid'});
+  items.forEach(it => {
+    const d = el('div', {class:'mac-drive-item', children:[
+      el('div', {class:'mac-icon-img', text:it.icon}), el('div', {class:'mac-icon-label', text:it.label})
+    ]});
+    d.addEventListener('dblclick', it.action);
+    grid.appendChild(d);
+  });
+  const status = el('div', {class:'mac-status-bar', text:'5 items    245.8 MB available'});
+  const wrap = el('div', {style:{display:'flex', flexDirection:'column', height:'100%'}, children:[grid, status]});
+  return {content:wrap};
+}
+
+function buildMacTrash(){
+  const wrap = el('div', {style:{height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'8px', color:'#444'}, children:[
+    el('div', {style:{fontSize:'44px'}, text:'🗑️'}),
+    el('div', {style:{fontSize:'12px'}, text:'The Trash is empty.'})
+  ]});
+  return {content:wrap};
+}
+
+function buildSimpleText(winEl, appId){
+  const textarea = el('textarea', {class:'simpletext-area', attrs:{spellcheck:'false'}});
+  try{ textarea.value = localStorage.getItem('macos-simpletext-content') || ''; }catch(e){}
+  textarea.addEventListener('input', () => { try{ localStorage.setItem('macos-simpletext-content', textarea.value); }catch(e){} });
+  const menus = {
+    file:[
+      {label:'New', action:()=>{ textarea.value=''; try{localStorage.setItem('macos-simpletext-content','');}catch(e){} }},
+      {label:'Save', action:()=>macAlert({title:'SimpleText', icon:'💾', message:'Document saved.'})},
+      {sep:true},
+      {label:'Close', action:()=>macCloseWindow(appId)}
+    ],
+    edit:[
+      {label:'Select All', action:()=>{ textarea.focus(); textarea.select(); }},
+      {label:'Cut', disabled:true}, {label:'Copy', disabled:true}, {label:'Paste', disabled:true}
+    ]
+  };
+  return {content:textarea, menus};
+}
+
+function buildMacPaint(winEl, appId){
+  const canvas = el('canvas', {attrs:{width:'420', height:'260'}});
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  function makePatternCanvas(fn){
+    const c = document.createElement('canvas'); c.width=8; c.height=8;
+    const cx = c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,8,8); cx.fillStyle='#000';
+    for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(fn(x,y)) cx.fillRect(x,y,1,1);
+    return c;
+  }
+  const patternDefs = [
+    {fn:()=>true}, {fn:()=>false},
+    {fn:(x,y)=>((x+y)%4===0)}, {fn:(x,y)=>((x+y)%2===0)},
+    {fn:(x,y)=>((((x-y)%4)+4)%4<2)}, {fn:(x,y)=>(x%3===0 && y%3===0)}
+  ];
+  let currentPattern = null;
+  const patternGrid = el('div', {class:'mac-pattern-grid'});
+  patternDefs.forEach((p,i) => {
+    const pc = makePatternCanvas(p.fn);
+    const dataUrl = pc.toDataURL();
+    const sw = el('div', {class:'mac-pattern-swatch' + (i===0?' selected':''), style:{backgroundImage:'url(' + dataUrl + ')'}});
+    sw.addEventListener('click', () => {
+      currentPattern = ctx.createPattern(pc, 'repeat');
+      patternGrid.querySelectorAll('.mac-pattern-swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+    });
+    patternGrid.appendChild(sw);
+    if(i===0) currentPattern = ctx.createPattern(pc, 'repeat');
+  });
+
+  let brushSize = 4;
+  const sizes = [2,4,9];
+  const sizeRow = el('div', {class:'mac-size-row'});
+  sizes.forEach((s,i) => {
+    const btn = el('div', {class:'mac-size-btn' + (i===1?' active':''), children:[el('div',{class:'dot', style:{width:s+'px', height:s+'px', borderRadius:'50%'}})]});
+    btn.addEventListener('click', () => {
+      brushSize = s;
+      sizeRow.querySelectorAll('.mac-size-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    sizeRow.appendChild(btn);
+  });
+
+  const clearBtn = el('button', {class:'mac-btn', text:'Clear', on:{click:()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }}});
+
+  const toolbar = el('div', {class:'mac-paint-toolbar', children:[patternGrid, sizeRow, clearBtn]});
+  const canvasWrap = el('div', {class:'mac-paint-canvas-wrap', children:[canvas]});
+
+  let drawing=false, lastX=0, lastY=0;
+  function pos(e){ const r=canvas.getBoundingClientRect(); const pt=e.touches?e.touches[0]:e; return {x:(pt.clientX-r.left)*(canvas.width/r.width), y:(pt.clientY-r.top)*(canvas.height/r.height)}; }
+  function startDraw(e){
+    e.preventDefault(); drawing=true; const p=pos(e); lastX=p.x; lastY=p.y;
+    const fill = (e.button===2) ? '#ffffff' : currentPattern;
+    ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(p.x,p.y,brushSize/2,0,Math.PI*2); ctx.fill();
+  }
+  function moveDraw(e){
+    if(!drawing) return; e.preventDefault(); const p=pos(e);
+    const stroke = (e.buttons===2) ? '#ffffff' : currentPattern;
+    ctx.strokeStyle = stroke; ctx.lineWidth = brushSize; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+    lastX=p.x; lastY=p.y;
+  }
+  function endDraw(){ drawing=false; }
+  canvas.addEventListener('contextmenu', e=>e.preventDefault());
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+
+  const wrap = el('div', {style:{display:'flex', flexDirection:'column', height:'100%'}, children:[toolbar, canvasWrap]});
+  const menus = { file:[
+    {label:'New', action:()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }},
+    {sep:true},
+    {label:'Close', action:()=>macCloseWindow(appId)}
+  ]};
+  return {content:wrap, menus};
+}
+
+function buildPuzzle(winEl, appId){
+  const size = 4;
+  let tiles = [], moves = 0;
+  function solved(){ return Array.from({length:size*size-1},(_,i)=>i+1).concat([0]); }
+  function neighborsOf(pos){
+    const r = Math.floor(pos/size), c = pos%size; const res=[];
+    if(r>0) res.push(pos-size); if(r<size-1) res.push(pos+size);
+    if(c>0) res.push(pos-1); if(c<size-1) res.push(pos+1);
+    return res;
+  }
+  function shuffle(){
+    tiles = solved(); let blank = tiles.indexOf(0);
+    for(let i=0;i<300;i++){
+      const ns = neighborsOf(blank);
+      const swap = ns[Math.floor(Math.random()*ns.length)];
+      [tiles[blank], tiles[swap]] = [tiles[swap], tiles[blank]];
+      blank = swap;
+    }
+    moves = 0;
+  }
+  const grid = el('div', {class:'mac-puzzle-grid'});
+  const moveLabel = el('span', {text:'Moves: 0'});
+  function render(){
+    grid.innerHTML = '';
+    tiles.forEach(v => {
+      grid.appendChild(el('div', {class:'mac-puzzle-tile' + (v===0?' blank':''), text: v===0?'':String(v)}));
+    });
+    moveLabel.textContent = 'Moves: ' + moves;
+  }
+  grid.addEventListener('click', (e) => {
+    const t = e.target.closest('.mac-puzzle-tile'); if(!t) return;
+    const idx = Array.from(grid.children).indexOf(t);
+    const blank = tiles.indexOf(0);
+    if(neighborsOf(blank).includes(idx)){
+      [tiles[blank], tiles[idx]] = [tiles[idx], tiles[blank]];
+      moves++; render();
+      if(tiles.join(',') === solved().join(',')){
+        setTimeout(()=>macAlert({title:'Puzzle', icon:'🎉', message:'Solved in ' + moves + ' moves!'}), 100);
+      }
+    }
+  });
+  const newBtn = el('button', {class:'mac-btn', text:'New Game', on:{click:()=>{ shuffle(); render(); }}});
+  const info = el('div', {class:'mac-puzzle-info', children:[moveLabel, newBtn]});
+  const wrap = el('div', {class:'mac-puzzle-wrap', children:[grid, info]});
+  shuffle(); render();
+  return {content:wrap};
+}
+
+buildMacMenuBar();
+window.MacOS = { boot: macBootSequence };
+})();
+</script>
+
+<script>
+/* ================================================================
+   TERMINAL OS MODULE
+   ================================================================ */
+(function(){
+"use strict";
+
+const screenEl = document.getElementById('term-screen');
+const outputEl = document.getElementById('term-output');
+const promptEl = document.getElementById('term-prompt');
+const inputEl = document.getElementById('term-input');
+
+let cwdPath = ['home','guest'];
+let history = [];
+let historyIndex = 0;
+let bootTime = Date.now();
+let matrixInterval = null, matrixCanvas = null;
+
+const fsRoot = { type:'dir', children:{
+  home:{ type:'dir', children:{ guest:{ type:'dir', children:{
+    'readme.txt':{ type:'file', content:"You found the terminal.\n\nThis whole 'computer' is one static HTML file with a tiny fake\nfilesystem living in a JS object -- no server behind it.\n\nType 'help' for a list of commands, or 'neofetch' for the\nobligatory flex." },
+    projects:{ type:'dir', children:{ 'notes.txt':{ type:'file', content:"idea: retro OS picker\nidea: matrix rain easter egg\nidea: stop scope-creeping this (failed)" } } },
+    '.secret':{ type:'file', content:"there's nothing here. nice try though." }
+  }}}},
+  etc:{ type:'dir', children:{ motd:{ type:'file', content:"Welcome to RetroOS. Be excellent to each other." } } }
+}};
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function getNode(segs){
+  let node = fsRoot;
+  for(const s of segs){
+    if(node.type !== 'dir' || !node.children || !node.children[s]) return null;
+    node = node.children[s];
+  }
+  return node;
+}
+function resolvePath(argPath){
+  let segs = (argPath && argPath.startsWith('/')) ? [] : cwdPath.slice();
+  const tokens = (argPath || '').split('/').filter(Boolean);
+  for(const t of tokens){
+    if(t === '..'){ if(segs.length) segs.pop(); }
+    else if(t === '.'){ /* noop */ }
+    else if(t === '~'){ segs = ['home','guest']; }
+    else segs.push(t);
+  }
+  return segs;
+}
+function displayPath(){
+  const full = cwdPath.join('/');
+  if(full === 'home/guest') return '~';
+  if(full.startsWith('home/guest/')) return '~/' + full.slice('home/guest/'.length);
+  return '/' + full;
+}
+function promptString(){ return 'guest@retro-os:' + displayPath() + '$'; }
+function updatePrompt(){ promptEl.textContent = promptString(); }
+
+function appendLine(text){
+  const d = document.createElement('div');
+  d.textContent = text;
+  outputEl.appendChild(d);
+  screenEl.scrollTop = screenEl.scrollHeight;
+}
+function clearOutput(){ outputEl.innerHTML = ''; }
+
+const HELP_LINES = [
+  'Available commands:',
+  '  help              show this list',
+  '  ls [path]         list a directory',
+  '  cd [path]         change directory',
+  '  pwd               print working directory',
+  '  cat <file>        print a file',
+  '  echo <text>       print text',
+  '  whoami            print user',
+  '  date              print date/time',
+  '  history           show command history',
+  '  neofetch          system info banner',
+  '  matrix            toggle matrix rain',
+  '  about             about this page',
+  '  clear             clear the screen',
+  '  reboot            restart this terminal',
+  '  exit / shutdown   power off and choose another OS'
+];
+
+function neofetchLines(){
+  const art = [
+    ' .-----------------.',
+    ' |  .-----------.  |',
+    ' |  |   >_      |  |',
+    ' |  |___________|  |',
+    ' |___________________|',
+    '    /             \\'
+  ];
+  const uptimeMs = Date.now() - bootTime;
+  const mins = Math.floor(uptimeMs/60000), secs = Math.floor((uptimeMs%60000)/1000);
+  const stats = [
+    'guest@retro-os', '--------------',
+    'OS: RetroOS 1.0', 'Host: GitHub Pages', 'Shell: retrosh',
+    'Uptime: ' + mins + 'm ' + secs + 's'
+  ];
+  const n = Math.max(art.length, stats.length);
+  const lines = [];
+  for(let i=0;i<n;i++){ lines.push((art[i]||'').padEnd(23,' ') + (stats[i]||'')); }
+  return lines;
+}
+
+function toggleMatrix(){
+  if(matrixInterval){ stopMatrix(); return 'matrix mode: off'; }
+  startMatrix();
+  return 'matrix mode: on (run "matrix" again to stop)';
+}
+function startMatrix(){
+  matrixCanvas = document.createElement('canvas');
+  matrixCanvas.style.cssText = 'position:fixed;inset:0;z-index:40000;pointer-events:none;';
+  matrixCanvas.width = window.innerWidth; matrixCanvas.height = window.innerHeight;
+  document.body.appendChild(matrixCanvas);
+  const ctx = matrixCanvas.getContext('2d');
+  const fontSize = 16;
+  const cols = Math.floor(matrixCanvas.width / fontSize);
+  const drops = new Array(cols).fill(1);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  matrixInterval = setInterval(() => {
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(0,0,matrixCanvas.width, matrixCanvas.height);
+    ctx.fillStyle = '#33ff33'; ctx.font = fontSize + 'px monospace';
+    drops.forEach((y,i) => {
+      const ch = chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch, i*fontSize, y*fontSize);
+      if(y*fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }, 50);
+}
+function stopMatrix(){
+  if(matrixInterval){ clearInterval(matrixInterval); matrixInterval = null; }
+  if(matrixCanvas){ matrixCanvas.remove(); matrixCanvas = null; }
+}
+
+function runCommand(raw){
+  const trimmed = raw.trim();
+  if(!trimmed) return [];
+  history.push(trimmed); historyIndex = history.length;
+  const parts = trimmed.split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1).filter(a => !a.startsWith('-'));
+  const argStr = parts.slice(1).join(' ');
+
+  switch(cmd){
+    case 'help': return HELP_LINES;
+    case 'ls': {
+      const target = args[0] ? resolvePath(args[0]) : cwdPath;
+      const node = getNode(target);
+      if(!node) return ["ls: cannot access '" + (args[0]||'.') + "': No such file or directory"];
+      if(node.type === 'file') return [args[0]];
+      const names = Object.keys(node.children || {}).sort();
+      if(!names.length) return [];
+      return [names.map(n => node.children[n].type === 'dir' ? n + '/' : n).join('  ')];
+    }
+    case 'cd': {
+      const target = resolvePath(args[0] || '~');
+      const node = getNode(target);
+      if(!node) return ["cd: no such file or directory: " + (args[0]||'')];
+      if(node.type !== 'dir') return ["cd: not a directory: " + (args[0]||'')];
+      cwdPath = target; updatePrompt(); return [];
+    }
+    case 'pwd': return ['/' + cwdPath.join('/')];
+    case 'cat': {
+      if(!args[0]) return ['cat: missing file operand'];
+      const target = resolvePath(args[0]);
+      const node = getNode(target);
+      if(!node) return ["cat: " + args[0] + ": No such file or directory"];
+      if(node.type === 'dir') return ["cat: " + args[0] + ": Is a directory"];
+      return node.content.split('\n');
+    }
+    case 'echo': return [argStr];
+    case 'whoami': return ['guest'];
+    case 'date': return [new Date().toString()];
+    case 'clear': clearOutput(); return [];
+    case 'history': return history.map((h,i) => (' '+(i+1)).slice(-3) + '  ' + h);
+    case 'neofetch': return neofetchLines();
+    case 'sudo': return ['guest is not in the sudoers file.  This incident will be reported.'];
+    case 'matrix': return [toggleMatrix()];
+    case 'about': return ['This "computer" is a static HTML/CSS/JS page -- no backend, no build step.', 'It is a nostalgia project. Type "help" to look around.'];
+    case 'reboot': appendLine('Rebooting...'); setTimeout(()=>termBootSequence(), 500); return [];
+    case 'exit': case 'logout': case 'shutdown':
+      setTimeout(()=>{ stopMatrix(); window.returnToPicker(); }, 600);
+      return ['logging out...'];
+    default: return ["command not found: " + parts[0] + " -- type 'help' for a list of commands."];
+  }
+}
+
+inputEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    const val = inputEl.value;
+    appendLine(promptString() + ' ' + val);
+    inputEl.value = '';
+    runCommand(val).forEach(appendLine);
+    screenEl.scrollTop = screenEl.scrollHeight;
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    if(history.length){ historyIndex = Math.max(0, historyIndex-1); inputEl.value = history[historyIndex] || ''; }
+  } else if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    historyIndex = Math.min(history.length, historyIndex+1);
+    inputEl.value = history[historyIndex] || '';
+  }
+});
+screenEl.addEventListener('click', () => inputEl.focus());
+
+async function termBootSequence(){
+  bootTime = Date.now();
+  cwdPath = ['home','guest'];
+  history = []; historyIndex = 0;
+  clearOutput(); inputEl.value = '';
+  const lines = [
+    'RetroBIOS v2.3 -- 640K conventional memory',
+    'Memory Test: 65536K OK',
+    'Detecting IDE drives... done',
+    'Loading kernel.......... done',
+    'Starting services: [ OK ]',
+    '',
+    'RetroOS 1.0 (tty1)',
+    '',
+    'retro-os login: guest (automatic login)',
+    ''
+  ];
+  for(const l of lines){ appendLine(l); await sleep(80); }
+  neofetchLines().forEach(appendLine);
+  appendLine('');
+  appendLine("Type 'help' to see available commands.");
+  appendLine('');
+  updatePrompt();
+  inputEl.focus();
+}
+
+window.TerminalOS = { boot: termBootSequence };
+})();
+</script>
+
+<script>
+/* ================================================================
+   OS PICKER
+   ================================================================ */
+(function(){
+"use strict";
+const picker = document.getElementById('os-picker');
+const items = Array.from(document.querySelectorAll('.picker-item'));
+let sel = 0;
+
+function highlight(){ items.forEach((it,i) => it.classList.toggle('active', i === sel)); }
+highlight();
+
+items.forEach((it,i) => {
+  it.addEventListener('click', () => { sel = i; highlight(); boot(it.dataset.os); });
+  it.addEventListener('mouseenter', () => { sel = i; highlight(); });
+});
+
+document.addEventListener('keydown', (e) => {
+  if(picker.classList.contains('hidden')) return;
+  if(e.key === 'ArrowDown'){ sel = (sel+1) % items.length; highlight(); e.preventDefault(); }
+  else if(e.key === 'ArrowUp'){ sel = (sel-1+items.length) % items.length; highlight(); e.preventDefault(); }
+  else if(e.key === 'Enter'){ boot(items[sel].dataset.os); }
+});
+
+function boot(osId){
+  picker.classList.add('hidden');
+  if(osId === 'win95'){ document.getElementById('win95-root').classList.remove('hidden'); window.Win95OS.boot(); }
+  else if(osId === 'mac'){ document.getElementById('mac-root').classList.remove('hidden'); window.MacOS.boot(); }
+  else if(osId === 'terminal'){ document.getElementById('terminal-root').classList.remove('hidden'); window.TerminalOS.boot(); }
+}
+})();
+</script>
+
+</body>
+</html>
