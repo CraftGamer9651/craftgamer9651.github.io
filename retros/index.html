@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Retro OS</title>
+<title>RetrOS</title>
 <style>
   :root{
     --face:#c0c0c0;
@@ -58,7 +58,10 @@
   .picker-name{ font-size:13px; font-weight:bold; }
   .picker-desc{ font-size:10px; color:#999; }
   .picker-item:hover .picker-desc, .picker-item.active .picker-desc{ color:#333; }
-  .picker-footer{ margin-top:18px; font-size:14px; animation:blinker 1s step-start infinite; }
+  .picker-cmdline{ display:flex; align-items:center; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid #444; }
+  .picker-cmd-prompt{ color:#888; flex-shrink:0; font-size:12px; }
+  #picker-cmd-input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:#e0e0e0; font:inherit; font-family:'Courier New', monospace; font-size:12px; caret-color:#e0e0e0; }
+  #picker-cmd-input::placeholder{ color:#555; }
   @keyframes blinker{ 50%{ opacity:0; } }
 
   /* ---------- Shared boot / shutdown screens ---------- */
@@ -421,7 +424,10 @@
         </div>
       </div>
     </div>
-    <div class="picker-footer">&#9612;</div>
+    <div class="picker-cmdline">
+      <span class="picker-cmd-prompt">boot:</span>
+      <input id="picker-cmd-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="press Enter to boot the highlighted OS, or type a command">
+    </div>
   </div>
 </div>
 
@@ -490,12 +496,12 @@
 
   <div id="mac-shutdown-screen" class="shutdown-screen-generic hidden">
     <div class="boot-content" id="mac-shutdown-progress">
-      <div style="font-size:40px;">🍎</div>
+      <div style="font-size:40px;">🙂</div>
       <div class="boot-caption" style="font-size:16px;">Shutting down...</div>
       <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
     </div>
     <div class="shutdown-done hidden" id="mac-shutdown-done">
-      <div style="font-size:40px;">🍎</div>
+      <div style="font-size:40px;">🙂</div>
       <div>It is now safe to switch off your Macintosh.</div>
       <small>(click anywhere to choose another OS)</small>
     </div>
@@ -595,6 +601,28 @@ function doShutdown(mode){
   closeStartMenu();
   if(mode === 'restart'){
     bootSequence();
+  } else if(mode === 'dos'){
+    desktop.classList.add('hidden');
+    const sd = document.getElementById('win95-shutdown-screen');
+    const progress = document.getElementById('win95-shutdown-progress');
+    const done = document.getElementById('win95-shutdown-done');
+    const caption = progress.querySelector('.boot-caption');
+    const originalCaption = caption.textContent;
+    caption.textContent = 'Restarting in MS-DOS mode...';
+    sd.classList.remove('hidden');
+    progress.classList.remove('hidden');
+    done.classList.add('hidden');
+    const fill = progress.querySelector('.boot-bar-fill');
+    fill.style.animation = 'none';
+    void fill.offsetWidth;
+    fill.style.animation = '';
+    setTimeout(() => {
+      sd.classList.add('hidden');
+      caption.textContent = originalCaption;
+      document.getElementById('win95-root').classList.add('hidden');
+      document.getElementById('terminal-root').classList.remove('hidden');
+      window.TerminalOS.boot(true);
+    }, 2200);
   } else {
     desktop.classList.add('hidden');
     const sd = document.getElementById('win95-shutdown-screen');
@@ -729,16 +757,14 @@ function showShutdownDialog(){
   [
     {v:'shutdown', l:'Shut down the computer?'},
     {v:'restart', l:'Restart the computer?'},
-    {v:'dos', l:'Restart the computer in MS-DOS mode? (disabled)'}
+    {v:'dos', l:'Restart the computer in MS-DOS mode?'}
   ].forEach((opt,i) => {
     const label = el('label');
     const radio = el('input', {attrs:{type:'radio', name:'sd-choice'}});
     radio.checked = i===0;
-    if(opt.v === 'dos') radio.disabled = true;
     radio.addEventListener('change', ()=>{ choice = opt.v; });
     label.appendChild(radio);
     label.appendChild(document.createTextNode(opt.l));
-    if(opt.v === 'dos') label.style.color = '#888';
     radios.appendChild(label);
   });
   const btnRow = el('div', {class:'dialog-buttons', children:[
@@ -2216,13 +2242,23 @@ async function termShutdownSequence(){
   window.returnToPicker();
 }
 
-async function termBootSequence(){
+async function termBootSequence(fromDos){
   bootTime = Date.now();
   cwdPath = ['home','guest'];
   history = []; historyIndex = 0;
   clearOutput(); inputEl.value = '';
   inputEl.disabled = false;
-  const lines = [
+  const lines = fromDos ? [
+    'Loading MS-DOS...',
+    'HIMEM is testing extended memory... OK',
+    'C:\\WINDOWS>win /d:x',
+    'Booting RetroOS instead of Windows 95...',
+    '',
+    'RetroOS 1.0 (tty1) -- loaded from MS-DOS mode',
+    '',
+    'retro-os login: guest (automatic login)',
+    ''
+  ] : [
     'RetroBIOS v2.3 -- 640K conventional memory',
     'Memory Test: 65536K OK',
     'Detecting IDE drives... done',
@@ -2253,8 +2289,13 @@ window.TerminalOS = { boot: termBootSequence };
    ================================================================ */
 (function(){
 "use strict";
+
+/* Change this to whatever URL you'd like the "exit" boot command to send people to. */
+const EXIT_REDIRECT_URL = 'https://example.com';
+
 const picker = document.getElementById('os-picker');
 const items = Array.from(document.querySelectorAll('.picker-item'));
+const cmdInput = document.getElementById('picker-cmd-input');
 let sel = 0;
 
 function highlight(){ items.forEach((it,i) => it.classList.toggle('active', i === sel)); }
@@ -2270,6 +2311,21 @@ document.addEventListener('keydown', (e) => {
   if(e.key === 'ArrowDown'){ sel = (sel+1) % items.length; highlight(); e.preventDefault(); }
   else if(e.key === 'ArrowUp'){ sel = (sel-1+items.length) % items.length; highlight(); e.preventDefault(); }
   else if(e.key === 'Enter'){ boot(items[sel].dataset.os); }
+});
+
+const cmdDefaultPlaceholder = cmdInput.placeholder;
+cmdInput.addEventListener('keydown', (e) => {
+  e.stopPropagation();
+  if(e.key !== 'Enter') return;
+  const val = cmdInput.value.trim().toLowerCase();
+  cmdInput.value = '';
+  if(!val) return;
+  if(val === 'exit'){
+    window.location.href = EXIT_REDIRECT_URL;
+  } else {
+    cmdInput.placeholder = "command not found: '" + val + "' -- try 'exit'";
+    setTimeout(() => { cmdInput.placeholder = cmdDefaultPlaceholder; }, 1800);
+  }
 });
 
 function boot(osId){
