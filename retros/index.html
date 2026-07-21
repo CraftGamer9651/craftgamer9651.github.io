@@ -77,6 +77,7 @@
     font-family:Arial, sans-serif; font-size:16px; cursor:pointer; flex-direction:column; gap:10px;
   }
   .shutdown-screen-generic small{ color:#999; font-size:12px; }
+  .shutdown-done{ display:flex; flex-direction:column; align-items:center; gap:10px; }
 
   .flag{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; width:46px; height:46px; }
   .flag span{ display:block; }
@@ -438,8 +439,14 @@
   </div>
 
   <div id="win95-shutdown-screen" class="shutdown-screen-generic hidden">
-    <div>It's now safe to turn off your computer.</div>
-    <small>(click anywhere to choose another OS)</small>
+    <div class="boot-content" id="win95-shutdown-progress">
+      <div class="boot-caption" style="font-size:16px;">Shutting down...</div>
+      <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
+    </div>
+    <div class="shutdown-done hidden" id="win95-shutdown-done">
+      <div>It's now safe to turn off your computer.</div>
+      <small>(click anywhere to choose another OS)</small>
+    </div>
   </div>
 
   <div id="win95-desktop" class="hidden">
@@ -475,16 +482,23 @@
 <div id="mac-root" class="hidden">
   <div id="mac-boot-screen" class="boot-screen-generic hidden">
     <div class="boot-content">
-      <div style="font-size:54px;">🍎</div>
+      <div style="font-size:54px;">🙂</div>
       <div class="boot-text" style="font-family:Geneva, Arial, sans-serif; font-size:22px;">Welcome to Macintosh</div>
       <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
     </div>
   </div>
 
   <div id="mac-shutdown-screen" class="shutdown-screen-generic hidden">
-    <div style="font-size:40px;">🍎</div>
-    <div>It is now safe to switch off your Macintosh.</div>
-    <small>(click anywhere to choose another OS)</small>
+    <div class="boot-content" id="mac-shutdown-progress">
+      <div style="font-size:40px;">🍎</div>
+      <div class="boot-caption" style="font-size:16px;">Shutting down...</div>
+      <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
+    </div>
+    <div class="shutdown-done hidden" id="mac-shutdown-done">
+      <div style="font-size:40px;">🍎</div>
+      <div>It is now safe to switch off your Macintosh.</div>
+      <small>(click anywhere to choose another OS)</small>
+    </div>
   </div>
 
   <div id="mac-desktop" class="hidden">
@@ -584,9 +598,21 @@ function doShutdown(mode){
   } else {
     desktop.classList.add('hidden');
     const sd = document.getElementById('win95-shutdown-screen');
+    const progress = document.getElementById('win95-shutdown-progress');
+    const done = document.getElementById('win95-shutdown-done');
     sd.classList.remove('hidden');
-    const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
-    sd.addEventListener('click', goBack);
+    progress.classList.remove('hidden');
+    done.classList.add('hidden');
+    const fill = progress.querySelector('.boot-bar-fill');
+    fill.style.animation = 'none';
+    void fill.offsetWidth;
+    fill.style.animation = '';
+    setTimeout(() => {
+      progress.classList.add('hidden');
+      done.classList.remove('hidden');
+      const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
+      sd.addEventListener('click', goBack);
+    }, 2200);
   }
 }
 
@@ -1471,9 +1497,21 @@ function macDoShutdown(mode){
   } else {
     macDesktopEl.classList.add('hidden');
     const sd = document.getElementById('mac-shutdown-screen');
+    const progress = document.getElementById('mac-shutdown-progress');
+    const done = document.getElementById('mac-shutdown-done');
     sd.classList.remove('hidden');
-    const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
-    sd.addEventListener('click', goBack);
+    progress.classList.remove('hidden');
+    done.classList.add('hidden');
+    const fill = progress.querySelector('.boot-bar-fill');
+    fill.style.animation = 'none';
+    void fill.offsetWidth;
+    fill.style.animation = '';
+    setTimeout(() => {
+      progress.classList.add('hidden');
+      done.classList.remove('hidden');
+      const goBack = () => { sd.classList.add('hidden'); window.returnToPicker(); sd.removeEventListener('click', goBack); };
+      sd.addEventListener('click', goBack);
+    }, 2200);
   }
 }
 
@@ -2137,8 +2175,8 @@ function runCommand(raw){
     case 'about': return ['This "computer" is a static HTML/CSS/JS page -- no backend, no build step.', 'It is a nostalgia project. Type "help" to look around.'];
     case 'reboot': appendLine('Rebooting...'); setTimeout(()=>termBootSequence(), 500); return [];
     case 'exit': case 'logout': case 'shutdown':
-      setTimeout(()=>{ stopMatrix(); window.returnToPicker(); }, 600);
-      return ['logging out...'];
+      termShutdownSequence();
+      return [];
     default: return ["command not found: " + parts[0] + " -- type 'help' for a list of commands."];
   }
 }
@@ -2161,11 +2199,29 @@ inputEl.addEventListener('keydown', (e) => {
 });
 screenEl.addEventListener('click', () => inputEl.focus());
 
+async function termShutdownSequence(){
+  inputEl.disabled = true;
+  stopMatrix();
+  appendLine('logging out...');
+  appendLine('');
+  const lines = [
+    'Stopping services: [ OK ]',
+    'Unmounting filesystems... done',
+    'Halting RetroOS 1.0...'
+  ];
+  for(const l of lines){ appendLine(l); await sleep(300); }
+  appendLine('');
+  appendLine('Power down.');
+  await sleep(900);
+  window.returnToPicker();
+}
+
 async function termBootSequence(){
   bootTime = Date.now();
   cwdPath = ['home','guest'];
   history = []; historyIndex = 0;
   clearOutput(); inputEl.value = '';
+  inputEl.disabled = false;
   const lines = [
     'RetroBIOS v2.3 -- 640K conventional memory',
     'Memory Test: 65536K OK',
