@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RetrOS</title>
+<title>Retro OS</title>
 <style>
   :root{
     --face:#c0c0c0;
@@ -2291,40 +2291,31 @@ window.TerminalOS = { boot: termBootSequence };
 "use strict";
 
 /* Change this to whatever URL you'd like the "exit" boot command to send people to. */
-const EXIT_REDIRECT_URL = '../index.html';
+const EXIT_REDIRECT_URL = 'https://example.com';
 
 const picker = document.getElementById('os-picker');
 const items = Array.from(document.querySelectorAll('.picker-item'));
 const cmdInput = document.getElementById('picker-cmd-input');
 let sel = 0;
 
-function highlight(){ items.forEach((it,i) => it.classList.toggle('active', i === sel)); }
+function highlight(){
+  items.forEach((it,i) => it.classList.toggle('active', i === sel));
+  cmdInput.value = items[sel].querySelector('.picker-name').textContent;
+}
 highlight();
 
 items.forEach((it,i) => {
   it.addEventListener('click', () => { sel = i; highlight(); boot(it.dataset.os); });
-  it.addEventListener('mouseenter', () => { sel = i; highlight(); });
 });
 
 document.addEventListener('keydown', (e) => {
   if(picker.classList.contains('hidden')) return;
   if(e.key === 'ArrowDown'){ sel = (sel+1) % items.length; highlight(); e.preventDefault(); }
   else if(e.key === 'ArrowUp'){ sel = (sel-1+items.length) % items.length; highlight(); e.preventDefault(); }
-  else if(e.key === 'Enter'){ boot(items[sel].dataset.os); }
-});
-
-const cmdDefaultPlaceholder = cmdInput.placeholder;
-cmdInput.addEventListener('keydown', (e) => {
-  e.stopPropagation();
-  if(e.key !== 'Enter') return;
-  const val = cmdInput.value.trim().toLowerCase();
-  cmdInput.value = '';
-  if(!val) return;
-  if(val === 'exit'){
-    window.location.href = EXIT_REDIRECT_URL;
-  } else {
-    cmdInput.placeholder = "command not found: '" + val + "' -- try 'exit'";
-    setTimeout(() => { cmdInput.placeholder = cmdDefaultPlaceholder; }, 1800);
+  else if(e.key === 'Enter'){
+    const typed = cmdInput.value.trim().toLowerCase();
+    if(typed === 'exit'){ window.location.href = EXIT_REDIRECT_URL; return; }
+    boot(items[sel].dataset.os);
   }
 });
 
