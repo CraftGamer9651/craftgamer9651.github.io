@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Projects</title>
+  <link rel="icon" type="image/x-icon" href="assets/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&amp;family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; }
 
+    body {
+      background-image: url('assets/bg.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+      margin:0;
+      padding:0;
+      height:100vh;
+      overflow-x:hidden;
+      color:#e5e7eb;
+      line-height:1.6;
+      position: relative;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    header {
+      padding:40px 20px;
+      text-align:center;
+      background: rgba(0, 0, 0, .4);
+      border-bottom:1px solid #1e293b;
+      border-radius: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size:2.5rem;
+      margin-bottom:10px;
+      color:#FFFFFF;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      letter-spacing: -1px
+    }
+    
+    header h1 span {
+      color:#F88379;
+      font-weight: 800;
+      font-family: 'Syne', sans-serif;
+    }
+    
+    header p { color:#94a3b8; }
+
+    .container { max-width:1100px; margin:auto; padding:40px 20px; position: relative; z-index: 1; }
+
+    .projects { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:25px; }
+
+    .card { 
+      background:#020617;
+      border:1px solid #1e293b;
+      border-radius:14px;
+      overflow:hidden;
+      transition:transform .2s ease, box-shadow .2s ease;
+      cursor:pointer; }
+    .card:hover { transform:translateY(-6px); box-shadow:0 10px 30px rgba(0,0,0,0.4); }
+    .card img { width:100%; height:160px; object-fit:cover; }
+    .card-content { padding:18px; }
+    .card-content h3 { margin-bottom:8px; }
+    .card-content p { font-size:0.9rem; color:#94a3b8; margin-bottom:15px; }
+    .buttons { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { text-decoration:none; font-size:0.85rem; padding:8px 14px; border-radius:8px; border:1px solid #334155; color:white; transition:background .2s; }
+    .btn:hover { background:#1e293b; }
+
+    footer {
+      text-align:center;
+      padding:25px;
+      border-top:1px solid #1e293b;
+      color:#94a3b8; margin-top:40px;
+      position: relative;
+      z-index: 1;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, .4);
+    }
+
+    /* Fullscreen project modal */
+    .project-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; padding:40px; z-index:1000; }
+    .project-modal.active { display:flex; }
+    .modal-content { max-width:900px; width:100%; background:#020617; border:1px solid #1e293b; border-radius:16px; overflow:hidden; animation:modalIn .35s ease; }
+    .modal-content img { width:100%; height:340px; object-fit:cover; }
+    .modal-body { padding:24px; display:flex; flex-direction: column; gap: 10px; }
+    .close-modal { position:absolute; top:25px; right:30px; font-size:28px; cursor:pointer; color:white; }
+
+    @keyframes modalIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+
+  </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<header>
+  <h1>My <span>Projects</span> Under Development</h1>
+  <p>A collection of things I've built and am working on</p>
+</header>
+
+<section class="container">
+  <div class="projects">
+
+    <div class="card">
+      <img src="netsafe/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>NotSafe Security Test</h3>
+        <p>A fun test you can take to see if you're responsible in the internet.</p>
+        <div class="buttons">
+          <a class="btn" href="netsafe/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="quicktube/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>QuickTube</h3>
+        <p>An unblocked website to view YouTube videos without restrictions.</p>
+        <div class="buttons">
+          <a class="btn" href="quicktube/index.html">Watch Now</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="exclude/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>exclude.gg</h3>
+        <p>A store and Minecraft server to buy items and chat with friends.</p>
+        <div class="buttons">
+          <a class="btn" href="exclude/index.html">Join Community</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="retros/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>RetrOS</h3>
+        <p>A bare-bones simulation of three retro operating systes.</p>
+        <div class="buttons">
+          <a class="btn" href="retros/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="void-arcade/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>Void Arcade</h3>
+        <p>A group of online games you can play straight from your browser, including chess, snake, checkers, and more with options for one and two players</p>
+        <div class="buttons">
+          <a class="btn" href="void-arcade/index.html">Play Now</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>CutOut</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="cutout/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>Discord CSS Builder</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="discord-css-builder/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>Luckyblocks</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="luckyblocks/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>MC Pack Maker</h3>
+        <p>In development.</p>
+        <div class="buttons">
+          <a class="btn" href="mc-pack-maker/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>Ragebait Tic-Tac-Toe</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="ragebait_tic-tac-toe/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>SN Extractor</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="sn-extractor/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="" alt="Project image">
+      <div class="card-content">
+        <h3>Index</h3>
+        <p>In development</p>
+        <div class="buttons">
+          <a class="btn" href="../index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+<!-- 
+    <div class="card">
+      <img src="discord-css-builder/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>Discord CSS Builder</h3>
+        <p>A website where you can style Discord to look how you want it and download the CSS file. (You need BetterDiscord to use it)</p>
+        <div class="buttons">
+          <a class="btn" href="discord-css-builder/index.html">Try It</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="cutout/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>MC Pack Studio</h3>
+        <p>A free-to-use website where you can make your own Minecraft resource packs, texture packs, and more.</p>
+        <div class="buttons">
+          <a class="btn" href="mc-pack-maker/index.html">Start a Pack</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>All projects Copyright © 2026 knokyoursock. All rights reserved.</p>
+  <a class="btn" href="https://exclude.gg/knokyoursock">About Me</a>
+</footer>
+
+<!-- Fullscreen project modal -->
+<div class="project-modal" id="projectModal">
+  <div class="close-modal" id="closeModal">✕</div>
+  <div class="modal-content" id="modalContent">
+    <img id="modalImage" src="" alt="Project image">
+    <div class="modal-body">
+      <h2 id="modalTitle"></h2>
+      <p id="modalDescription"></p>
+      <div class="buttons" id="modalButtons"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
