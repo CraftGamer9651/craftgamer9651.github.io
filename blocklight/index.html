@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blocklight: a Minecraft launcher for modded play</title>
+<meta name="description" content="Blocklight is a desktop Minecraft launcher built with Tauri and Rust. Paste a Modrinth or CurseForge link, manage instances, and launch NeoForge, Fabric or Quilt.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e2a24b' d='M5 0h14l5 5v14l-5 5H5l-5-5V5z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#15171b; --surface:#1d2025; --surface-raised:#262a31; --surface-hover:#2c313a;
+  --line:#34383f; --line-soft:#282c33;
+  --ink:#eceef1; --ink-dim:#9298a3; --ink-faint:#656b76;
+  --ember:#e2a24b; --ember-strong:#c8862e; --ember-wash:rgba(226,162,75,.12);
+  --lime:#8fd14f; --lime-wash:rgba(143,209,79,.12);
+  --signal-blue:#4f9cf0; --signal-blue-wash:rgba(79,156,240,.12);
+  --font:-apple-system,"Segoe UI Variable Text","Segoe UI","Ubuntu","Cantarell","Noto Sans",sans-serif;
+  --notch:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--font);-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--signal-blue);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+.notched{clip-path:polygon(var(--notch) 0,calc(100% - var(--notch)) 0,100% var(--notch),100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,var(--notch) 100%,0 calc(100% - var(--notch)),0 var(--notch))}
+.notched-sm{--notch:7px}
+.mark{width:24px;height:24px;background:var(--ember);flex-shrink:0;clip-path:polygon(20% 0,80% 0,100% 20%,100% 80%,80% 100%,20% 100%,0 80%,0 20%)}
+
+/* buttons / badges, same shapes as the app */
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:8px;font:600 15px var(--font);border:1px solid transparent;text-decoration:none;cursor:pointer;transition:background .12s,border-color .12s}
+.btn-primary{background:var(--ember);color:#1a1206}
+.btn-primary:hover{background:var(--ember-strong)}
+.btn-secondary{background:var(--surface-raised);color:var(--ink);border-color:var(--line)}
+.btn-secondary:hover{background:var(--surface-hover)}
+.badge{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:var(--lime-wash);color:var(--lime)}
+.b-info{background:var(--signal-blue-wash);color:var(--signal-blue)}
+.b-warn{background:var(--ember-wash);color:var(--ember)}
+
+/* nav */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:17px}
+.links{display:flex;gap:6px;font-size:14px;font-weight:500}
+.links a{padding:8px 12px;border-radius:8px;color:var(--ink-dim);text-decoration:none}
+.links a:hover{background:var(--surface-hover);color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:48px;align-items:center;padding:64px 0 88px}
+h1{font-size:clamp(34px,4.6vw,54px);line-height:1.08;letter-spacing:-.025em;margin-bottom:20px}
+.lede{color:var(--ink-dim);font-size:18px;max-width:28em;margin-bottom:28px}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+.stackline{margin-top:24px;color:var(--ink-faint);font-size:13.5px}
+
+/* app mock: a scaled copy of the real shell */
+.app{display:grid;grid-template-columns:170px 1fr;background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.4),0 28px 60px -28px rgba(0,0,0,.7);font-size:12.5px;line-height:1.5}
+.sidebar{background:var(--surface);border-right:1px solid var(--line-soft);display:flex;flex-direction:column;padding:14px 10px;gap:20px}
+.sidebar .brand{padding:4px 6px;font-size:13.5px}
+.sidebar .mark{width:20px;height:20px}
+.snav{display:flex;flex-direction:column;gap:2px;flex:1}
+.sl{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--ink-dim);font-weight:500;border:1px solid transparent}
+.sl svg{width:14px;height:14px;flex-shrink:0}
+.sl.active{background:var(--ember-wash);color:var(--ember);border-color:rgba(226,162,75,.25)}
+.status{border:1px solid var(--line-soft);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.status small{color:var(--ink-faint);font-size:11px}
+.mainpane{padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.mainpane h3{font-size:18px}
+.sub{color:var(--ink-dim);font-size:12.5px;margin-top:2px}
+.tile{background:var(--surface);border:1px solid var(--line-soft);padding:16px 18px}
+.tile-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.tile h4{margin:0;font-size:15px;font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px;color:var(--ink-dim);margin-top:4px;font-size:12px}
+.meta s{text-decoration:none;color:var(--ink-faint)}
+.play{height:28px;padding:0 14px;border-radius:8px;background:var(--ember);color:#1a1206;font-weight:600;display:inline-flex;align-items:center}
+.tile .badge{margin-top:12px}
+.prog{margin-top:12px}
+.prog .meta{margin:0 0 6px;justify-content:space-between}
+.track{height:6px;border-radius:4px;background:var(--surface-raised);overflow:hidden}
+.fill{height:100%;width:0;background:var(--ember);transition:width .25s ease}
+.detail{margin-top:6px;color:var(--ink-dim);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabular{font-variant-numeric:tabular-nums}
+.paste{border:1px solid var(--line-soft);border-radius:12px;padding:14px;background:var(--surface)}
+.paste label{display:block;font-size:12px;font-weight:600;color:var(--ink-dim);margin-bottom:6px}
+.row{display:flex;gap:8px}
+.input{flex:1;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink-faint);padding:0 10px;display:flex;align-items:center;font-size:12px;overflow:hidden;white-space:nowrap}
+.sbtn{height:30px;padding:0 12px;border-radius:8px;background:var(--surface-raised);border:1px solid var(--line);font-weight:600;display:inline-flex;align-items:center}
+
+/* sections */
+section{padding:80px 0;border-top:1px solid var(--line-soft)}
+h2{font-size:clamp(26px,3.2vw,34px);line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;max-width:18em}
+.lead{color:var(--ink-dim);max-width:36em;margin-bottom:40px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.ftile{background:var(--line-soft);padding:1px}
+.ftile>div{background:var(--surface);padding:22px;height:100%;display:flex;flex-direction:column;gap:8px;clip-path:inherit;transition:background .12s}
+.ftile:hover>div{background:var(--surface-hover)}
+.ftile h3{font-size:17px}
+.ftile p{color:var(--ink-dim);font-size:15px}
+.ftile .badge{align-self:flex-start;margin-bottom:4px}
+
+.stages{list-style:none;margin:0;padding:0;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface);overflow:hidden}
+.stages li{display:grid;grid-template-columns:36px 1fr;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.stages li:last-child{border-bottom:0}
+.stages b{color:var(--ember);font-weight:600;font-variant-numeric:tabular-nums}
+.stages span{color:var(--ink-dim);font-size:15px}
+.stages strong{display:block;color:var(--ink);font-weight:600;font-size:15.5px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:20px}
+.panel h3{font-size:15px;margin-bottom:10px}
+pre{margin:0;background:#0e0f12;border:1px solid var(--line-soft);border-radius:8px;padding:14px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c7cad1;overflow-x:auto}
+.note{color:var(--ink-dim);font-size:14.5px;margin-top:12px}
+.note code{font:12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--ember)}
+
+footer{border-top:1px solid var(--line-soft);padding:32px 0 56px;color:var(--ink-dim);font-size:14.5px}
+footer .row{justify-content:space-between;flex-wrap:wrap;gap:14px}
+footer a{color:var(--signal-blue)}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;padding:36px 0 56px;gap:36px}
+  .split{grid-template-columns:1fr}
+  .links a:not(.keep){display:none}
+}
+@media (max-width:560px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .wrap{padding:0 20px}
+  .tile-top{flex-direction:column}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#top"><span class="mark"></span>Blocklight</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#launch">Launching</a>
+      <a href="#start">Get started</a>
+      <a class="keep" href="https://github.com/CraftGamer9651/blocklight">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div>
+      <h1>Modded Minecraft, without the setup grind.</h1>
+      <p class="lede">Blocklight is a desktop launcher for people who play with mods. Paste a Modrinth or CurseForge link, and it checks compatibility, pulls in dependencies, and launches your instance.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://github.com/CraftGamer9651/blocklight">View on GitHub</a>
+        <a class="btn btn-secondary" href="#start">Build it yourself</a>
+      </div>
+      <p class="stackline">Built with Tauri v2, Rust, React and TypeScript.</p>
+    </div>
+
+    <div class="app" role="img" aria-label="The Blocklight Home screen: an instance tile for NeoForge 1.21.1 with a launch progress bar and a link import box">
+      <div class="sidebar">
+        <div class="brand"><span class="mark"></span>Blocklight</div>
+        <div class="snav">
+          <div class="sl active"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5 8 2l6 5.5V14a1 1 0 0 1-1 1h-3v-4.5H6V15H3a1 1 0 0 1-1-1V7.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Home</div>
+          <div class="sl"><svg viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 6h11M6 2.5v11" stroke="currentColor" stroke-width="1.1" opacity=".6"/></svg>Mods</div>
+          <div class="sl"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5a5.5 5.5 0 1 0 0 11c.7 0 1.2-.6 1.2-1.3 0-.3-.1-.6-.3-.8-.2-.2-.3-.5-.3-.8 0-.7.6-1.2 1.2-1.2h1.4a2.3 2.3 0 0 0 2.3-2.3C13.5 4.6 11 2.5 8 2.5Z" stroke="currentColor" stroke-width="1.3"/></svg>Resource Packs</div>
+          <div class="sl"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5c.3 2 1.5 3.2 3.5 3.5-2 .3-3.2 1.5-3.5 3.5-.3-2-1.5-3.2-3.5-3.5 2-.3 3.2-1.5 3.5-3.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Shaders</div>
+          <div class="sl"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.1" stroke="currentColor" stroke-width="1.3"/><path d="M8 2.7v1.4M8 11.9v1.4M13.3 8h-1.4M4.1 8H2.7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Settings</div>
+        </div>
+        <div class="status"><span class="badge b-ok"><i></i>Offline profile</span><small>Local mode, no sign-in needed</small></div>
+      </div>
+      <div class="mainpane">
+        <div><h3>Home</h3><p class="sub">Your instances, mods, and worlds, all in one place.</p></div>
+        <div class="tile notched">
+          <div class="tile-top">
+            <div>
+              <h4>NeoForge 1.21.1</h4>
+              <div class="meta"><span>Minecraft 1.21.1</span><s>•</s><span>NeoForge</span><s>•</s><span>24 mods</span><s>•</s><span>Java 21</span></div>
+            </div>
+            <span class="play">Play</span>
+          </div>
+          <span class="badge b-ok"><i></i>Ready for offline play</span>
+          <div class="prog" aria-hidden="true">
+            <div class="meta"><span id="stage">Downloading libraries</span><span class="tabular" id="count">0/120</span></div>
+            <div class="track"><div class="fill" id="fill"></div></div>
+            <div class="detail" id="detail">libraries/net/neoforged/neoforge/21.1.0/neoforge-21.1.0.jar</div>
+          </div>
+        </div>
+        <div class="paste">
+          <label>Paste a Modrinth or CurseForge link</label>
+          <div class="row"><div class="input">https://modrinth.com/mod/sodium</div><span class="sbtn">Check</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything between a link and the main menu.</h2>
+    <p class="lead">The parts of a launcher you use every session, in one quiet window.</p>
+    <div class="tiles">
+      <div class="ftile notched"><div>
+        <h3>Link import</h3>
+        <p>Paste, drag in, or clipboard-paste a Modrinth or CurseForge link. Blocklight works out the platform, content type and version, checks it against your instance, resolves dependencies and installs it.</p>
+      </div></div>
+      <div class="ftile notched"><div>
+        <h3>Instances</h3>
+        <p>Keep each pack or version in its own instance, with its own mods, resource packs, shaders and worlds. Set custom JVM arguments per instance.</p>
+      </div></div>
+      <div class="ftile notched"><div>
+        <h3>Offline mode</h3>
+        <p>Blocklight notices when you lose your connection and keeps working. Manage content and launch with a local profile, no Microsoft account required.</p>
+      </div></div>
+      <div class="ftile notched"><div>
+        <h3>Microsoft sign-in</h3>
+        <p>Device-code login through Xbox and Minecraft Services, with a real ownership check. Accounts without Minecraft are refused.</p>
+      </div></div>
+      <div class="ftile notched"><div>
+        <h3>Skins</h3>
+        <p>Change your current account's skin by uploading a PNG or pasting a SkinMC link, right from Settings.</p>
+      </div></div>
+      <div class="ftile notched"><div>
+        <h3>Discord status</h3>
+        <p>An opt-in setting that shows which instance you are playing in your Discord status.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section id="launch">
+  <div class="wrap">
+    <h2>A launch you can watch.</h2>
+    <p class="lead">Blocklight prepares the game, then streams its progress and log into the app while it starts. It reuses files already on disk and finds a compatible local Java install.</p>
+    <ol class="stages">
+      <li><b>1</b><span><strong>Download the game</strong>The Minecraft client, libraries, and assets, verified as they arrive.</span></li>
+      <li><b>2</b><span><strong>Extract natives</strong>Platform libraries unpacked for your system.</span></li>
+      <li><b>3</b><span><strong>Prepare the loader</strong>Fabric and Quilt profiles are merged. NeoForge runs its real installer and processor chain.</span></li>
+      <li><b>4</b><span><strong>Start and stream</strong>Java arguments are built, the game starts, and its log streams into the launch panel.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap split">
+    <div>
+      <h2>Build it from source.</h2>
+      <p class="lead" style="margin-bottom:0">Blocklight is open source. You need Node.js 18 or newer, stable Rust, and the Tauri v2 system dependencies for your OS.</p>
+    </div>
+    <div class="panel">
+      <h3>Run it locally</h3>
+<pre>git clone https://github.com/CraftGamer9651/blocklight
+cd blocklight
+npm install
+npm run tauri dev</pre>
+      <p class="note">CurseForge links need an API key, set with <code>BLOCKLIGHT_CURSEFORGE_API_KEY</code> or in Settings. Microsoft sign-in needs your own Azure client id in <code>BLOCKLIGHT_MSA_CLIENT_ID</code>. Modrinth works with no setup.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>Blocklight by knokyoursock</span>
+      <span><a href="https://github.com/CraftGamer9651/blocklight">GitHub</a> &nbsp;&nbsp; <a href="https://craftgamer9651.github.io/">Website</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var stages=[["Downloading Minecraft",1],["Downloading libraries",120],["Downloading assets",3400],["Extracting natives",14],["Downloading NeoForge libraries",86],["Running NeoForge installer",9]];
+  var details=["client.jar","libraries/net/neoforged/neoforge/21.1.0/neoforge-21.1.0.jar","assets/objects/5f/5ff04807c356f1beed0b86ccf659b44b9983e3fa","natives/lwjgl-glfw-natives.so","libraries/net/neoforged/fancymodloader/loader.jar","processor 4 of 9: binary patcher"];
+  var s=document.getElementById("stage"),c=document.getElementById("count"),f=document.getElementById("fill"),d=document.getElementById("detail");
+  var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var i=0,n=0;
+  function render(){var t=stages[i][1];s.textContent=stages[i][0];c.textContent=Math.min(n,t)+"/"+t;f.style.width=(Math.min(n,t)/t*100)+"%";d.textContent=details[i];}
+  if(reduce){i=1;n=74;render();return;}
+  var hold=0;
+  setInterval(function(){
+    if(hold>0){hold--;return;}
+    var t=stages[i][1];
+    n=Math.min(t,n+Math.max(1,Math.round(t/14)));
+    render();
+    if(n>=t){hold=2;i=(i+1)%stages.length;n=0;}
+  },260);
+  render();
+})();
+</script>
+</body>
+</html>
