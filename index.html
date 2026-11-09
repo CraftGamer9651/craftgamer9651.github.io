@@ -78,6 +78,32 @@
       object-fit: cover;
       display: block;
     }
+    .card.featured {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: stretch;
+    }
+    
+    .card.featured img {
+      width: 40%;
+      aspect-ratio: auto;
+      flex-shrink: 0;
+    }
+    
+    .card.featured .card-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 30px;
+    }
+    
+    .card.featured .card-content h3 { font-size: 1.6rem; }
+    .card.featured .card-content p { font-size: 1rem; }
+    
+    @media (max-width: 700px) {
+      .card.featured { flex-direction: column; }
+      .card.featured img { width: 100%; aspect-ratio: 6 / 5; }
+    }
     .card-content { padding:18px; }
     .card-content h3 { margin-bottom:8px; }
     .card-content p { font-size:0.9rem; color:#94a3b8; margin-bottom:15px; }
@@ -125,6 +151,16 @@
 
 <section class="container">
   <div class="projects">
+    <div class="card featured">
+      <img src="sector_404/img.png" alt="Project image">
+      <div class="card-content">
+        <h3>Sector 404</h3>
+        <p>A space-themed FPS game with fully rotoscoped weapons, made in Unity.</p>
+        <div class="buttons">
+          <a class="btn" href="sector_404/index.html">Check It Out</a>
+        </div>
+      </div>
+    </div>
 
     <div class="card">
       <img src="blocklight/img.png" alt="Project image">
