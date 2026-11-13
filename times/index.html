@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Times Tables Trainer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#1b1f2a;--muted:#6b7280;--accent:#4f46e5;--accent-text:#fff;--good:#16a34a;--bad:#dc2626;--border:#e3e6ef;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12141c;--card:#1b1e29;--text:#eceef5;--muted:#9aa1b2;--accent:#818cf8;--accent-text:#12141c;--good:#4ade80;--bad:#f87171;--border:#2b2f3f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12141c;--card:#1b1e29;--text:#eceef5;--muted:#9aa1b2;--accent:#818cf8;--accent-text:#12141c;--good:#4ade80;--bad:#f87171;--border:#2b2f3f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+main{width:100%;max-width:480px}
+h1{font-size:1.6rem;margin:0 0 4px;text-align:center}
+.sub{color:var(--muted);text-align:center;margin:0 0 20px}
+.card{--text:#eceef5;--muted:#a9adb9;--border:#4b4f5c;--bg:#1b1d23;--accent:#f59e0b;--accent-text:#1b1d23;background:linear-gradient(160deg,#3d414c,#23252b);border:1px solid #555a68;border-radius:26px;padding:22px;color:var(--text);box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.card::before{content:"knokyoursock · MX-12";display:block;font:600 .7rem system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.lcd{--text:#1f2a1a;--muted:#55654d;--border:#7f8f74;--good:#1d5e22;--bad:#8f1d1d;background:linear-gradient(#bac6a8,#a6b494);color:var(--text);border-radius:10px;padding:14px 16px;box-shadow:inset 0 4px 10px rgba(0,0,0,.45),0 0 0 4px #15171b;font-family:"VT323","Courier New",monospace;font-size:1.3rem;text-shadow:1px 1px 0 rgba(255,255,255,.25)}
+.lcd .top{font-size:1.3rem}.lcd .fb{font-size:1.5rem}.lcd .imp{font-size:1.4rem}.lcd .stat b{font-size:2.2rem;font-weight:400}.lcd .stat span{font-size:1.1rem}.lcd h2{font-weight:400;font-size:1.8rem}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{flex:1;padding:10px;border-radius:10px;border:0;background:#3b3f4a;color:var(--text);font-size:1rem;cursor:pointer;box-shadow:0 3px 0 #14161a}
+.tab.on{background:var(--accent);color:var(--accent-text);font-weight:700;box-shadow:0 3px 0 #b45309}
+.desc{color:var(--muted);font-size:.92rem;margin:0 0 16px}
+label{display:block;font-weight:600;margin:12px 0 6px}
+input[type=number],input[type=text]{width:100%;padding:12px;font-size:1.1rem;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+button.main{width:100%;margin-top:20px;padding:14px;font-size:1.1rem;font-weight:700;border:0;border-radius:12px;background:var(--accent);color:var(--accent-text);cursor:pointer;box-shadow:0 5px 0 #b45309}
+button.main:active,.tab:active{transform:translateY(3px);box-shadow:0 1px 0 #14161a}
+.hide{display:none!important}
+.top{display:flex;justify-content:space-between;color:var(--muted);font-variant-numeric:tabular-nums}
+.problem{font-size:4.2rem;line-height:1;text-align:right;margin:22px 0 8px;font-variant-numeric:tabular-nums;font-family:"VT323","Courier New",monospace}
+#ans{text-align:right;font-size:2.6rem;font-family:"VT323","Courier New",monospace;background:transparent;border:0;border-top:2px dashed #7f8f74;border-radius:0;color:#1f2a1a;outline:none;padding:6px 0}
+#ans::placeholder{color:#55654d;opacity:.6}
+#ans.shake{animation:sh .25s}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.fb{text-align:right;min-height:3.2em;margin-top:8px;font-size:1.05rem}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.stat{border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.85rem}
+.imp{text-align:center;font-weight:600;margin:4px 0}
+footer{margin-top:24px;color:var(--muted);font-size:.85rem;text-align:center}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <h1>✖️ Times Tables Trainer</h1>
+  <p class="sub">How well do you really know them?</p>
+  <div class="card">
+    <div id="setup">
+      <div class="tabs">
+        <button class="tab on" id="t-speed">Speed run</button>
+        <button class="tab" id="t-study">Studying</button>
+      </div>
+      <p class="desc" id="desc"></p>
+      <label for="max">Highest number</label>
+      <input type="number" id="max" value="12" min="2" max="99">
+      <label for="rounds">Number of rounds</label>
+      <input type="number" id="rounds" value="20" min="1" max="200">
+      <button class="main" id="start">Start</button>
+    </div>
+
+    <div id="game" class="hide"><div class="lcd">
+      <div class="top"><span id="prog"></span><span id="timer">0.00s</span></div>
+      <div class="problem" id="problem"></div>
+      <input type="text" id="ans" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="fb" id="fb"></div></div>
+      <button class="main hide" id="next">Next</button>
+    </div>
+
+    <div id="results" class="hide"><div class="lcd">
+      <h2 style="text-align:center;margin:0">Results</h2>
+      <div class="stats">
+        <div class="stat"><b id="r-avg"></b><span>Average</span></div>
+        <div class="stat"><b id="r-min"></b><span>Fastest</span></div>
+        <div class="stat"><b id="r-max"></b><span>Slowest</span></div>
+        <div class="stat"><b id="r-acc"></b><span>First-try correct</span></div>
+      </div>
+      <p class="imp" id="r-imp"></p></div>
+      <button class="main" id="again">Play again</button>
+    </div>
+  </div>
+  <footer>Made by <a href="https://craftgamer9651.github.io/" target="_blank" rel="noopener">knokyoursock</a> · <a href="https://github.com/CraftGamer9651" target="_blank" rel="noopener">GitHub</a></footer>
+</main>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var mode='speed', qs=[], idx=0, t0=0, tick=null, times=[], firstTry=0, wrongThis=false, locked=false;
+  var descs={speed:'Type the answer and the next problem appears instantly — no Enter needed. Wrong answers just clear the box, and the clock keeps running.',
+             study:'Type your answer and press Enter. You’ll see your time, and if you’re wrong, the correct answer.'};
+  function setMode(m){mode=m;$('t-speed').classList.toggle('on',m==='speed');$('t-study').classList.toggle('on',m==='study');$('desc').textContent=descs[m]}
+  $('t-speed').onclick=function(){setMode('speed')};
+  $('t-study').onclick=function(){setMode('study')};
+  setMode('speed');
+
+  function show(id){['setup','game','results'].forEach(function(s){$(s).classList.toggle('hide',s!==id)})}
+  function fmt(ms){return (ms/1000).toFixed(2)+'s'}
+  function clamp(v,lo,hi,d){v=parseInt(v,10);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v))}
+
+  function start(){
+    var max=clamp($('max').value,2,99,12), rounds=clamp($('rounds').value,1,200,20);
+    $('max').value=max;$('rounds').value=rounds;
+    qs=[];for(var i=0;i<rounds;i++){
+      var a,b,tries=0;
+      do{a=1+Math.floor(Math.random()*max);b=1+Math.floor(Math.random()*max);tries++}
+      while(i>0&&qs[i-1].a===a&&qs[i-1].b===b&&tries<10);
+      qs.push({a:a,b:b});
+    }
+    idx=0;times=[];firstTry=0;
+    show('game');
+    ask();
+  }
+
+  function ask(){
+    var q=qs[idx];
+    $('prog').textContent='Question '+(idx+1)+' of '+qs.length;
+    $('problem').textContent=q.a+' × '+q.b;
+    $('ans').value='';$('ans').disabled=false;$('ans').focus();
+    $('fb').textContent='';$('next').classList.add('hide');
+    wrongThis=false;locked=false;
+    t0=performance.now();
+    clearInterval(tick);
+    tick=setInterval(function(){$('timer').textContent=fmt(performance.now()-t0)},50);
+  }
+
+  function record(){
+    var t=performance.now()-t0;clearInterval(tick);$('timer').textContent=fmt(t);
+    times.push(t);if(!wrongThis)firstTry++;
+    return t;
+  }
+
+  function advance(){idx++;if(idx>=qs.length)finish();else ask()}
+
+  $('ans').addEventListener('input',function(){
+    if(mode!=='speed'||locked)return;
+    var q=qs[idx],correct=String(q.a*q.b),v=this.value.trim();
+    if(v===correct){locked=true;record();advance()}
+    else if(v.length>=correct.length){
+      wrongThis=true;this.value='';
+      this.classList.remove('shake');void this.offsetWidth;this.classList.add('shake');
+    }
+  });
+
+  $('ans').addEventListener('keydown',function(e){
+    if(mode!=='study'||e.key!=='Enter')return;
+    e.preventDefault();
+    if(locked){advance();return}
+    var v=this.value.trim();if(v==='')return;
+    var q=qs[idx],correct=q.a*q.b;
+    if(parseInt(v,10)===correct){wrongThis=false}else{wrongThis=true}
+    var t=record();locked=true;this.disabled=true;
+    $('fb').innerHTML=wrongThis
+      ?'<span class="bad">✗ Not quite.</span> '+q.a+' × '+q.b+' = <b>'+correct+'</b><br>Time: '+fmt(t)
+      :'<span class="good">✓ Correct!</span><br>Time: '+fmt(t);
+    $('next').textContent=idx+1>=qs.length?'See results':'Next';
+    $('next').classList.remove('hide');$('next').focus();
+  });
+  $('next').onclick=function(){advance()};
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&mode==='study'&&locked&&!$('game').classList.contains('hide')&&document.activeElement!==$('next')){advance()}
+  });
+
+  function finish(){
+    clearInterval(tick);
+    var sum=times.reduce(function(a,b){return a+b},0),avg=sum/times.length;
+    var mn=Math.min.apply(null,times),mx=Math.max.apply(null,times);
+    $('r-avg').textContent=fmt(avg);$('r-min').textContent=fmt(mn);$('r-max').textContent=fmt(mx);
+    $('r-acc').textContent=Math.round(firstTry/times.length*100)+'%';
+    var key='ttt-last-'+mode,prev=null;
+    try{var s=localStorage.getItem(key);if(s)prev=JSON.parse(s)}catch(e){}
+    var el=$('r-imp');el.className='imp';
+    if(!prev){el.textContent='This is your first '+(mode==='speed'?'speed run':'study')+' game — play again to see your improvement!'}
+    else{
+      var diff=prev.avg-avg,pct=Math.abs(diff/prev.avg*100).toFixed(1);
+      if(Math.abs(diff)<5){el.textContent='About the same as last time ('+fmt(prev.avg)+' average).'}
+      else if(diff>0){el.className='imp good';el.textContent='▲ '+fmt(diff)+' faster per question than last game ('+pct+'% improvement)'}
+      else{el.className='imp bad';el.textContent='▼ '+fmt(-diff)+' slower per question than last game ('+pct+'% slower)'}
+    }
+    try{localStorage.setItem(key,JSON.stringify({avg:avg,date:Date.now()}))}catch(e){}
+    show('results');
+  }
+
+  $('start').onclick=start;
+  $('again').onclick=function(){show('setup')};
+})();
+</script>
+</body>
+</html>
